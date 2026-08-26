@@ -1,0 +1,111 @@
+GESTION DIARIA:
+GESTIÓN DIARIA - ANALISTA DE ALISTAMIENTO
+
+A primera hora:
+Verificar el espacio de trabajo y asegurar condiciones organizadas para el inicio de operaciones.
+Revisar chat de WhatsApp corporativo — responder y resolver requerimientos si es el caso.
+Revisar bandeja de entrada de correo electrónico corporativo.
+Verificar surtido de producto en las estanterías — identificar faltantes antes de iniciar despachos.
+Confirmar con el Jefe de Bodega las prioridades y volumen de pedidos del día.
+
+A diario:
+Realizar conteo diario de producto en bodega (meta: exactitud 100%).
+Verificar que el alistamiento de cada pedido esté completo antes de pasar al área de empaque.
+Registrar unidades alistadas — meta mínima: 200 unidades por turno.
+Dar alerta inmediata al Jefe de Bodega ante agotamiento de stock o quiebre de inventario.
+Verificar coherencia entre facturas y producto alistado — reportar discrepancia si aplica.
+Apoyo en empaquetado cuando el volumen de pedidos lo requiera.
+Mantener surtido de estanterías actualizado durante toda la operación.
+Mantener orden y limpieza de la zona de alistamiento durante el turno.
+
+Apoyo en:
+Apoyo en el área de despachos cuando el volumen o la ausencia del responsable lo requieran.
+Apoyo en organización general de la bodega.
+Apoyo en levantamiento de inventario general cuando sea requerido por el Jefe de Bodega.
+
+OBJETIVO Y ALCANCE:
+OBJETIVO Y ALCANCE DEL CARGO
+
+Objetivo del Cargo:
+Ejecutar actividades operativas de soporte en la bodega o almacén, garantizando la organización, limpieza y óptimo surtido del espacio de trabajo y estanterías antes y durante la operación. El titular debe asegurar la precisión del inventario mediante conteos diarios y la integridad de los pedidos a través de verificaciones de alistamiento y empaque. Asimismo, es responsable de actuar como un filtro de calidad y control, emitiendo alertas oportunas sobre agotamiento de stock y discrepancias en la documentación (facturas) para soportar la eficiencia del área de despachos.
+
+Alcance del Cargo:
+El rango de acción del Analista de Alistamiento se concentra dentro de las instalaciones físicas de la bodega, almacén o zona de surtido de la compañía. Su alcance incluye:
+Alistamiento Operativo: Asegurar las condiciones organizadas del área y el surtido completo de estanterías.
+Control de Existencias: Realizar conteos físicos diarios y emitir alertas de quiebre de stock.
+Aseguramiento de Calidad: Verificar que el alistamiento de pedidos esté completo, apoyar en el empaquetado y confirmar la coherencia documental (facturas).
+Soporte General: Colaborar activamente en la organización de la bodega y brindar apoyo operativo en el área de despachos según la demanda.
+
+FUNCIONES Y RESPONSABILIDAD:
+FUNCIONES Y RESPONSABILIDAD
+
+Verificar el espacio de trabajo y asegurar condiciones organizadas para el inicio de operaciones.
+Verificar surtido de producto en las estanterías.
+Realizar conteo diario de producto en bodega.
+Verificar el alistamiento de productos esté completo.
+Apoyo a la organización de la bodega.
+Apoyo en empaquetado.
+Dar alertas de agotamiento de stock.
+Verificar la coherencia de las facturas y dar su alerta si es necesario.
+Apoyo en el área de despachos en caso de ser necesario.
+
+PROCESOS Y HERRAMIENTAS:
+PROCESOS Y HERRAMIENTAS
+
+1. Procesos Clave del Cargo (Flujos de Trabajo Paso a Paso)
+
+Proceso A: Apertura de Turno y Acondicionamiento
+Paso 1 (Inspección y Limpieza): Evaluar visualmente la zona de alistamiento (picking), empaque (packing) y pasillos de bodega. Limpiar y retirar residuos del turno anterior.
+Paso 2 (Abastecimiento de Insumos): Verificar que la mesa de empaque cuente con cajas, cintas, etiquetas, plástico de burbujas y papelería listos para usar.
+Paso 3 (Liberación de Estación): Organizar las herramientas físicas (bisturí, marcadores, báscula o escáneres) en su lugar asignado para iniciar la operación de forma segura.
+
+Proceso B: Gestión de Inventario, Surtido y Alertas de Stock
+Paso 1 (Auditoría de Exhibición): Recorrer el área de estanterías y vitrinas comerciales para verificar los niveles de exhibición. Surtir el producto faltante desde la bodega principal.
+Paso 2 (Conteo Cíclico Diario): Ejecutar el inventario físico diario de las referencias asignadas en la bodega según el plan de rotación.
+Paso 3 (Cruce y Disparador de Alertas): Comparar las existencias físicas con el stock mínimo requerido. Si el producto llegó a su punto de reorden o está en cero, emitir de inmediato la Alerta de Agotamiento al supervisor del área para congelar la venta o gestionar la compra.
+
+Proceso C: Alistamiento, Control de Coherencia y Empaque (Picking & Packing)
+Paso 1 (Lectura Documental): Recibir la orden de alistamiento o la factura física/digital y analizar las referencias y cantidades solicitadas.
+Paso 2 (Extracción de Producto - Picking): Ubicar la mercancía en bodega validando visualmente que el lote, la fecha de vencimiento y el empaque estén en perfectas condiciones.
+Paso 3 (Filtro de Coherencia y Control de Calidad): Realizar un conteo cruzado de la mercancía recolectada contra la factura. Paso Crítico: Si el código del producto físico no coincide con el descrito en la factura, o las cantidades difieren, se retiene el pedido y se emite una Alerta de Inconsistencia Facturada.
+Paso 4 (Embalaje Seguro - Packing): Colocar el producto en la caja o bolsa adecuada, sellar utilizando cinta de seguridad y adherir el rótulo con los datos de entrega.
+
+Proceso D: Soporte Organizacional y Despacho
+Paso 1 (Zonificación de Pedidos): Trasladar los paquetes terminados al área de tránsito (staging) o muelle de salida, organizándolos por ruta, transportadora o cliente.
+Paso 2 (Ordenamiento de Bodega): Ubicar las devoluciones procesadas o los ingresos de mercancía nueva en sus respectivas posiciones asignadas en estanterías.
+Paso 3 (Apoyo en Despacho): En horas pico de alta operación, integrarse al equipo de despacho para cargar vehículos, verificar planillas de salida y agilizar los tiempos de entrega.
+
+2. Herramientas del Cargo (Físicas, Digitales y Visuales)
+
+Herramientas Digitales y de Gestión (Sistemas):
+Módulo de Inventario (ERP / WMS): Sistema para consultar ubicaciones de almacenamiento, actualizar bases de datos y contrastar el conteo cíclico.
+Protocolo Digital de Alertas: Canal de mensajería instantánea empresarial con plantillas rápidas para reportar novedades. Ejemplo: Plantilla Alerta Stock [AGOTADO] [Código Referencia] [Nombre Producto] [Saldo Físico: X]. Plantilla Alerta Factura [ERROR FACTURA] [N° Factura: XXXX] [Inconsistencia: Físico pide 5, Factura dice 2].
+
+Herramientas Físicas y de Control Operativo:
+Checklists de Verificación Estándar: Lista de chequeo 5S de apertura para asegurar el orden del espacio de trabajo. Formato de Conteo Cíclico Diario para el registro manual del inventario antes de subir la información al sistema centralizado.
+Elementos de Identificación Visual (Código de Colores): etiquetas o cintas autoadhesivas de colores en la mesa de control — Verde: Pedido verificado, coherente con factura y listo para despacho; Rojo: Pedido retenido por inconsistencia en factura o daño físico.
+Insumos de Alistamiento y Protección: Cintas de embalaje industrial, cajas de cartón corrugado de diferentes tamaños, vinipel (plástico film), plástico de burbujas para protección interna, marcadores permanentes y bisturí de seguridad con hoja retráctil.
+Equipos de Apoyo Logístico: Carro transportador manual tipo picking (con divisiones para organizar pedidos simultáneos), transpaleta manual (gato hidráulico) para mover cargas pesadas y báscula pesadora para verificar el peso final de las cajas empacadas frente a lo facturado.
+
+KPIS:
+KPI's ESTANDARIZADOS
+
+Indicadores de Desempeño (KPI):
+- Exactitud de inventarios: Meta 100%
+- Cumplimiento de alistamiento de pedidos: Meta 100% (200 al día)
+
+Metas de Conversión:
+Conversión (x10): Meta 30'000.000 (Valor de empaques)
+
+PROTOCOLOS EN GENERAL:
+PROTOCOLOS EN GENERAL
+(sin contenido adicional registrado más allá del título)
+
+TIPS Y RECOMENDACIONES:
+TIP'S Y RECOMENDACIONES
+(sin contenido adicional registrado más allá del título)
+
+OPORTUNIDADES DE MEJORA:
+OPORTUNIDADES DE MEJORA
+
+Digitalizar el proceso de revisión de factura, incluir un tópico que se incluya alistamiento.

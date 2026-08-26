@@ -1,0 +1,82 @@
+GESTION DIARIA:
+GESTIÓN DIARIA ANALISTA DE SISTEMAS Y CONTROL DE ACTIVOS FIJOS
+Objetivo: Proteger activos físicos y digitales.
+1. Organización del Escritorio: mantener cada activo en su lugar, guardar documentos confidenciales en el cajón.
+2. WhatsApp Corporativo: revisar y responder todos los chats. Resultado: 0 mensajes pendientes.
+3. Correo Electrónico: revisar bandeja completa y dar solución.
+4. Formulario de solicitudes pentágono (máx. 1 día hábil): validar, clasificar y ejecutar solicitudes de accesos, activos, materiales, ingresos y retiros de personal.
+5. Cronograma de pendientes.
+6. Auditar pendientes de base de datos (solo en el pc asignado en el pentágono).
+7. Auditar conexión de redes de internet y revisar novedades.
+8. Auditar la ciberseguridad de la empresa y sus bases de datos.
+9. Administrar las bases de datos de clientes, líneas, etc.
+Entregable diario: reporte con estado de accesos, inventario actualizado, alertas de riesgo tecnológico.
+
+Semanal: Backups y Seguridad (jueves): confirmar respaldo diario, revisar accesos sospechosos, reportar novedades críticas. Rectificar inventario estudio (viernes).
+
+A TENER EN CUENTA: revisar usuarios activos en CRM vs personal real; revisar OC de activos requeridos e insumos de oficina; bloquear accesos de empleados retirados el mismo día; verificar doble autenticación activa en todas las plataformas; reportar inmediatamente cualquier acceso sospechoso; apoyar y dar seguimiento a proyectos de ciberseguridad del Pentágono; inventario tecnológico y materiales de oficina (actualizar equipos Mac, celulares, tablets, validar responsables, actas firmadas y estado físico); custodia y uso seguro de la base de datos (exclusivamente en computador designado, para campañas de email marketing autorizadas); administración de líneas telefónicas con el proveedor.
+
+LA GESTIÓN DIARIA GARANTIZA UN 90% LOS RESULTADOS EN EL MES DE MANERA PERSONAL Y GRUPAL, SIGUIENDO CADA CASO CON LA ESTRATEGIA DADA EN LA BASE DEL CARGO.
+
+OBJETIVO Y ALCANCE DEL CARGO:
+1. Objetivo del Cargo
+Asegurar la integridad, trazabilidad, seguridad y correcto uso de los activos tangibles (tecnológicos, mobiliario, herramientas) e intangibles (accesos, bases de datos, plataformas) de la compañía. Su propósito es mitigar riesgos operativos, financieros y de ciberseguridad mediante auditoría constante, control riguroso de inventarios, administración centralizada de credenciales y seguimiento a planes de mantenimiento y desarrollo.
+
+2. Alcance del Cargo
+Alcance táctico, de control y soporte operativo inter-área, cubriendo transversalmente toda la organización. Autoridad para inspeccionar físicamente cualquier sede y auditar bases de datos, plataformas y comportamiento de usuarios en entornos digitales. Responsable de centralizar, otorgar, recuperar y denegar accesos corporativos (primer filtro de ciberseguridad). Tramita solicitudes formales de activos, insumos, accesos y desarrollos tecnológicos (Pentágono). Facultad de documentar hallazgos, asignar responsabilidades por mal uso o pérdida de recursos, medir percepción del servicio y reportar riesgos a la alta gerencia.
+
+FUNCIONES Y RESPONSABILIDAD:
+Es responsable de registrar, actualizar y mantener el inventario maestro de activos (equipos tecnológicos, mobiliario, herramientas).
+Es responsable de verificar físicamente la ubicación de cada activo, validando coincidencia con los registros del sistema.
+Es responsable de validar y confirmar el responsable asignado de cada activo.
+Es responsable de inspeccionar el estado de los activos, identificando daños, deterioro o mal uso.
+Es responsable de detectar, reportar y documentar de manera inmediata pérdidas, daños o irregularidades relacionadas con activos.
+Es responsable de elaborar y presentar informes mensuales de control de activos.
+Administrar, recuperar y centralizar los accesos de toda la empresa.
+Gestionar solicitudes por formato referentes a activos fijos, insumos de oficina, bases de datos de clientes, Respond (organización), desarrollos solicitados por el Pentágono, encuestas de satisfacción, soporte tecnológico, proyectos de tecnología, mantenimientos de equipos (computadores, impresoras).
+Administrar ciberseguridad de accesos y plataformas.
+Controlar y hacer seguimiento a mantenimientos preventivos y correctivos.
+Gestión de proveedores de telefonía y línea de celulares. Alistamiento de activos del personal nuevo. Garantizar estado de servicios de internet. Realizar soporte técnico. Manejo de ciberseguridad y antivirus (Bitdefender). Manejo y supervisión de Sophos.
+
+KPI's ESTANDARIZADOS:
+- Cumplimiento de Requerimientos: Meta 100%
+- Exactitud de Inventarios: Meta 100%
+- Cumplimiento de cronograma: Meta 100%
+Metas de Conversión: Conversión (x47): Meta 141'000.000
+
+PROCESOS Y HERRAMIENTAS:
+PROCESOS DEL CARGO
+Gestión Integral de Seguridad, Activos y Control de Riesgos Tecnológicos: gestión de seguridad física y digital, administración y control de activos tecnológicos.
+Seguridad Física y Control de Accesos: protocolos de seguridad física para equipos e información sensible; administración de control de accesos físicos y lógicos (emisión, revocación, monitoreo de credenciales); coordinación con vigilancia.
+Administración y Mantenimiento de Activos Tecnológicos: ciclo de vida completo (adquisición a disposición final); inventario de hardware y software; configuración, parcheo y actualización de software.
+Gestión de Solicitudes Internas y Soporte Tecnológico: validación, priorización y ejecución de solicitudes de acceso, recursos, configuración, resolución de incidentes (primer y segundo nivel); sistema de tickets/mesa de ayuda.
+Auditoría y Monitoreo de Bases de Datos y Sistemas: auditorías periódicas para identificar vulnerabilidades y accesos no autorizados; monitoreo de logs; informes de auditoría.
+Control de Inventarios y Activos: seguimiento continuo para prevenir pérdidas o mal uso; conciliación con registros contables; documentación de movimientos.
+Monitoreo y Mitigación de Riesgos Tecnológicos: identificación proactiva de amenazas de ciberseguridad, fallos de hardware/software; planes de respuesta a incidentes.
+
+HERRAMIENTAS QUE USA:
+WhatsApp Corporativo y Correo Electrónico. CRM (validación de usuarios, seguimiento). Formularios Internos de Solicitudes. Bases de Datos Controladas. Google Drive. Equipos tecnológicos (Mac, celulares, tablets). Respon.io (plataforma de gestión conversacional con IA para atención a clientes vía chats). Microsoft Tenant, Meta Business Manager, Instagram, Facebook, Google, e-commerce, bancos (control centralizado de accesos y 2FA). Bitdefender (antivirus). Sophos.
+
+TIP'S Y RECOMENDACIONES:
+No dejar solicitudes pendientes: sistema de seguimiento (ticketing) para trazabilidad.
+Validar siempre la información antes de ejecutar cambios o configuraciones.
+Mantener actualizado el inventario en tiempo real (alta, baja o modificación registrada inmediatamente).
+Asegurar el uso de doble autenticación (MFA/2FA) en todos los sistemas críticos.
+Controlar estrictamente accesos bajo principio de mínimo privilegio.
+Trabajar con orden físico y digital (estructura de carpetas lógica, nomenclatura estandarizada).
+
+PROTOCOLOS EN GENERAL:
+1. Identificación Inmediata y Clasificación de la Novedad: detección proactiva o reactiva, evaluación preliminar y clasificación por criticidad.
+2. Reporte Directo al Líder Funcional Responsable, usando canal oficial definido con trazabilidad.
+3. Registro Exhaustivo y Documentación del Caso: fecha/hora, descripción, evidencia, clasificación, responsable notificado.
+4. Seguimiento Continuo y Coordinación Interdisciplinaria hasta solución definitiva, dentro de SLAs, con escalamiento si se estanca.
+5. Retroalimentación Estructurada y Formal al Área Involucrada (análisis de Causa Raíz con 5 Porqués, Ishikawa).
+6. Validación de la Corrección y Verificación de la Eficacia (auditoría de eficacia; reapertura si hay reincidencia).
+
+OPORTUNIDADES DE MEJORA:
+Actualización inmediata del inventario (única fuente de verdad) tras cualquier movimiento, adquisición o desecho.
+Implementación obligatoria de doble autenticación (MFA/2FA) en todos los sistemas críticos.
+Control estricto de acceso y privilegios bajo principio de mínimo privilegio, con revisión periódica y registros detallados.
+
+CONTEXTO ADICIONAL (Entrevista de levantamiento de procesos, Analista de Sistemas y Control de Activos Fijos, 14 de agosto 2026):
+El cargo está en reestructuración por redistribución de tareas. Administración integral de Respon.io (plataforma de gestión conversacional e IA), vinculación de líneas WhatsApp comerciales, migración de bases de datos desde Shopify, Dropee, Zoho y celulares físicos. Seguridad informática y credenciales: control centralizado de accesos (Microsoft Tenant, Meta Business Manager, Instagram, Facebook, Google, e-commerce, bancos) y códigos de verificación 2FA. Desarrollo interno de aplicaciones ("Pentágono"): soluciones ad-hoc para control de inventarios, auditoría con evidencia fotográfica, entrega de dotaciones a empleados (HR), registro de insumos de oficina y monitoreo. El analista también realiza auditoría a las actividades/KPIs de otros cargos por encargo de la gerencia (verificación de cumplimiento). Próximos pasos: formularios centralizados para solicitudes de TI/desarrollo, unificación de formatos de nómina/horas extras, elaboración de manuales de procedimientos.

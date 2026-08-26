@@ -1,0 +1,68 @@
+GESTION DIARIA:
+A PRIMERA HORA:
+Revisar chat de WhatsApp, responder y resolver los requerimientos si es el caso.
+Revisar bandeja de entrada de correo electrónico corporativo.
+Subir historias a estados de WhatsApp / de contenido compartido en el (Chat estados).
+Limpiar espacio de trabajo.
+
+ACTIVIDADES DIARIAS:
+Archivos (CRM).
+Revisión grupos: comprobantes / pagos (líneas asignadas a cada facturador).
+Facturar ventas comerciales en orden descendente – de abajo hacia arriba.
+Pasar facturas a Líder de Bodega: es importante localizar la bodega de donde saldrá el producto. Ejemplo: Ciudad de Cali, se emite 2 facturas (área despachos/área contable). Se realiza la guía de ser necesario. Si el producto sale de bodega externa (Medellín, Bogotá, México, Panamá, Ecuador, Londres, España, etc, bodega vigente y próximas a apertura), al facturar se saca colilla para el área contable y se debe enviar orden de compra al grupo por país o ciudad.
+Alimentar Drive/Excel, diligenciar datos del cliente o información del documento (control interno de salida del producto área de facturación).
+Organizar AZ con consecutivos de cada una de las facturas.
+
+OTROS TENER EN CUENTA:
+Pausa activa (Mañana / Tarde).
+Cronograma de domingos y feriados.
+Reporte / descarga de archivo de seguimiento de salida de facturas.
+
+OBJETIVO Y ALCANCE DEL CARGO:
+1. Objetivo del Cargo
+Coordinar y ejecutar de manera oportuna, ordenada y sistemática el proceso de facturación y generación de guías logísticas para todas las ventas comerciales de la compañía, tanto nacionales como internacionales. Su propósito es actuar como el nodo conector entre los canales de venta digitales (WooCommerce, Mercado Libre, Dropi, SorryChina) y la operación de distribución, asegurando la correcta asignación de bodegas de origen (locales y externas), la emisión de soportes documentales conforme a las normativas de control interno y la entrega fluida de órdenes de despacho al área logística.
+
+2. Alcance del Cargo
+El cargo tiene un alcance de ejecución técnica especializada, control documental de salidas y coordinación logística-administrativa internacional. Su rango de acción abarca la gestión de todas las plataformas operativas de comercio electrónico de la empresa y la comunicación directa con el Líder de Bodega y los equipos encargados de los inventarios globales.
+Tiene la responsabilidad directa de transformar cada pedido aprobado en una factura legal y una guía de transporte válida, operando plataformas logísticas como SkyDropx y Coordinadora. Cuenta con la autonomía operativa para determinar la ruta de despacho: emitir el juego de facturas dobles (Despachos/Contabilidad) si el producto sale de la sede principal (Cali), o desviar el requerimiento generando colillas administrativas y activando las órdenes de compra en los grupos internacionales correspondientes si el stock se encuentra en bodegas satélites (Medellín, Bogotá, México, Panamá, Ecuador, Londres, España, etc.).
+No tiene la facultad de modificar inventarios en el CRM, alterar tarifas de envío, ni autorizar notas crédito o descuentos sin aprobación superior. Su impacto se mide directamente en el indicador de despachos correctos (Perfect Order Rate), la eliminación de cuellos de botella entre la venta y la bodega, la exactitud de las bases de datos de control interno en Drive/Excel y la fluidez del flujo de información transfronterizo de la compañía.
+
+FUNCIONES Y RESPONSABILIDAD:
+A primera hora (inicio de jornada)
+Revisar el chat de WhatsApp corporativo y atender requerimientos inmediatos.
+Verificar y responder la bandeja de entrada del correo electrónico.
+Publicar contenidos en los estados de WhatsApp (según información compartida en el chat "estados").
+Realizar limpieza y organización del espacio de trabajo.
+
+Actividades Diarias
+Actualizar archivos en el CRM.
+Ejecutar el proceso de facturación de ventas comerciales en orden descendente (de abajo hacia arriba).
+Pasar facturas al Líder de Bodega para su respectivo despacho.
+Importante: Localizar la bodega desde la cual saldrá el producto. Si es Cali, se emiten 2 facturas (área de despachos y área contable) y se genera guía si es necesario. Si es una bodega externa (Medellín, Bogotá, México, Panamá, Ecuador, Londres, España, etc.), se genera colilla para contabilidad y se envía orden de compra al grupo correspondiente por país o ciudad.
+Alimentar las bases de datos en Drive/Excel diligenciando los datos del cliente o la información del documento (control interno de salida del producto).
+
+FACTURACIÓN POR PLATAFORMA
+1. Dropi (internacional): Generar guía e imprimir. Crear orden de compra y emitir factura. Adjuntar factura (grapada) a la guía para entrega al área de despachos.
+2. Mercado Pago (Mercado Libre) ecommerce: Generar guía e imprimir. Crear orden de compra y emitir factura. Adjuntar factura a la guía para entrega al área de despachos.
+3. WooCommerce: Generar guía manual e imprimir. Crear orden de compra y emitir factura. Adjuntar factura a la guía para entrega al área de despachos.
+4. SorryChina (Extensión de Dropi): Generar guía e imprimir. Crear orden de compra y emitir factura. Adjuntar factura a la guía para entrega al área de despachos.
+
+EMPRESAS TRANSPORTADORAS / GENERACIÓN DE GUÍAS
+Coordinadora: https://www.coordinadora.com/mi-coordinadora/mis-guias/
+SkyDropx (Interrapidísimo, Servientrega, Envia, Coordinadora, entre otros): https://www.skydropx.com
+
+ENVÍO A BODEGA Y DESPACHO
+Entregar las facturas al Líder de Bodega para coordinar el despacho.
+Determinar la bodega de origen del producto (ej. Cali, Medellín, Bogotá, México, España, etc.).
+Si el despacho es desde una bodega externa, generar colilla para contabilidad y enviar la orden de compra al grupo correspondiente por ciudad o país.
+
+OTROS ASPECTOS A TENER EN CUENTA
+Participar en las pausas activas (mañana y tarde).
+Seguir el cronograma asignado para domingos y festivos si aplica.
+Descargar y organizar periódicamente el reporte de seguimiento de salida de facturas.
+
+KPI's ESTANDARIZADOS:
+- Exactitud de facturas | Meta: 98%
+- Cumplimiento de facturas | Meta: 100% (60 al dia)
+
+NOTA: Los documentos de PROCESOS Y HERRAMIENTAS, TIP'S Y RECOMENDACIONES, PROTOCOLOS EN GENERAL y OPORTUNIDADES DE MEJORA de este cargo existen en Drive pero están vacíos (solo contienen el título, sin contenido desarrollado).

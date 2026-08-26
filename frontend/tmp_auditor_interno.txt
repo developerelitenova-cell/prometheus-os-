@@ -1,0 +1,88 @@
+GESTION DIARIA:
+GESTIÓN DIARIA AUDITOR INTERNO
+
+1. ACTIVIDADES EN LA MAÑANA
+Organización y Planeación: Definir prioridades del día, revisar agenda, pendientes críticos y riesgos activos.
+Gestión de Comunicaciones: Revisar WhatsApp, grupos internos y correo corporativo.
+Seguimiento a Hallazgos: Revisar estado de hallazgos abiertos y exigir evidencia de cierre.
+
+2. ACTIVIDADES EN LA TARDE
+Verificación de Cumplimiento Operativo: Auditar ejecución de actividades programadas en áreas.
+Control de Reportes: Validar gestión diaria de colaboradores y aprobación de líderes.
+
+3. ACTIVIDADES COMPLEMENTARIAS
+Auditoría de Procesos.
+Actualización de Reportes: Registrar hallazgos de auditoría al día.
+Inteligencia y Prevención: Identificar riesgos operativos, financieros y comerciales.
+
+4. CONTROL Y MEJORA CONTINUA
+Detectar desviaciones y generar recomendaciones. Realizar seguimiento a acciones correctivas. Escalar incumplimientos relevantes.
+
+A TENER EN CUENTA
+Tiempo de respuesta: Cero hallazgos sin gestionar. Escalamiento: Reportar inmediatamente riesgos críticos. Evidencia: Todo hallazgo debe estar soportado. Enfoque: Control, prevención y mejora continua.
+
+LA GESTIÓN DIARIA GARANTIZA UN 90% LOS RESULTADOS EN EL MES DE MANERA PERSONAL Y GRUPAL, SIGUIENDO CADA CASO CON LA ESTRATEGIA DADA EN LA BASE DEL CARGO.
+
+OBJETIVO Y ALCANCE DEL CARGO:
+1. Objetivo del Cargo
+Evaluar, verificar y asegurar de manera sistemática y objetiva el cumplimiento de los procesos internos, la exactitud de la información financiera-contable y el correcto resguardo de los activos de la empresa (inventarios, cajas y producción). Su propósito es mitigar riesgos, detectar desviaciones o irregularidades y promover la mejora continua mediante recomendaciones estratégicas y el seguimiento estricto a las acciones correctivas, garantizando la transparencia y eficiencia operativa de la compañía.
+
+2. Alcance del Cargo
+El cargo tiene un alcance táctico, fiscalizador y de evaluación independiente. Su gestión es transversal a todas las áreas de la compañía (Producción, Contabilidad, Logística, Tesorería, entre otras), lo que le otorga la autoridad para solicitar información, revisar documentación contable, inspeccionar instalaciones y realizar auditorías sorpresa o verificaciones cruzadas sin previo aviso.
+Su alcance administrativo le faculta para documentar hallazgos mediante evidencia irrefutable, señalar responsabilidades ante fallas operativas o pérdidas y exigir a los líderes de área planes de acción obligatorios. Aunque actúa como un órgano consultor de control y no tiene autoridad de mando directo sobre las operaciones de otras áreas, su impacto es crítico, ya que sus informes detallados se presentan directamente a la Alta Gerencia o al Comité de Control para la toma de decisiones presupuestarias, legales u operativas.
+
+FUNCIONES Y RESPONSABILIDAD:
+Auditar y verificar de manera constante inventarios, cajas, procesos de producción, devoluciones y documentación contable, asegurando la veracidad de la información.
+Analizar y validar el cumplimiento de los procesos internos establecidos en cada área de la compañía.
+Detectar, documentar y evidenciar inconsistencias, errores o desviaciones en la operación.
+Elaborar y presentar informes detallados de auditoría, incluyendo hallazgos, causas y recomendaciones claras de mejora.
+Realizar seguimiento obligatorio a las acciones correctivas, verificando su cumplimiento y efectividad.
+Ejecutar y apoyar auditorías sorpresa y procesos de verificación cruzada entre áreas, garantizando control y transparencia en la operación.
+
+KPI's ESTANDARIZADOS:
+- Cumplimiento del plan de auditoria: Meta 100%
+- Tasa de ejecución de planes de Acción: Meta 100%
+- Creación de plan de acción: Meta 100% (1 por cada hallazgo)
+Metas de Conversión: Conversión (x20): Meta 60'000.000
+
+PROCESOS Y HERRAMIENTAS:
+PROCESOS DEL CARGO
+Auditoría interna integral de la operación, supervisión de procesos, evaluación de calidad en el servicio al cliente, seguimiento a hallazgos, verificación de cumplimiento operativo y gestión de riesgos en todas las áreas de la compañía.
+
+1. Supervisión y Evaluación de Procesos Operacionales: Revisión detallada de todos los procesos internos, desde la adquisición hasta la entrega y el servicio postventa, para asegurar su eficiencia, cumplimiento de políticas y optimización continua. Identificación de cuellos de botella y áreas de ineficiencia.
+2. Evaluación de Calidad en el Servicio al Cliente: Medición y análisis de la calidad del servicio en todos los puntos de contacto (ventas, soporte, atención de quejas y reclamos). Verificación del cumplimiento de estándares de servicio y promesas de valor. Revisión de documentación y registro de interacciones con clientes.
+3. Seguimiento y Gestión de Hallazgos de Auditoría: Documentación detallada de no conformidades, observaciones y oportunidades de mejora. Monitoreo riguroso de planes de acción correctivos y preventivos. Verificación de la sostenibilidad de las soluciones implementadas.
+4. Verificación del Cumplimiento Operativo y Normativo: Aseguramiento del cumplimiento de políticas, procedimientos y manuales internos.
+5. Gestión y Disminución de Riesgos en Todas las Áreas: Identificación proactiva de riesgos operativos, financieros, tecnológicos y de cumplimiento. Evaluación de la efectividad de los controles internos existentes. Propuesta de mejoras a los marcos de control y gestión de riesgos.
+En resumen, el cargo implica una función de aseguramiento de tercera línea de defensa, garantizando transparencia, integridad de datos, efectividad de controles internos y cumplimiento normativo en toda la organización.
+
+HERRAMIENTAS QUE USA:
+Canales de Comunicación Corporativos: WhatsApp corporativo y correo electrónico.
+Sistemas de Control y Análisis de Auditoría: matrices de auditoría (Excel/Google Sheets) para planificación, ejecución, registro de hallazgos, seguimiento a planes de acción y documentación.
+Sistemas de Información Operacional: acceso y manejo de sistemas de facturación.
+Fuentes de Información Interna: reportes internos de operaciones, ventas, logística.
+Gestión de PQRS: manejo de información asociada a PQRS para auditar calidad del servicio.
+Plataforma de Almacenamiento: Google Drive como repositorio centralizado de evidencias de auditoría.
+
+TIP'S Y RECOMENDACIONES:
+Priorización de Riesgos Críticos: centrar el análisis inicialmente en riesgos calificados como críticos o de alto impacto.
+Gestión Proactiva de Hallazgos: no permitir acumulación de hallazgos sin plan de acción definido; asignar responsables, plazos y documentar evidencia.
+Documentación: documentar completa, precisa y metódicamente cada etapa del proceso de auditoría (planes de trabajo, evidencia, hallazgos con criterio-condición-causa-impacto, recomendaciones, seguimiento y cierre).
+Comunicación Constante: mantener comunicación fluida y bidireccional con líderes de área (notificación de inicio de auditoría, validación de hallazgos, discusión de recomendaciones).
+Objetividad y Criterio Analítico: toda revisión debe fundamentarse en objetividad, evaluando suficiencia de controles, materialidad de hallazgos, relación causa-efecto, y formulando recomendaciones prácticas y viables.
+
+PROTOCOLOS EN GENERAL:
+1. Identificación del Hallazgo o Riesgo: detección de desviación, incumplimiento, debilidad de control o amenaza potencial; descripción clara del proceso, norma o control afectado.
+2. Recolección de Evidencia: obtención y aseguramiento de documentos, registros, capturas o testimonios; la evidencia debe ser suficiente, competente y relevante.
+3. Registro en Matriz de Auditoría: formalización del hallazgo con descripción, causa raíz, área responsable, fecha de detección y estado inicial.
+4. Clasificación del Nivel de Impacto: evaluación de severidad/probabilidad (Crítico, Alto, Medio, Bajo).
+5. Escalamiento Inmediato si es Crítico: notificación a alta gerencia y responsables para acciones de contención urgentes.
+6. Seguimiento hasta Cierre: implementación y verificación de acciones correctivas/preventivas por el área responsable, con seguimiento periódico.
+7. Validación de Solución: el equipo de auditoría verifica objetivamente la eficacia de la solución implementada.
+8. Documentación Final: consolidación de toda la información (hallazgo, evidencia, acciones, resultados, validación); cierre formal en la matriz de auditoría.
+
+OPORTUNIDADES DE MEJORA:
+Fortalecimiento en automatización de auditorías mediante herramientas y software especializados que permitan captura, análisis y monitoreo continuo de datos, reduciendo revisiones manuales.
+Optimización en tiempos de respuesta a hallazgos y recomendaciones, estableciendo KPIs claros de seguimiento y coordinación con áreas auditadas.
+Estandarización de reportes de auditoría: formatos únicos, unificación de terminología, repositorio centralizado de informes.
+Capacitación continua en mejores prácticas de control interno y metodologías de gestión de riesgos (ISO 31000).

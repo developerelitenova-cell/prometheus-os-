@@ -1,0 +1,99 @@
+PERFIL DE CARGO:
+Cargo: Auxiliar contable
+Área: Contabilidad
+Reporta a: Gerente de contabilidad
+Personal a cargo: No aplica
+
+1. Formación Académica: Técnico o tecnólogo en contabilidad
+2. Experiencia Laboral: Experiencia mínima de 2 años en registro de transacciones, gestión de facturación, digitación de comprobantes de egreso, realización de conciliaciones bancarias
+3. Competencias Técnicas: Manejo de software contables y de herramientas digitales.
+4. Competencias Blandas: Atención al detalle, Organización y gestión del tiempo, Capacidad de análisis, Comunicación efectiva y asertiva, Trabajo en equipo, Orientación a resultados
+5. Condiciones de Trabajo: Modalidad presencial, horario de oficina
+
+GESTION DIARIA:
+Organizar el puesto de Trabajo
+Revisar Grupos de WhatsApp y mensajes, dar respuesta (orden de prioridad o llegada cronológicamente) a todas las solicitudes.
+Revisar correo electrónico y dar respuesta a solicitudes
+Revisar "PLANNER" (Calendario)
+Registrar pendientes del dia en la agenda "TO DO"
+Ingresar a las plataformas bancarias, descargar informes de movimientos del día anterior y subirlos a carpeta de Auditoría para su verificación
+Identificar e ingresar los pagos recibidos, verificar la cartera pendiente por cobrar y elaborar los documentos correspondientes en el sistema.
+Conciliar todas las cuentas bancarias.
+Emisión y Transmisión de Facturas: Generar y realizar la transmisión de la facturación electrónica de venta ante la DIAN
+Digitar y contabilizar en los sistemas Siigo y Zoho todas las facturas de compra pendientes del día anterior y las del día.
+Elaborar en SIIGO y transmitir ante la DIAN los documentos soporte electrónicos correspondientes a adquisiciones o cobros realizados con no obligados a facturar.
+Demás solicitudes requeridas que sean inherentes al área de contabilidad
+
+Gestión mensual:
+Entregar a los consultores externos las conciliaciones de las cuentas bancarias Bancolombia 6427 y 9430
+Entregar a los consultores externos los soportes de la caja ingresos y egresos en el sistema Zoho Crm y tener las a-z organizadas.
+Organizar carpetas físicas con facturas de compra.
+Gestión de Inventarios: Ingresar al sistema el inventario reportado mensualmente por el área de bodega y realizar los ajustes necesarios en el sistema para mantener las existencias al día.
+
+OBJETIVO Y ALCANCE DEL CARGO:
+1. Objetivo del Cargo
+Garantizar el registro oportuno, preciso y conforme a la ley de las operaciones financieras y contables de la empresa, apoyando la gestión de cuentas por cobrar, cuentas por pagar y conciliaciones bancarias, con el fin de proporcionar información confiable para la toma de decisiones y el cumplimiento de las obligaciones fiscales.
+
+2. Alcance del Cargo
+Alcance Operativo y de Registro: responsable del ciclo inicial del dato contable; abarca la recepción, verificación, clasificación y digitación de todos los soportes contables (facturas de compra/venta, recibos de caja, comprobantes de egreso, notas crédito/débito) en el software contable.
+Alcance en Conciliación y Control: Cobertura directa sobre el seguimiento rutinario de las cuentas bancarias, causación de facturas de proveedores, control de cartera de clientes e inventarios básicos.
+Alcance tributario y Laboral: Apoyo en la recopilación, cálculo inicial y sistematización de los insumos necesarios para la liquidación de impuestos locales/nacionales (como IVA o retenciones) y novedades de nómina.
+Límites de Responsabilidad (Fuera del alcance): Este cargo no abarca la firma ni validación legal de estados financieros, la toma de decisiones sobre inversiones, la autorización final de pagos o transferencias bancarias, ni la estrategia tributaria de la empresa.
+
+FUNCIONES Y RESPONSABILIDAD:
+AUXILIAR CONTABLE
+1. Control Bancario
+Reporte Diario a Auditoría: Descargar y enviar oportunamente los extractos y movimientos bancarios del día anterior al área de Auditoría para el control y seguimiento financiero.
+Realizar comprobantes de egreso y recibos de caja en SIIGO tanto de efectivo como bancos, y los demás documentos necesarios para que el Analista Contable realice conciliaciones.
+Realizar conciliación de los extractos de tarjetas de crédito, identificando, notificando y ajustando cualquier discrepancia o partida pendiente.
+
+2. Causación y Facturación Electrónica (Siigo y Zoho)
+Facturación de Venta Electrónica: Emitir y realizar la transmisión de la facturación electrónica de venta ante la DIAN.
+Digitación de Compras y Ventas: Registrar, digitar e ingresar en los sistemas Siigo y Zoho todas las facturas de compra y venta pendientes.
+Revisar con novedades los estados de las facturas compras del mes
+Documentos Soporte Electrónicos: Generar y transmitir ante la DIAN los documentos soporte en adquisiciones efectuadas a sujetos no obligados a expedir factura.
+
+3. Inventarios y Apoyo General
+Digitación de Inventarios: Cargar y actualizar en el sistema contable las entradas, salidas y movimientos de inventario.
+Realizar carpeta-archivo físico de comprobantes de egresos e ingresos de Zoho, con sus respectivos soportes.
+Atención a Requerimientos Generales: Atender y dar respuesta oportuna a los requerimientos de información financiera o documental solicitados por el jefe inmediato.
+
+KPI's ESTANDARIZADOS:
+- Puntualidad de reporte | Fórmula: Registros realizados a Tiempo / Total registros | Meta: >95%
+- Exactitud de registros | Fórmula: Registros exactos / Total de registros | Meta: 100%
+
+PROCESOS Y HERRAMIENTAS:
+1. Proceso: Ingreso a bancos y envío de movimientos a Auditoría
+Objetivo: Enviar diariamente los movimientos bancarios del día anterior en el repositorio compartido y dejarlos disponibles para el área de Auditoría.
+Frecuencia: Diaria
+Bancos a cargo del Auxiliar Contable: Davivienda, Colpatria, Banco de Occidente, Banco de Bogotá. Banco a cargo de Auditoría: Bancolombia.
+Los movimientos descargados de cada banco se suben a través del correo facturas@elitenutrition.com.co al OneDrive compartido: "BANCOS Y PLATAFORMAS DE PAGO" > "1-9, extractos bancarios" > carpeta del mes correspondiente.
+Davivienda: ingresar con usuario "Facturación Elite 1" a www.davivienda.com > Empresas > Portal transaccional, ir a Movimientos y extractos, filtrar por fecha, descargar PDF, subir a OneDrive.
+Colpatria: ingresar a www.davibank.com > ScotiaConnect, con usuario/contraseña y token solicitado a Tesorería, consultar movimientos, descargar PDF, subir a OneDrive. Cuenta usada específicamente para pago de impuestos.
+Banco de Occidente: ingresar a bancodeoccidente.com.co > Empresas, aprobar ingreso desde dispositivo móvil de tesorería, consultar movimientos, exportar PDF, subir a OneDrive.
+Banco de Bogotá: ingresar a bancodebogota.com > Empresas > Portal empresa, aprobar ingreso vía app móvil de Tesorería, generar movimientos de cuenta corriente, exportar PDF, subir a OneDrive.
+
+2. Proceso: Registro de movimientos bancarios en software bancario SIIGO
+Objetivo: Registrar diariamente en SIIGO todos los movimientos bancarios de todas las cuentas.
+Frecuencia: Diaria
+El auxiliar contable ingresa en el software contable todos los movimientos del día anterior y del día, solicitando soportes a Tesorería según se requiera.
+
+TIP'S Y RECOMENDACIONES:
+Mantenga un orden adecuado de los documentos físicos y digitales.
+Clasifique los soportes contables según el proceso correspondiente (facturas, comprobantes, recibos, extractos, entre otros).
+Actualice diariamente las tareas pendientes para evitar acumulación de trabajo.
+Verifique que los datos registrados sean correctos antes de realizar cualquier contabilización.
+Revise que los documentos cuenten con los soportes y autorizaciones requeridas.
+Confirme que los valores, fechas y terceros coincidan con los documentos originales.
+Conserve los soportes contables de acuerdo con las políticas internas de archivo.
+Priorice las actividades según los cronogramas de cierre contable y las fechas establecidas.
+Realice seguimiento a las tareas pendientes para garantizar su cumplimiento oportuno.
+
+PROTOCOLOS EN GENERAL:
+Error en una contabilización: Identificar el comprobante. Verificar el soporte. Informar al jefe inmediato si el error afecta a los estados financieros. Realizar revisión o ajuste siguiendo el procedimiento interno. Documentar el cambio realizado.
+Fallas del sistema contable: Informar inmediatamente al área de TI. Registrar temporalmente la información en Excel. No realizar registros duplicados una vez el sistema sea restablecido. Validar la integridad de la información después de la recuperación.
+Requerimientos de auditoría: Entregar únicamente información validada. Mantener disponibles los soportes físicos y digitales. Registrar los documentos entregados y la fecha de envío.
+
+OPORTUNIDADES DE MEJORA:
+Mantenerse actualizado sobre cambios en la normatividad contable y tributaria aplicable.
+Proponer mejoras que contribuyan a optimizar los procesos contables y administrativos.

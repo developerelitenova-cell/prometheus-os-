@@ -1,0 +1,105 @@
+PERFIL DE CARGO:
+Cargo: Analista Contable
+Área: Contabilidad
+Reporta a: Gerente de contabilidad
+Personal a cargo: No aplica
+
+1. Formación Académica: Tecnólogo o Profesional en Contaduría Pública.
+2. Experiencia Laboral: Experiencia mínima de 2 años en procesos contables, cierres contables, conciliaciones, análisis de cuentas y elaboración de información financiera.
+3. Competencias Técnicas: Manejo de software contable y de herramientas digitales. Análisis contable, Interpretación de información financiera.
+4. Competencias Blandas: Atención al detalle, Organización y gestión del tiempo, Capacidad de análisis, Comunicación efectiva y asertiva, Trabajo en equipo, Orientación a resultados
+5. Condiciones de Trabajo: Modalidad presencial, horario de oficina
+
+GESTION DIARIA:
+Organizar el puesto de Trabajo
+Revisar Grupos de WhatsApp y mensajes, dar respuesta (orden de prioridad o llegada cronológicamente) a todas las solicitudes.
+Revisar correo electrónico y dar respuesta a solicitudes
+Revisar "PLANNER" (Calendario)
+Registrar pendientes del dia en la agenda "TO DO"
+Descargar informe de facturas emitidas por proveedores en la plataforma de la Dian.
+Hacer el proceso de acuse de recibido de la facturación electrónica de proveedores de Elite Nutrition y JCR en el software contable Siigo.
+Realizar control y seguimiento de la cartera de clientes y asegurar el cumplimiento en los pagos.
+Registrar diariamente en Zoho los ingresos correspondientes a la venta de producto propio y suplementación, asegurando que cada movimiento quede debidamente soportado y conciliado con la facturación emitida.
+Elaborar y mantener actualizado el reporte de cuentas por pagar, verificando vencimientos, soportes y valores pendientes, y remitir oportunamente la información al área de Tesorería para la programación y ejecución de pagos.
+Demás solicitudes requeridas que sean inherentes al área de contabilidad.
+
+Gestión mensual:
+Realizar conciliación mensual bancos nacionales de Elite Nutrition.
+Asegurar la correcta documentación y archivo de soportes contables.
+
+OBJETIVO Y ALCANCE DEL CARGO:
+1. Objetivo del Cargo
+Ejecutar, registrar y conciliar de manera oportuna y veraz la información financiera, contable y bancaria de las empresas del grupo (Elite y JCR), garantizando el cumplimiento estricto de la normatividad tributaria vigente en Colombia (DIAN) mediante el correcto uso del software contable Siigo. Su propósito es asegurar el control absoluto del flujo de caja diario a través del registro de egresos, la gestión proactiva de la cartera de clientes, el acuse de recibido de la facturación electrónica de proveedores y la conciliación mensual de la totalidad de las cuentas bancarias nacionales, suministrando información confiable y soportes organizados para las auditorías y revisiones externas.
+
+2. Alcance del Cargo
+El ocupante de este cargo tiene un alcance técnico-operativo, de control tributario básico y de gestión de tesorería. Su rango de acción abarca el procesamiento de transacciones financieras y la custodia de la información contable de las razones sociales de la compañía.
+Tiene la responsabilidad directa de causar la totalidad de las facturas de compras, emitir la facturación electrónica propia y aplicar correctamente las retenciones en la fuente obligatorias por ley. Cuenta con autonomía operativa para interactuar con las plataformas bancarias nacionales, resolver novedades financieras vía telefónica, realizar el cobro de cartera a clientes y procesar el flujo normativo de la factura electrónica (eventos de acuse de recibo) en los sistemas internos.
+No define políticas contables ni tiene la facultad de autorizar pagos o transferencias de manera independiente (labor reservada para Tesorería o Gerencia), pero su alcance le exige ser el guardián de la veracidad del saldo en bancos frente a los libros del software Siigo. Su impacto se mide directamente en la ausencia de sanciones por parte de la DIAN, la disminución de la cartera vencida, la exactitud en los saldos de las nueve cuentas bancarias monitoreadas y el orden impecable en el archivo digital (Drive/Dropbox) para el equipo de contadores externos.
+
+FUNCIONES Y RESPONSABILIDAD:
+ANALISTA CONTABLE
+Realizar conciliaciones de cuentas contables y bancarias
+Descargar informe de facturas emitidas por proveedores en la plataforma de la Dian para registro en software Siigo
+Hacer el proceso de acuse de recibido de la facturación electrónica de proveedores en el software Siigo Elite y JCR
+Practicar retenciones a facturas de proveedores
+Realizar control y seguimiento de la cartera de clientes y asegurar el cumplimiento en los pagos.
+Realizar llamadas telefónicas para solución problemas bancarios
+Apoyar el cierre contable mensual y anual
+Garantizar la liquidacion de las obligaciones tributarias y contables
+Mantener actualizados los soportes y archivos contables
+Atender requerimientos de auditoría interna, externa y entes de control.
+Registrar de manera oportuna y correcta las transacciones contables.
+
+KPI's ESTANDARIZADOS:
+- Efectividad de Conciliación (Partidas conciliadas / Total de movimientos bancarios) en la semana. Meta: 100%
+- Tasa de Error en Facturación (Facturas corregidas o notas crédito / Total facturado). Meta: < 1%
+
+PROCESOS Y HERRAMIENTAS:
+1. Proceso: Guardar un contacto en el celular
+Objetivo: registrar correctamente un nuevo contacto en el teléfono móvil.
+Frecuencia: cada vez que sea necesario.
+Formato: etiqueta-nombre-ciudad. Etiquetas: Modelo (MOD), Generador de contenido (GEN UGC), Influencer (INF), Proveedor (PROV), Cliente detal (C), Mayorista (MAY).
+
+2. Proceso: Conciliación de cuentas contables y bancarias
+Objetivo: verificar la coincidencia entre los saldos registrados en el software contable SIIGO y los extractos bancarios y auxiliares contables, identificando y regularizando oportunamente las diferencias encontradas.
+Frecuencia: diaria (cuentas bancarias) y mensual (cuentas contables, previo al cierre).
+Después de que el Auxiliar contable ingrese y registre todos los movimientos bancarios del mes: 1. Revisar extractos bancarios en OneDrive: carpeta "BANCOS Y PLATAFORMAS DE PAGO" > carpeta "1-9, extractos bancarios" > carpeta del mes. 2. Comparar movimiento por movimiento el extracto bancario contra los auxiliares registrados en SIIGO. 3. Identificar partidas pendientes o diferencias. 4. Solicitar al Auxiliar Contable los soportes de los movimientos no identificados. 5. Documentar la conciliación realizada. Si la diferencia no se logra explicar, escalar al jefe inmediato antes del cierre contable.
+
+3. Proceso: Descarga del informe de facturas emitidas por proveedores en la plataforma de la DIAN
+Objetivo: obtener el reporte de facturación electrónica emitida por los proveedores para su posterior registro en SIIGO.
+Frecuencia: diaria.
+1. Entrar al portal de la DIAN (dian.gov.co), sección Facturando Electrónicamente. 2. Seleccionar Empresa y digitar datos. 3. Revisar correo del RUT para el Token de Acceso temporal. 4. Clic en el enlace del correo para entrar a la plataforma. 5. Menú Histórico > Descargar listados, seleccionar rango de fechas y solo recibidos. 6. Exportar Excel. 7. Comparar el listado contra las facturas recibidas en el correo facturas@elitenutrition.com.co.
+
+4. Proceso: Acuse de recibido de la facturación electrónica de proveedores
+Objetivo: confirmar en Siigo el recibido de las facturas electrónicas de proveedores, cumpliendo requisitos legales.
+Frecuencia: diaria.
+1. Copiar los CUFE de los documentos recibidos del informe de la DIAN. 2. Ingresar a SIIGO -> Registro de eventos -> Registrar nueva factura. 3. Pegar el CUFE y escribir nombre, apellido, cédula, cargo y área de quién recibió la factura, confirmar recepción. 4. Repetir para todos los CUFE. 5. Filtrar por "estado de recepción de la factura: validado". 6. En Acciones dar "continuar" a cada uno hasta que los tres procesos salgan validados.
+
+5. Proceso: Control y seguimiento de la cartera de clientes
+Objetivo: monitorear el estado de la cartera de clientes y asegurar el cumplimiento de los plazos de pago pactados.
+Frecuencia: seguimiento semanal; informe consolidado mensual.
+1. Generar desde SIIGO el reporte de cartera por edades de cliente. 2. Identificar los clientes con saldos vencidos o próximos a vencer. 3. Contactar al cliente por correo o llamada. 4. Registrar la gestión realizada. 5. Escalar al área comercial y/o al jefe inmediato los casos de cartera vencida crítica.
+
+TIP'S Y RECOMENDACIONES:
+Asegurarse que los soportes cumplan con los requisitos legales antes de contabilizarlos.
+Validar centros de costos antes de aprobar registros.
+Comparar saldos con el mes anterior para detectar variaciones inusuales.
+Mantener actualizado el archivo de conciliaciones para facilitar auditorías.
+Registrar diariamente las operaciones evita acumulación de trabajo al cierre.
+Revisar periódicamente auxiliares contables para detectar inconsistencias.
+Mantener comunicación constante con tesorería, compras y cartera.
+Verificar diariamente que los ingresos registrados en el CRM coincidan con la facturación electrónica y movimientos bancarios.
+Ingresar el costo de producto propio y suplementación el mismo día para mantener actualizada la rentabilidad.
+No dejar facturas de proveedores sin acuse de recibido en Siigo.
+Mantener actualizado el reporte de cuentas por pagar y alertar a Tesorería sobre vencimientos próximos.
+
+PROTOCOLOS EN GENERAL:
+Error en una contabilización: Identificar el comprobante. Verificar el soporte. Informar al jefe inmediato si el error afecta a los estados financieros. Realizar revisión o ajuste siguiendo el procedimiento interno. Documentar el cambio realizado.
+Diferencias en conciliaciones bancarias: Revisar movimientos bancarios. Comparar contra auxiliares contables. Identificar partidas pendientes. Escalar al área de tesorería si es necesario.
+Cierre contable con diferencias: Revisar cuentas críticas. Verificar provisiones. Confirmar contabilización de todas las facturas. Conciliar cuentas de balance antes del cierre.
+Fallas del sistema contable: Informar inmediatamente al área de TI. Registrar temporalmente la información en Excel. No realizar registros duplicados una vez el sistema sea restablecido. Validar la integridad de la información después de la recuperación.
+Requerimientos de auditoría: Entregar únicamente información validada. Mantener disponibles los soportes físicos y digitales. Registrar los documentos entregados y la fecha de envío.
+
+OPORTUNIDADES DE MEJORA:
+Reducir el uso de documentos físicos mediante gestión documental electrónica.
+Automatizar registros contables repetitivos.
