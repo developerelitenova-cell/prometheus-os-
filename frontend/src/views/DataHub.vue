@@ -2,8 +2,8 @@
   <div class="data-hub">
     <header class="glass-panel hub-header">
       <div class="header-content">
-        <h1>Centro de Mando & Recopilación</h1>
-        <p>Directorio de Manuales de Cargo y Roles ({{ roles.length }} Registros)</p>
+        <h1>PROMETHEUS OS | Inteligencia Operativa</h1>
+        <p>Red de Arquitectura Organizacional ({{ roles.length }} Nodos)</p>
       </div>
       <div class="header-actions">
         <router-link to="/knowledge-loader" class="btn-primary knowledge-btn">🧠 Inyectar Conocimiento</router-link>
@@ -56,9 +56,15 @@
                   </span>
                 </td>
                 <td class="actions-cell">
-                  <button class="btn-edit" @click="openRoleDetails(role)">Detalles</button>
-                  <router-link :to="`/mapper/${role.id}`" class="btn-primary btn-small">Mapear Flujo</router-link>
-                  <button class="btn-edit" @click="copyMapperLink(role)">{{ copiedRoleId === role.id ? '✓ Copiado' : 'Copiar enlace' }}</button>
+                  <button class="btn-action-small btn-ghost" @click="openRoleDetails(role)">
+                    <span title="Ver Detalles">👁️</span>
+                  </button>
+                  <router-link :to="`/mapper/${role.id}`" class="btn-action-small btn-gradient">Mapear Flujo</router-link>
+                  <button class="btn-action-small btn-outline" @click="copyMapperLink(role)">
+                    <span :title="copiedRoleId === role.id ? 'Copiado!' : 'Copiar enlace'">
+                      {{ copiedRoleId === role.id ? '✓' : '🔗' }}
+                    </span>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -87,36 +93,11 @@
             <label>Flujo de Trabajo Mapeado</label>
             <div v-if="loadingWorkflow" class="hint">Cargando flujo...</div>
             <div v-else-if="!selectedWorkflow" class="empty-workflow">
-              <p class="hint">Este rol todavía no tiene su flujo de trabajo mapeado.</p>
+              <p class="hint">Aún no hay nodos de información disponibles para este cargo.</p>
               <router-link :to="`/mapper/${selectedRole.id}`" class="btn-primary btn-small">Mapear Flujo</router-link>
             </div>
-            <div v-else class="workflow-summary">
-              <div class="workflow-block" v-if="selectedWorkflow.tasks?.length">
-                <label>Tareas</label>
-                <ul><li v-for="(t, i) in selectedWorkflow.tasks" :key="i">{{ t }}</li></ul>
-              </div>
-              <div class="workflow-block" v-if="selectedWorkflow.inputs?.length">
-                <label>Inputs</label>
-                <ul><li v-for="(t, i) in selectedWorkflow.inputs" :key="i">{{ t }}</li></ul>
-              </div>
-              <div class="workflow-block" v-if="selectedWorkflow.outputs?.length">
-                <label>Outputs</label>
-                <ul><li v-for="(t, i) in selectedWorkflow.outputs" :key="i">{{ t }}</li></ul>
-              </div>
-              <div class="workflow-block" v-if="selectedWorkflow.tools_used?.length">
-                <label>Herramientas</label>
-                <div class="tags">
-                  <span class="tag" v-for="(t, i) in selectedWorkflow.tools_used" :key="i">{{ t }}</span>
-                </div>
-              </div>
-              <div class="workflow-block" v-if="selectedWorkflow.bottlenecks?.length">
-                <label>Cuellos de botella</label>
-                <ul><li v-for="(t, i) in selectedWorkflow.bottlenecks" :key="i" class="warning-item">{{ t }}</li></ul>
-              </div>
-              <div class="workflow-block" v-if="selectedWorkflow.kpis?.length">
-                <label>KPIs</label>
-                <ul><li v-for="(t, i) in selectedWorkflow.kpis" :key="i">{{ t }}</li></ul>
-              </div>
+            <div v-else class="workflow-graph">
+              <RoleGraph :role="selectedRole" :workflow="selectedWorkflow" />
             </div>
           </div>
         </div>
@@ -131,6 +112,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '../api/supabase';
+import RoleGraph from '../components/RoleGraph.vue';
 
 const roles = ref([]);
 const loading = ref(true);
@@ -154,8 +136,17 @@ const fetchRoles = async () => {
       console.error('Error fetching roles:', error);
       alert('Error cargando los roles de Supabase: ' + error.message);
     } else {
-      // Ordenamos en memoria para evitar errores de orden en Supabase si no manejamos bien la relación
-      roles.value = (data || []).sort((a, b) => {
+      // Filtrar duplicados por nombre (para mantener el directorio limpio) y ordenar por área
+      const uniqueRoles = [];
+      const seenNames = new Set();
+      for (const r of (data || [])) {
+        if (!seenNames.has(r.name)) {
+          seenNames.add(r.name);
+          uniqueRoles.push(r);
+        }
+      }
+
+      roles.value = uniqueRoles.sort((a, b) => {
         const areaA = a.areas?.name || '';
         const areaB = b.areas?.name || '';
         return areaA.localeCompare(areaB);
@@ -441,14 +432,50 @@ tr:hover td {
 .actions-cell {
   display: flex;
   gap: 8px;
+  align-items: center;
+  white-space: nowrap;
 }
 
-.btn-small {
+.btn-action-small {
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  color: #fff;
+}
+.btn-gradient:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.btn-outline:hover {
+  border-color: #00f0ff;
+  background: rgba(0, 240, 255, 0.1);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #a0a0a0;
+}
+.btn-ghost:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Modal Styles */
@@ -467,9 +494,9 @@ tr:hover td {
 }
 
 .modal-content {
-  width: 600px;
-  max-width: 90vw;
-  max-height: 90vh;
+  width: 900px;
+  max-width: 95vw;
+  max-height: 95vh;
   display: flex;
   flex-direction: column;
   background: #1a1a24;
@@ -541,54 +568,11 @@ tr:hover td {
   gap: 12px;
 }
 
-.workflow-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.workflow-block {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 14px;
-}
-
-.workflow-block label {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: #00f0ff;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-}
-
-.workflow-block ul {
-  margin: 0;
-  padding-left: 18px;
-  color: #ccc;
-  font-size: 0.9rem;
-}
-
-.workflow-block li {
-  margin-bottom: 6px;
-}
-
-.warning-item {
-  color: #ff3366;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.85rem;
+.workflow-graph {
+  width: 100%;
+  margin-top: 16px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .modal-footer {
