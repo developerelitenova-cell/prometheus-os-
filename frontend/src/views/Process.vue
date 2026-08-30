@@ -178,15 +178,15 @@
           <div v-else-if="currentPhase < 1" class="graph-waiting">
             <div class="waiting-icon">
               <svg viewBox="0 0 100 100" class="network-icon">
-                <circle cx="50" cy="20" r="8" fill="none" stroke="#000" stroke-width="1.5"/>
-                <circle cx="20" cy="60" r="8" fill="none" stroke="#000" stroke-width="1.5"/>
-                <circle cx="80" cy="60" r="8" fill="none" stroke="#000" stroke-width="1.5"/>
-                <circle cx="50" cy="80" r="8" fill="none" stroke="#000" stroke-width="1.5"/>
-                <line x1="50" y1="28" x2="25" y2="54" stroke="#000" stroke-width="1"/>
-                <line x1="50" y1="28" x2="75" y2="54" stroke="#000" stroke-width="1"/>
-                <line x1="28" y1="60" x2="72" y2="60" stroke="#000" stroke-width="1" stroke-dasharray="4"/>
-                <line x1="50" y1="72" x2="26" y2="66" stroke="#000" stroke-width="1"/>
-                <line x1="50" y1="72" x2="74" y2="66" stroke="#000" stroke-width="1"/>
+                <circle cx="50" cy="20" r="8" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5"/>
+                <circle cx="20" cy="60" r="8" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5"/>
+                <circle cx="80" cy="60" r="8" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5"/>
+                <circle cx="50" cy="80" r="8" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5"/>
+                <line x1="50" y1="28" x2="25" y2="54" stroke="var(--text-tertiary)" stroke-width="1"/>
+                <line x1="50" y1="28" x2="75" y2="54" stroke="var(--text-tertiary)" stroke-width="1"/>
+                <line x1="28" y1="60" x2="72" y2="60" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="4"/>
+                <line x1="50" y1="72" x2="26" y2="66" stroke="var(--text-tertiary)" stroke-width="1"/>
+                <line x1="50" y1="72" x2="74" y2="66" stroke="var(--text-tertiary)" stroke-width="1"/>
               </svg>
             </div>
             <p class="waiting-text">等待本体生成</p>
@@ -912,7 +912,7 @@ const renderGraph = () => {
       .attr('x', width / 2)
       .attr('y', height / 2)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#999')
+      .attr('fill', 'var(--text-tertiary)')
       .text('等待图谱数据...')
     return
   }
@@ -988,7 +988,7 @@ const renderGraph = () => {
   
   // 可见的细线
   const link = linkGroup.append('line')
-    .attr('stroke', '#ccc')
+    .attr('stroke', 'var(--border)')
     .attr('stroke-width', 1.5)
     .attr('stroke-opacity', 0.6)
   
@@ -1005,7 +1005,7 @@ const renderGraph = () => {
     .enter()
     .append('text')
     .attr('font-size', '9px')
-    .attr('fill', '#999')
+    .attr('fill', 'var(--text-tertiary)')
     .attr('text-anchor', 'middle')
     .text(d => d.type.length > 15 ? d.type.substring(0, 12) + '...' : d.type)
   
@@ -1029,16 +1029,16 @@ const renderGraph = () => {
   node.append('circle')
     .attr('r', 10)
     .attr('fill', d => colorScale(d.type))
-    .attr('stroke', '#fff')
+    .attr('stroke', 'var(--surface)')
     .attr('stroke-width', 2)
     .attr('class', 'node-circle')
-  
+
   node.append('text')
     .attr('dx', 14)
     .attr('dy', 4)
     .text(d => d.name?.substring(0, 12) || '')
     .attr('font-size', '11px')
-    .attr('fill', '#333')
+    .attr('fill', 'var(--ink-secondary)')
     .attr('font-family', 'JetBrains Mono, monospace')
   
   // 点击空白处关闭详情面板
@@ -1099,20 +1099,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 变量 */
-:root {
-  --black: #000000;
-  --white: #FFFFFF;
-  --orange: #FF6B35;
-  --gray-light: #F5F5F5;
-  --gray-border: #E0E0E0;
-  --gray-text: #666666;
-}
-
 .process-page {
   min-height: 100vh;
-  background: var(--white);
-  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+  background: var(--bg-primary);
+  font-family: var(--font-mono);
   overflow: hidden; /* Prevent body scroll in fullscreen */
 }
 
@@ -1123,8 +1113,11 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 0 24px;
   height: 56px;
-  background: #000;
-  color: #fff;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--ink);
   z-index: 10;
   position: relative;
 }
@@ -1135,6 +1128,7 @@ onUnmounted(() => {
   letter-spacing: 0.1em;
   cursor: pointer;
   transition: opacity 0.2s;
+  color: var(--ink);
 }
 
 .nav-brand:hover {
@@ -1151,19 +1145,19 @@ onUnmounted(() => {
 }
 
 .step-badge {
-  background: #FF6B35;
-  color: #fff;
+  background: var(--bg-secondary);
+  color: var(--gold-deep);
   padding: 2px 8px;
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.05em;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .step-name {
   font-size: 0.85rem;
   letter-spacing: 0.05em;
-  color: #fff;
+  color: var(--ink);
 }
 
 .nav-status {
@@ -1175,21 +1169,21 @@ onUnmounted(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #666;
+  background: var(--text-tertiary);
   margin-right: 8px;
 }
 
 .status-dot.processing {
-  background: #FF6B35;
+  background: var(--gold);
   animation: pulse 1.5s infinite;
 }
 
 .status-dot.completed {
-  background: #1A936F;
+  background: var(--success);
 }
 
 .status-dot.error {
-  background: #C5283D;
+  background: var(--danger);
 }
 
 @keyframes pulse {
@@ -1199,7 +1193,7 @@ onUnmounted(() => {
 
 .status-text {
   font-size: 0.75rem;
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 /* 主内容区 */
@@ -1215,9 +1209,9 @@ onUnmounted(() => {
   flex: none; /* Fixed width initially */
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #E0E0E0;
+  border-right: 1px solid var(--border-subtle);
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  background: #fff;
+  background: var(--surface);
   z-index: 5;
 }
 
@@ -1231,8 +1225,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  border-bottom: 1px solid #E0E0E0;
-  background: #fff;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
   height: 50px;
 }
 
@@ -1243,7 +1237,7 @@ onUnmounted(() => {
 }
 
 .header-deco {
-  color: #FF6B35;
+  color: var(--gold);
   font-size: 0.8rem;
 }
 
@@ -1258,7 +1252,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .stat-item {
@@ -1269,11 +1263,11 @@ onUnmounted(() => {
 
 .stat-val {
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
 }
 
 .stat-divider {
-  color: #eee;
+  color: var(--border-subtle);
 }
 
 .action-buttons {
@@ -1292,13 +1286,13 @@ onUnmounted(() => {
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
-  color: #666;
-  border-radius: 2px;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
 }
 
 .action-btn:hover:not(:disabled) {
-  background: #F5F5F5;
-  color: #000;
+  background: var(--bg-secondary);
+  color: var(--ink);
 }
 
 .action-btn:disabled {
@@ -1353,7 +1347,7 @@ onUnmounted(() => {
 .loading-ring:nth-child(1) {
   width: 80px;
   height: 80px;
-  border-top-color: #000;
+  border-top-color: var(--ink);
 }
 
 .loading-ring:nth-child(2) {
@@ -1361,7 +1355,7 @@ onUnmounted(() => {
   height: 60px;
   top: 10px;
   left: 10px;
-  border-right-color: #FF6B35;
+  border-right-color: var(--gold);
   animation-delay: 0.2s;
 }
 
@@ -1370,7 +1364,7 @@ onUnmounted(() => {
   height: 40px;
   top: 20px;
   left: 20px;
-  border-bottom-color: #666;
+  border-bottom-color: var(--text-secondary);
   animation-delay: 0.4s;
 }
 
@@ -1381,13 +1375,13 @@ onUnmounted(() => {
 .loading-text,
 .waiting-text {
   font-size: 0.9rem;
-  color: #333;
+  color: var(--ink-secondary);
   margin: 0 0 8px;
 }
 
 .waiting-hint {
   font-size: 0.8rem;
-  color: #999;
+  color: var(--text-tertiary);
   margin: 0;
 }
 
@@ -1421,16 +1415,16 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: rgba(255, 107, 53, 0.1);
-  border: 1px solid #FF6B35;
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  border: 1px solid var(--gold);
   font-size: 0.8rem;
-  color: #FF6B35;
+  color: var(--gold-deep);
 }
 
 .building-dot {
   width: 8px;
   height: 8px;
-  background: #FF6B35;
+  background: var(--gold);
   border-radius: 50%;
   animation: pulse 1s infinite;
 }
@@ -1442,9 +1436,9 @@ onUnmounted(() => {
   right: 16px;
   width: 320px;
   max-height: calc(100% - 32px);
-  background: #fff;
-  border: 1px solid #E0E0E0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1456,21 +1450,21 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: #FAFAFA;
-  border-bottom: 1px solid #E0E0E0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .detail-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
 }
 
 .detail-badge {
   padding: 2px 10px;
   font-size: 0.75rem;
   color: #fff;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .detail-close {
@@ -1483,13 +1477,13 @@ onUnmounted(() => {
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #999;
+  color: var(--text-tertiary);
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .detail-close:hover {
-  color: #333;
+  color: var(--ink);
 }
 
 .detail-content {
@@ -1506,21 +1500,21 @@ onUnmounted(() => {
 
 .detail-label {
   font-size: 0.8rem;
-  color: #999;
+  color: var(--text-tertiary);
   min-width: 70px;
   flex-shrink: 0;
 }
 
 .detail-value {
   font-size: 0.85rem;
-  color: #333;
+  color: var(--ink-secondary);
   word-break: break-word;
 }
 
 .detail-value.uuid {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .detail-section {
@@ -1530,11 +1524,11 @@ onUnmounted(() => {
 .detail-summary {
   margin: 8px 0 0 0;
   font-size: 0.85rem;
-  color: #333;
+  color: var(--ink-secondary);
   line-height: 1.6;
   padding: 10px;
-  background: #F9F9F9;
-  border-left: 3px solid #FF6B35;
+  background: var(--bg-tertiary);
+  border-left: 3px solid var(--gold);
 }
 
 .detail-labels {
@@ -1546,9 +1540,9 @@ onUnmounted(() => {
 .label-tag {
   padding: 2px 8px;
   font-size: 0.75rem;
-  background: #F0F0F0;
-  border: 1px solid #E0E0E0;
-  color: #666;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
 }
 
 /* 边详情关系展示 */
@@ -1559,48 +1553,48 @@ onUnmounted(() => {
   gap: 8px;
   margin-bottom: 16px;
   padding: 12px;
-  background: #F9F9F9;
-  border: 1px solid #E0E0E0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
 }
 
 .edge-source,
 .edge-target {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #333;
+  color: var(--ink-secondary);
 }
 
 .edge-arrow {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .edge-type {
   padding: 2px 8px;
   font-size: 0.75rem;
-  background: #FF6B35;
+  background: var(--gold);
   color: #fff;
 }
 
 .detail-value.highlight {
   font-weight: 600;
-  color: #000;
+  color: var(--ink);
 }
 
 .detail-subtitle {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   margin: 16px 0 12px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid #E0E0E0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 /* Properties 属性列表 */
 .properties-list {
   margin-top: 8px;
   padding: 10px;
-  background: #F9F9F9;
-  border: 1px solid #E0E0E0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
 }
 
 .property-item {
@@ -1614,13 +1608,13 @@ onUnmounted(() => {
 }
 
 .property-key {
-  color: #666;
+  color: var(--text-secondary);
   margin-right: 8px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .property-value {
-  color: #333;
+  color: var(--ink-secondary);
   word-break: break-word;
 }
 
@@ -1636,10 +1630,10 @@ onUnmounted(() => {
   display: block;
   padding: 6px 10px;
   font-size: 0.75rem;
-  font-family: 'JetBrains Mono', monospace;
-  background: #F0F0F0;
-  border: 1px solid #E0E0E0;
-  color: #666;
+  font-family: var(--font-mono);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
   word-break: break-all;
 }
 
@@ -1655,8 +1649,8 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 16px;
   padding: 12px 24px;
-  border-top: 1px solid #E0E0E0;
-  background: #FAFAFA;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
 }
 
 .legend-item {
@@ -1673,11 +1667,11 @@ onUnmounted(() => {
 }
 
 .legend-label {
-  color: #333;
+  color: var(--ink-secondary);
 }
 
 .legend-count {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 /* 右侧面板 - 50% default */
@@ -1686,7 +1680,7 @@ onUnmounted(() => {
   flex: none;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--surface);
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, transform 0.3s ease;
   overflow: hidden;
   opacity: 1;
@@ -1700,13 +1694,13 @@ onUnmounted(() => {
 }
 
 .right-panel .panel-header.dark-header {
-  background: #000;
-  color: #fff;
-  border-bottom: none;
+  background: var(--bg-secondary);
+  color: var(--ink);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .right-panel .header-icon {
-  color: #FF6B35;
+  color: var(--gold);
   margin-right: 8px;
 }
 
@@ -1720,7 +1714,7 @@ onUnmounted(() => {
 /* 流程阶段 */
 .process-phase {
   margin-bottom: 24px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--border-subtle);
   opacity: 0.5;
   transition: all 0.3s;
 }
@@ -1731,11 +1725,11 @@ onUnmounted(() => {
 }
 
 .process-phase.active {
-  border-color: #FF6B35;
+  border-color: var(--gold);
 }
 
 .process-phase.completed {
-  border-color: #1A936F;
+  border-color: var(--success);
 }
 
 .phase-header {
@@ -1743,31 +1737,31 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: 16px;
   padding: 16px;
-  background: #FAFAFA;
-  border-bottom: 1px solid #E0E0E0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .process-phase.active .phase-header {
-  background: #FFF5F2;
+  background: color-mix(in srgb, var(--gold) 8%, var(--bg-primary));
 }
 
 .process-phase.completed .phase-header {
-  background: #F2FAF6;
+  background: color-mix(in srgb, var(--success) 8%, var(--bg-primary));
 }
 
 .phase-num {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ddd;
+  color: var(--border);
   line-height: 1;
 }
 
 .process-phase.active .phase-num {
-  color: #FF6B35;
+  color: var(--gold);
 }
 
 .process-phase.completed .phase-num {
-  color: #1A936F;
+  color: var(--success);
 }
 
 .phase-info {
@@ -1782,24 +1776,24 @@ onUnmounted(() => {
 
 .phase-api {
   font-size: 0.75rem;
-  color: #999;
-  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
 }
 
 .phase-status {
   font-size: 0.75rem;
   padding: 4px 10px;
-  background: #eee;
-  color: #666;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
 }
 
 .phase-status.active {
-  background: #FF6B35;
+  background: var(--gold);
   color: #fff;
 }
 
 .phase-status.completed {
-  background: #1A936F;
+  background: var(--success);
   color: #fff;
 }
 
@@ -1818,9 +1812,9 @@ onUnmounted(() => {
 .entity-tag {
   font-size: 0.75rem;
   padding: 4px 10px;
-  background: #F5F5F5;
-  border: 1px solid #E0E0E0;
-  color: #333;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink-secondary);
 }
 
 /* 关系列表 */
@@ -1833,7 +1827,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 6px 0;
-  border-bottom: 1px dashed #eee;
+  border-bottom: 1px dashed var(--border-subtle);
 }
 
 .relation-item:last-child {
@@ -1842,21 +1836,21 @@ onUnmounted(() => {
 
 .rel-source,
 .rel-target {
-  color: #333;
+  color: var(--ink-secondary);
 }
 
 .rel-arrow {
-  color: #ccc;
+  color: var(--border);
 }
 
 .rel-name {
-  color: #FF6B35;
+  color: var(--gold-deep);
   font-weight: 500;
 }
 
 .relation-more {
   padding-top: 8px;
-  color: #999;
+  color: var(--text-tertiary);
   font-size: 0.75rem;
 }
 
@@ -1866,48 +1860,48 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: #FFF5F2;
-  border: 1px solid #FFE0D6;
+  background: color-mix(in srgb, var(--gold) 8%, var(--bg-primary));
+  border: 1px solid var(--gold-light);
 }
 
 .progress-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #FFE0D6;
-  border-top-color: #FF6B35;
+  border: 2px solid var(--gold-light);
+  border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .progress-text {
   font-size: 0.85rem;
-  color: #333;
+  color: var(--ink-secondary);
 }
 
 /* 等待状态 */
 .waiting-state {
   padding: 16px;
-  background: #F9F9F9;
-  border: 1px dashed #E0E0E0;
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border-subtle);
   text-align: center;
 }
 
 .waiting-hint {
   font-size: 0.85rem;
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 /* 进度条 */
 .progress-bar {
   height: 6px;
-  background: #E0E0E0;
+  background: var(--border-subtle);
   margin-bottom: 8px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: #FF6B35;
+  background: var(--gold-gradient);
   transition: width 0.3s;
 }
 
@@ -1918,11 +1912,11 @@ onUnmounted(() => {
 }
 
 .progress-message {
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .progress-percent {
-  color: #FF6B35;
+  color: var(--gold-deep);
   font-weight: 600;
 }
 
@@ -1936,20 +1930,20 @@ onUnmounted(() => {
   flex: 1;
   text-align: center;
   padding: 12px;
-  background: #F5F5F5;
+  background: var(--bg-secondary);
 }
 
 .result-value {
   display: block;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #000;
+  color: var(--ink);
   margin-bottom: 4px;
 }
 
 .result-label {
   font-size: 0.7rem;
-  color: #999;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1958,7 +1952,7 @@ onUnmounted(() => {
 .next-step-section {
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid #E0E0E0;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .next-step-btn {
@@ -1968,7 +1962,7 @@ onUnmounted(() => {
   justify-content: center;
   gap: 10px;
   padding: 16px;
-  background: #000;
+  background: var(--ink);
   color: #fff;
   border: none;
   font-size: 1rem;
@@ -1976,14 +1970,15 @@ onUnmounted(() => {
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s;
+  border-radius: var(--radius-md);
 }
 
 .next-step-btn:hover:not(:disabled) {
-  background: #FF6B35;
+  background: var(--gold);
 }
 
 .next-step-btn:disabled {
-  background: #ccc;
+  background: var(--border);
   cursor: not-allowed;
 }
 
@@ -1993,8 +1988,8 @@ onUnmounted(() => {
 
 /* 项目信息面板 */
 .project-panel {
-  border-top: 1px solid #E0E0E0;
-  background: #FAFAFA;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
 }
 
 .project-header {
@@ -2002,11 +1997,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 24px;
-  border-bottom: 1px solid #E0E0E0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .project-icon {
-  color: #FF6B35;
+  color: var(--gold-deep);
 }
 
 .project-title {
@@ -2023,7 +2018,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 8px 0;
-  border-bottom: 1px dashed #E0E0E0;
+  border-bottom: 1px dashed var(--border-subtle);
   font-size: 0.8rem;
 }
 
@@ -2032,21 +2027,21 @@ onUnmounted(() => {
 }
 
 .item-label {
-  color: #999;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
 .item-value {
-  color: #333;
+  color: var(--ink-secondary);
   text-align: right;
   max-width: 60%;
   word-break: break-all;
 }
 
 .item-value.code {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* 响应式 */
@@ -2054,11 +2049,11 @@ onUnmounted(() => {
   .main-content {
     flex-direction: column;
   }
-  
+
   .left-panel {
     width: 100% !important;
     border-right: none;
-    border-bottom: 1px solid #E0E0E0;
+    border-bottom: 1px solid var(--border-subtle);
     height: 50vh;
   }
   

@@ -275,11 +275,12 @@ watch(() => props.systemLogs.length, () => {
 <style scoped>
 .workbench-panel {
   height: 100%;
-  background-color: #FAFAFA;
+  background-color: var(--bg-secondary);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  font-family: var(--font-sans);
 }
 
 .scroll-container {
@@ -292,18 +293,18 @@ watch(() => props.systemLogs.length, () => {
 }
 
 .step-card {
-  background: #FFF;
-  border-radius: 8px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  border: 1px solid #EAEAEA;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-subtle);
   transition: all 0.3s ease;
   position: relative; /* For absolute overlay */
 }
 
 .step-card.active {
-  border-color: #FF5722;
-  box-shadow: 0 4px 12px rgba(255, 87, 34, 0.08);
+  border-color: var(--gold);
+  box-shadow: var(--shadow-md);
 }
 
 .card-header {
@@ -320,46 +321,48 @@ watch(() => props.systemLogs.length, () => {
 }
 
 .step-num {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 20px;
   font-weight: 700;
-  color: #E0E0E0;
+  color: var(--border);
 }
 
 .step-card.active .step-num,
 .step-card.completed .step-num {
-  color: #000;
+  color: var(--ink);
 }
 
 .step-title {
   font-weight: 600;
   font-size: 14px;
   letter-spacing: 0.5px;
+  color: var(--ink);
 }
 
 .badge {
   font-size: 10px;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   text-transform: uppercase;
+  font-family: var(--font-mono);
 }
 
-.badge.success { background: #E8F5E9; color: #2E7D32; }
-.badge.processing { background: #FF5722; color: #FFF; }
-.badge.accent { background: #FF5722; color: #FFF; }
-.badge.pending { background: #F5F5F5; color: #999; }
+.badge.success { background: rgba(52, 199, 89, 0.12); color: var(--success); }
+.badge.processing { background: var(--gold); color: #FFF; }
+.badge.accent { background: var(--gold); color: #FFF; }
+.badge.pending { background: var(--bg-secondary); color: var(--text-tertiary); }
 
 .api-note {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
-  color: #999;
+  color: var(--text-tertiary);
   margin-bottom: 8px;
 }
 
 .description {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 16px;
 }
@@ -378,7 +381,7 @@ watch(() => props.systemLogs.length, () => {
 .tag-label {
   display: block;
   font-size: 10px;
-  color: #AAA;
+  color: var(--text-tertiary);
   margin-bottom: 8px;
   font-weight: 600;
 }
@@ -390,13 +393,13 @@ watch(() => props.systemLogs.length, () => {
 }
 
 .entity-tag {
-  background: #F5F5F5;
-  border: 1px solid #EEE;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
-  color: #333;
-  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
   transition: all 0.2s;
 }
 
@@ -405,8 +408,8 @@ watch(() => props.systemLogs.length, () => {
 }
 
 .entity-tag.clickable:hover {
-    background: #E0E0E0;
-    border-color: #CCC;
+    background: var(--gold-light);
+    border-color: var(--gold);
 }
 
 /* Ontology Detail Overlay */
@@ -419,9 +422,9 @@ watch(() => props.systemLogs.length, () => {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(4px);
     z-index: 10;
-    border: 1px solid #EAEAEA;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-sm);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -435,8 +438,8 @@ watch(() => props.systemLogs.length, () => {
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid #EAEAEA;
-    background: #FAFAFA;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
 }
 
 .detail-title-group {
@@ -449,7 +452,7 @@ watch(() => props.systemLogs.length, () => {
     font-size: 9px;
     font-weight: 700;
     color: #FFF;
-    background: #000;
+    background: var(--ink);
     padding: 2px 6px;
     border-radius: 2px;
     text-transform: uppercase;
@@ -458,20 +461,21 @@ watch(() => props.systemLogs.length, () => {
 .detail-name {
     font-size: 14px;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono);
+    color: var(--ink);
 }
 
 .close-btn {
     background: none;
     border: none;
     font-size: 18px;
-    color: #999;
+    color: var(--text-tertiary);
     cursor: pointer;
     line-height: 1;
 }
 
 .close-btn:hover {
-    color: #333;
+    color: var(--ink);
 }
 
 .detail-body {
@@ -482,11 +486,11 @@ watch(() => props.systemLogs.length, () => {
 
 .detail-desc {
     font-size: 12px;
-    color: #444;
+    color: var(--ink-secondary);
     line-height: 1.5;
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 1px dashed #EAEAEA;
+    border-bottom: 1px dashed var(--border-subtle);
 }
 
 .detail-section {
@@ -497,7 +501,7 @@ watch(() => props.systemLogs.length, () => {
     display: block;
     font-size: 10px;
     font-weight: 600;
-    color: #AAA;
+    color: var(--text-tertiary);
     margin-bottom: 8px;
 }
 
@@ -514,23 +518,23 @@ watch(() => props.systemLogs.length, () => {
     gap: 6px;
     align-items: baseline;
     padding: 4px;
-    background: #F9F9F9;
-    border-radius: 4px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
 }
 
 .attr-name {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono);
     font-weight: 600;
-    color: #000;
+    color: var(--ink);
 }
 
 .attr-type {
-    color: #999;
+    color: var(--text-tertiary);
     font-size: 10px;
 }
 
 .attr-desc {
-    color: #555;
+    color: var(--ink-secondary);
     flex: 1;
     min-width: 150px;
 }
@@ -543,11 +547,11 @@ watch(() => props.systemLogs.length, () => {
 
 .example-tag {
     font-size: 11px;
-    background: #FFF;
-    border: 1px solid #E0E0E0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     padding: 3px 8px;
-    border-radius: 12px;
-    color: #555;
+    border-radius: var(--radius-pill);
+    color: var(--ink-secondary);
 }
 
 .conn-item {
@@ -556,18 +560,18 @@ watch(() => props.systemLogs.length, () => {
     gap: 8px;
     font-size: 11px;
     padding: 6px;
-    background: #F5F5F5;
-    border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
 }
 
 .conn-node {
     font-weight: 600;
-    color: #333;
+    color: var(--ink-secondary);
 }
 
 .conn-arrow {
-    color: #BBB;
+    color: var(--text-tertiary);
 }
 
 /* Step 02 Stats */
@@ -575,9 +579,9 @@ watch(() => props.systemLogs.length, () => {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
-  background: #F9F9F9;
+  background: var(--bg-secondary);
   padding: 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .stat-card {
@@ -588,13 +592,13 @@ watch(() => props.systemLogs.length, () => {
   display: block;
   font-size: 20px;
   font-weight: 700;
-  color: #000;
-  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink);
+  font-family: var(--font-mono);
 }
 
 .stat-label {
   font-size: 9px;
-  color: #999;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   margin-top: 4px;
   display: block;
@@ -603,23 +607,24 @@ watch(() => props.systemLogs.length, () => {
 /* Step 03 Button */
 .action-btn {
   width: 100%;
-  background: #000;
+  background: var(--ink);
   color: #FFF;
   border: none;
   padding: 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .action-btn:hover:not(:disabled) {
-  opacity: 0.8;
+  opacity: 0.85;
+  transform: translateY(-1px);
 }
 
 .action-btn:disabled {
-  background: #CCC;
+  background: var(--border);
   cursor: not-allowed;
 }
 
@@ -628,15 +633,15 @@ watch(() => props.systemLogs.length, () => {
   align-items: center;
   gap: 10px;
   font-size: 12px;
-  color: #FF5722;
+  color: var(--gold-deep);
   margin-bottom: 12px;
 }
 
 .spinner-sm {
   width: 14px;
   height: 14px;
-  border: 2px solid #FFCCBC;
-  border-top-color: #FF5722;
+  border: 2px solid var(--gold-light);
+  border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -645,22 +650,22 @@ watch(() => props.systemLogs.length, () => {
 
 /* System Logs */
 .system-logs {
-  background: #000;
-  color: #DDD;
+  background: var(--bg-secondary);
+  color: var(--ink-secondary);
   padding: 16px;
-  font-family: 'JetBrains Mono', monospace;
-  border-top: 1px solid #222;
+  font-family: var(--font-mono);
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .log-header {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 8px;
   margin-bottom: 8px;
   font-size: 10px;
-  color: #888;
+  color: var(--text-tertiary);
 }
 
 .log-content {
@@ -677,7 +682,7 @@ watch(() => props.systemLogs.length, () => {
 }
 
 .log-content::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--border);
   border-radius: 2px;
 }
 
@@ -689,12 +694,12 @@ watch(() => props.systemLogs.length, () => {
 }
 
 .log-time {
-  color: #666;
+  color: var(--text-tertiary);
   min-width: 75px;
 }
 
 .log-msg {
-  color: #CCC;
+  color: var(--ink-secondary);
   word-break: break-all;
 }
 </style>

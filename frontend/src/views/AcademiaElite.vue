@@ -80,6 +80,9 @@
   height: 100vh;
   padding: 16px;
   gap: 16px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 .side-nav {
@@ -98,14 +101,15 @@
 .logo-box {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
-  border-radius: 12px;
+  background: var(--gold-gradient);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   font-size: 1.2rem;
-  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+  color: #fff;
+  box-shadow: var(--shadow-md);
 }
 
 .nav-links {
@@ -128,7 +132,7 @@
 }
 
 .nav-links a:hover, .nav-links a.active {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
@@ -151,7 +155,8 @@
 .avatar {
   width: 40px;
   height: 40px;
-  background: var(--glass-border);
+  background: var(--gold-light);
+  color: var(--gold-deep);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -190,10 +195,10 @@
 }
 
 .search-box input {
-  background: rgba(0,0,0,0.2);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   color: var(--text-primary);
   width: 250px;
 }
@@ -249,11 +254,11 @@
 }
 
 .node {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-align: center;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border-subtle);
 }
 
 .node span {
@@ -291,7 +296,6 @@
   height: 10px;
   background: var(--success);
   border-radius: 50%;
-  box-shadow: 0 0 10px var(--success);
 }
 
 .chat-area {
@@ -312,14 +316,15 @@
 }
 
 .message.bot {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
+  color: var(--ink-secondary);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
 }
 
 .message.user {
-  background: rgba(0, 240, 255, 0.1);
-  color: var(--accent-primary);
+  background: var(--gold-light);
+  color: var(--gold-deep);
   align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
@@ -333,19 +338,19 @@
 
 .chat-input input {
   flex: 1;
-  background: rgba(0,0,0,0.2);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
   padding: 10px 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   color: var(--text-primary);
 }
 
 .chat-input button {
   background: var(--accent-primary);
-  color: #000;
+  color: var(--ink);
   border: none;
   padding: 0 20px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   cursor: pointer;
 }

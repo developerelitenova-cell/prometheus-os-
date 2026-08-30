@@ -27,12 +27,12 @@
 
       <!-- Main Content / Table -->
       <main class="glass-panel content">
-        <div v-if="loading" class="loading-state">
-          <p>Sincronizando con Supabase...</p>
+        <div v-if="loading" class="empty-state">
+          <TechLoader text="Sincronizando Nodos Neuronales" />
         </div>
-        <div v-else-if="roles.length === 0" class="empty-state">
-          <h3>No se encontraron roles</h3>
-          <p>Puede deberse a permisos de lectura (RLS) en Supabase o a que la tabla está vacía.</p>
+        <div v-else-if="filteredRoles.length === 0" class="empty-state">
+          <p>No se encontraron nodos que coincidan con la búsqueda.</p>
+          <p>La red puede estar vacía o restringida por nivel de acceso.</p>
         </div>
         <div v-else class="table-container">
           <table>
@@ -113,6 +113,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '../api/supabase';
 import RoleGraph from '../components/RoleGraph.vue';
+import TechLoader from '../components/TechLoader.vue';
 
 const roles = ref([]);
 const loading = ref(true);
@@ -133,8 +134,8 @@ const fetchRoles = async () => {
       .select('*, areas(name)');
 
     if (error) {
-      console.error('Error fetching roles:', error);
-      alert('Error cargando los roles de Supabase: ' + error.message);
+      console.error('Error fetching nodes:', error);
+      alert('Error conectando con la red central: ' + error.message);
     } else {
       // Filtrar duplicados por nombre (para mantener el directorio limpio) y ordenar por área
       const uniqueRoles = [];
@@ -224,16 +225,18 @@ const copyMapperLink = async (role) => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  background: #12121a;
-  color: #fff;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-sm);
 }
 
 .hub-header {
@@ -249,7 +252,7 @@ const copyMapperLink = async (role) => {
 }
 
 .knowledge-btn {
-  background: linear-gradient(135deg, #ff3366, #ff7733) !important;
+  background: var(--gold-gradient) !important;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -257,14 +260,14 @@ const copyMapperLink = async (role) => {
 
 .hub-header h1 {
   font-size: 1.5rem;
-  background: linear-gradient(90deg, #00f0ff, #7000ff);
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
 }
 
 .hub-header p {
-  color: #999;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-top: 4px;
 }
@@ -286,7 +289,7 @@ const copyMapperLink = async (role) => {
 .sidebar h3 {
   margin-bottom: 16px;
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--ink);
 }
 
 .sidebar ul {
@@ -300,22 +303,22 @@ const copyMapperLink = async (role) => {
 .sidebar li {
   padding: 10px 16px;
   margin-bottom: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s ease;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .sidebar li:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: var(--bg-secondary);
+  color: var(--ink);
 }
 
 .sidebar li.active {
-  background: rgba(0, 240, 255, 0.1);
-  color: #00f0ff;
-  border-left: 3px solid #00f0ff;
+  background: var(--gold-light);
+  color: var(--gold-deep);
+  border-left: 3px solid var(--gold);
 }
 
 .content {
@@ -331,16 +334,16 @@ const copyMapperLink = async (role) => {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: #00f0ff;
+  color: var(--gold-deep);
 }
 
 .empty-state h3 {
   margin-bottom: 10px;
-  color: #ff3366;
+  color: var(--danger);
 }
 
 .empty-state p {
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .table-container {
@@ -350,132 +353,159 @@ const copyMapperLink = async (role) => {
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 th {
   position: sticky;
   top: 0;
-  background: rgba(18, 18, 26, 0.95);
-  padding: 16px;
+  background: rgba(251, 251, 253, 0.95);
+  padding: 20px 24px;
   text-align: left;
-  font-weight: 500;
-  color: #999;
-  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   z-index: 10;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 td {
-  padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.9rem;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.95rem;
+  color: var(--ink-secondary);
+  vertical-align: middle;
+}
+
+tr {
+  transition: all 0.3s ease;
 }
 
 tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-secondary);
 }
 
 .role-name {
-  font-weight: 500;
-  color: #fff;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.3px;
 }
 
 .badge {
-  padding: 4px 10px;
-  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  font-family: var(--font-mono);
 }
 
-.level-1 { background: rgba(255, 51, 102, 0.2); color: #ff3366; }
-.level-2 { background: rgba(112, 0, 255, 0.2); color: #a366ff; }
-.level-3 { background: rgba(0, 240, 255, 0.2); color: #00f0ff; }
-.level-4 { background: rgba(255, 255, 255, 0.1); color: #ccc; }
+.level-1 { background: rgba(255, 59, 48, 0.1); color: var(--danger); border: 1px solid rgba(255, 59, 48, 0.25); }
+.level-2 { background: var(--gold-light); color: var(--gold-deep); border: 1px solid var(--gold-light); }
+.level-3 { background: var(--bg-secondary); color: var(--gold); border: 1px solid var(--border-subtle); }
+.level-4 { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
 
-.badge-mapped { background: rgba(0, 255, 153, 0.15); color: #00ff99; }
-.badge-unmapped { background: rgba(255, 255, 255, 0.08); color: #999; }
+.badge-mapped { background: rgba(52, 199, 89, 0.1); color: var(--success); border: 1px solid rgba(52, 199, 89, 0.3); }
+.badge-unmapped { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px solid var(--border-subtle); }
 
 .btn-primary {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--ink);
   color: #fff;
   border: none;
-  padding: 10px 24px;
-  border-radius: 8px;
+  padding: 12px 28px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
   opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-edit {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  padding: 6px 16px;
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .btn-edit:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #00f0ff;
-  color: #00f0ff;
+  background: var(--bg-secondary);
+  border-color: var(--gold);
+  color: var(--gold-deep);
 }
 
 .actions-cell {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
   white-space: nowrap;
 }
 
 .btn-action-small {
-  padding: 6px 12px;
-  font-size: 0.8rem;
+  padding: 8px 16px;
+  font-size: 0.85rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
+  letter-spacing: 0.5px;
 }
 
 .btn-gradient {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--gold-gradient);
   color: #fff;
+  box-shadow: var(--shadow-sm);
 }
 .btn-gradient:hover {
-  opacity: 0.9;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+  opacity: 0.95;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
 }
 .btn-outline:hover {
-  border-color: #00f0ff;
-  background: rgba(0, 240, 255, 0.1);
+  border-color: var(--gold);
+  background: var(--gold-light);
+  color: var(--gold-deep);
+  transform: translateY(-1px);
 }
 
 .btn-ghost {
   background: transparent;
-  color: #a0a0a0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  padding: 8px;
+  border-radius: 50%;
 }
 .btn-ghost:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--gold-deep);
+  background: var(--gold-light);
+  transform: scale(1.1);
 }
 
 /* Modal Styles */
@@ -485,7 +515,7 @@ tr:hover td {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
@@ -499,12 +529,13 @@ tr:hover td {
   max-height: 95vh;
   display: flex;
   flex-direction: column;
-  background: #1a1a24;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
   padding: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -513,20 +544,20 @@ tr:hover td {
 .modal-header h2 {
   margin: 0;
   font-size: 1.4rem;
-  color: #00f0ff;
+  color: var(--ink);
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: #999;
+  color: var(--text-secondary);
   font-size: 1.5rem;
   cursor: pointer;
   transition: color 0.3s;
 }
 
 .close-btn:hover {
-  color: #fff;
+  color: var(--ink);
 }
 
 .modal-body {
@@ -543,7 +574,7 @@ tr:hover td {
   display: block;
   font-size: 0.8rem;
   text-transform: uppercase;
-  color: #999;
+  color: var(--text-tertiary);
   margin-bottom: 8px;
   letter-spacing: 1px;
 }
@@ -551,13 +582,13 @@ tr:hover td {
 .detail-group p {
   margin: 0;
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--ink);
 }
 
 .hint {
   display: block;
   margin-top: 8px;
-  color: #888;
+  color: var(--text-tertiary);
   font-size: 0.8rem;
 }
 
@@ -571,13 +602,13 @@ tr:hover td {
 .workflow-graph {
   width: 100%;
   margin-top: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
 .modal-footer {
   padding: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: flex-end;
 }

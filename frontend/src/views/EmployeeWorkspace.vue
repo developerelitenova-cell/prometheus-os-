@@ -66,6 +66,36 @@
         </div>
       </div>
 
+      <!-- Columna Central: Biblioteca Documental -->
+      <div class="glass-panel documents-column">
+        <div class="documents-header">
+          <h3>📚 Biblioteca y Formatos</h3>
+          <p>Documentos oficiales para tu cargo</p>
+        </div>
+        <div class="documents-list">
+          <div v-if="loadingKpis" class="loading-text">Cargando biblioteca...</div>
+          <div v-else-if="templates.length === 0" class="empty-state-mini">
+            <p>No hay documentos asignados a este cargo aún.</p>
+          </div>
+          <div v-else class="template-grid">
+            <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank" class="template-card">
+              <div class="template-icon">
+                <span v-if="tpl.type === 'excel'">📊</span>
+                <span v-else-if="tpl.type === 'word'">📝</span>
+                <span v-else-if="tpl.type === 'pdf'">📕</span>
+                <span v-else-if="tpl.type === 'notion'">📓</span>
+                <span v-else>📄</span>
+              </div>
+              <div class="template-info">
+                <h4>{{ tpl.title }}</h4>
+                <small>{{ tpl.role_id ? 'Específico del Cargo' : 'Global' }}</small>
+              </div>
+              <div class="template-action">→</div>
+            </a>
+          </div>
+        </div>
+      </div>
+
       <!-- Columna Derecha: Chatbot Especializado -->
       <div class="glass-panel chat-column">
         <div class="chat-header">
@@ -126,6 +156,9 @@ const currentKpi = ref({ overall_score: 0, ai_evaluation_notes: null });
 const loadingKpis = ref(false);
 const roleTasks = ref([]);
 const roleContextStr = ref('');
+
+// Plantillas
+const templates = ref([]);
 
 // Chat
 const messages = ref([]);
@@ -205,6 +238,15 @@ KPIs esperados: ${JSON.stringify(flowData.kpis)}
       roleContextStr.value = '';
     }
 
+    // 3. Fetch Templates (Global or specific to this role)
+    const { data: templateData } = await supabase
+      .from('document_templates')
+      .select('*')
+      .or(`role_id.is.null,role_id.eq.${roleId}`)
+      .order('title');
+      
+    templates.value = templateData || [];
+
   } catch (error) {
     console.error('Error fetching role data:', error);
   } finally {
@@ -277,17 +319,20 @@ const getScoreColor = (score) => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #12121a;
-  color: #fff;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
   padding: 24px;
   gap: 24px;
+  font-family: var(--font-sans);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-sm);
 }
 
 .workspace-header {
@@ -298,7 +343,7 @@ const getScoreColor = (score) => {
 }
 
 .header-left .back-link {
-  color: #00f0ff;
+  color: var(--gold-deep);
   text-decoration: none;
   font-size: 0.9rem;
   margin-bottom: 8px;
@@ -308,6 +353,7 @@ const getScoreColor = (score) => {
 .header-left h1 {
   margin: 0;
   font-size: 1.5rem;
+  color: var(--ink);
 }
 
 .role-selector {
@@ -317,19 +363,25 @@ const getScoreColor = (score) => {
 }
 
 .role-selector label {
-  color: #999;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .glass-select {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-weight: 600;
   min-width: 250px;
+}
+
+.glass-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-light);
 }
 
 .empty-state {
@@ -339,7 +391,7 @@ const getScoreColor = (score) => {
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: #a0a0b0;
+  color: var(--text-secondary);
 }
 
 .empty-state .icon {
@@ -356,7 +408,7 @@ const getScoreColor = (score) => {
 
 /* Sidebar Column */
 .sidebar-column {
-  width: 350px;
+  width: 300px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -374,22 +426,24 @@ const getScoreColor = (score) => {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--gold-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   font-weight: bold;
+  color: #fff;
 }
 
 .profile-info h2 {
   margin: 0 0 4px 0;
   font-size: 1.2rem;
+  color: var(--ink);
 }
 
 .profile-info p {
   margin: 0;
-  color: #00f0ff;
+  color: var(--gold-deep);
   font-size: 0.9rem;
 }
 
@@ -400,7 +454,7 @@ const getScoreColor = (score) => {
 
 .mini-kpi h3, .tasks-card h3 {
   margin: 0 0 16px 0;
-  color: #fff;
+  color: var(--ink);
   font-size: 1.1rem;
 }
 
@@ -408,7 +462,7 @@ const getScoreColor = (score) => {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  border: 4px solid #333;
+  border: 4px solid var(--border-subtle);
   margin: 0 auto 16px auto;
   display: flex;
   flex-direction: column;
@@ -416,9 +470,10 @@ const getScoreColor = (score) => {
   justify-content: center;
 }
 
-.kpi-score.green { border-color: #00ff99; box-shadow: 0 0 20px rgba(0,255,153,0.2); color: #00ff99; }
-.kpi-score.yellow { border-color: #ffcc00; box-shadow: 0 0 20px rgba(255,204,0,0.2); color: #ffcc00; }
-.kpi-score.red { border-color: #ff3366; box-shadow: 0 0 20px rgba(255,51,102,0.2); color: #ff3366; }
+.kpi-score.gray { border-color: var(--border); color: var(--text-tertiary); }
+.kpi-score.green { border-color: var(--success); color: var(--success); }
+.kpi-score.yellow { border-color: var(--warning); color: var(--warning); }
+.kpi-score.red { border-color: var(--danger); color: var(--danger); }
 
 .score-number {
   font-size: 2.2rem;
@@ -428,15 +483,15 @@ const getScoreColor = (score) => {
 .score-label {
   font-size: 0.7rem;
   text-transform: uppercase;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .kpi-insight {
   font-size: 0.85rem;
-  color: #ddd;
-  background: rgba(0, 0, 0, 0.3);
+  color: var(--ink-secondary);
+  background: var(--bg-secondary);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-align: left;
 }
 
@@ -453,22 +508,120 @@ const getScoreColor = (score) => {
 
 .task-list li {
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 0.9rem;
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  color: var(--ink-secondary);
 }
 
 .check-icon {
-  color: #00f0ff;
+  color: var(--gold);
   font-weight: bold;
 }
 
 .no-tasks {
-  color: #666;
+  color: var(--text-tertiary);
   font-style: italic;
   justify-content: center;
+}
+
+/* Documents Column */
+.documents-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.documents-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.documents-header h3 {
+  margin: 0 0 4px 0;
+  color: var(--ink);
+  font-size: 1.2rem;
+}
+
+.documents-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.documents-list {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.template-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--ink);
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.template-card:hover {
+  background: var(--bg-secondary);
+  border-color: var(--gold-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.template-icon {
+  font-size: 1.8rem;
+  background: var(--bg-secondary);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.template-info {
+  flex: 1;
+}
+
+.template-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.template-info small {
+  color: var(--gold-deep);
+  font-size: 0.75rem;
+}
+
+.template-action {
+  color: var(--gold);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.empty-state-mini {
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 40px 0;
+  font-style: italic;
 }
 
 /* Chat Column */
@@ -481,7 +634,7 @@ const getScoreColor = (score) => {
 
 .chat-header {
   padding: 16px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -489,18 +642,18 @@ const getScoreColor = (score) => {
 
 .chat-header h3 {
   margin: 0;
+  color: var(--ink);
 }
 
 .status-dot {
   width: 10px;
   height: 10px;
-  background: #00ff99;
+  background: var(--success);
   border-radius: 50%;
-  box-shadow: 0 0 8px #00ff99;
 }
 
 .chat-header small {
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .chat-messages {
@@ -514,7 +667,7 @@ const getScoreColor = (score) => {
 
 .empty-chat {
   text-align: center;
-  color: #888;
+  color: var(--text-tertiary);
   margin: auto 0;
 }
 
@@ -542,68 +695,72 @@ const getScoreColor = (score) => {
 }
 
 .message.ai .avatar-small {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--gold-gradient);
   color: #fff;
 }
 
 .message.user .avatar-small {
-  background: #333;
+  background: var(--ink);
   color: #fff;
 }
 
 .bubble {
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
   line-height: 1.5;
 }
 
 .message.ai .bubble {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(0, 240, 255, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink-secondary);
   border-top-left-radius: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .message.user .bubble {
-  background: rgba(0, 240, 255, 0.1);
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: var(--gold-light);
+  border: 1px solid var(--gold-light);
+  color: var(--ink);
   border-top-right-radius: 0;
 }
 
 .typing .bubble {
-  color: #00f0ff;
+  color: var(--gold-deep);
   font-style: italic;
 }
 
 .chat-input-area {
   padding: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   gap: 12px;
 }
 
 .chat-input-area input {
   flex: 1;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 1rem;
 }
 
 .chat-input-area input:focus {
   outline: none;
-  border-color: #00f0ff;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-light);
 }
 
 .send-btn {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--gold-gradient);
   color: #fff;
   border: none;
   padding: 0 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
   transition: opacity 0.3s;

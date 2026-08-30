@@ -32,12 +32,15 @@ let mouseX = -1000;
 let mouseY = -1000;
 
 // Configuración de categorías de nodos
+// Paleta categórica (distingue tipos de dato, no marca) — ver design_system_spec.md:
+// #7000ff / #00f0ff eran los acentos neón de marca reutilizados aquí como "un color más",
+// así que se sustituyen por un azul pizarra y un teal apagado que no chocan con el dorado.
 const categories = [
-  { key: 'tasks', label: 'Tarea / Responsabilidad', color: '#7000ff', radius: 140 },
+  { key: 'tasks', label: 'Tarea / Responsabilidad', color: '#5c6ac4', radius: 140 },
   { key: 'inputs', label: 'Entrada (Input)', color: '#3b82f6', radius: 100 },
   { key: 'outputs', label: 'Salida (Output)', color: '#10b981', radius: 180 },
   { key: 'tools_used', label: 'Herramienta', color: '#f97316', radius: 220 },
-  { key: 'kpis', label: 'Indicador (KPI)', color: '#00f0ff', radius: 260 }
+  { key: 'kpis', label: 'Indicador (KPI)', color: '#0f9b8e', radius: 260 }
 ];
 
 const initGraph = () => {
@@ -52,7 +55,7 @@ const initGraph = () => {
     y: 0,
     baseX: 0,
     baseY: 0,
-    color: '#ffffff',
+    color: '#b08d57',
     size: 20
   });
 
@@ -113,27 +116,33 @@ const draw = () => {
     if (!isHoveringAny) {
       // Movimiento orbital y flotante
       node.angle += node.speed;
-      const wobble = Math.sin(time * 0.02 + node.wobbleOffset) * 10;
+      const wobble = Math.sin(time * 0.02 + node.wobbleOffset) * 15;
       const currentRadius = node.baseRadius + wobble;
       
       node.x = centerX + Math.cos(node.angle) * currentRadius;
       node.y = centerY + Math.sin(node.angle) * currentRadius;
     }
 
-    // Dibujar línea al centro
+    // Dibujar línea al centro con gradiente
+    const grad = ctx.createLinearGradient(centerX, centerY, node.x, node.y);
+    
+    // Opacidad de la línea
+    let lineOpacity = 0.2;
+    if (isHoveringAny) {
+      if (hoveredNode.value.id === node.id) lineOpacity = 0.9;
+      else lineOpacity = 0.02;
+    }
+    
+    // Convertir hex a rgb para el gradiente (truco sencillo asumiendo colores hex fijos o usar rgba)
+    grad.addColorStop(0, `rgba(29, 29, 31, ${lineOpacity * 0.5})`);
+    grad.addColorStop(1, node.color.replace(')', `, ${lineOpacity})`).replace('rgb', 'rgba')); // fallback
+
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(node.x, node.y);
-    
-    // Opacidad de la línea
-    let lineOpacity = 0.15;
-    if (isHoveringAny) {
-      if (hoveredNode.value.id === node.id) lineOpacity = 0.8;
-      else lineOpacity = 0.05;
-    }
-    
-    ctx.strokeStyle = `rgba(255, 255, 255, ${lineOpacity})`;
-    ctx.lineWidth = isHoveringAny && hoveredNode.value.id === node.id ? 2 : 1;
+
+    ctx.strokeStyle = `rgba(29, 29, 31, ${lineOpacity})`;
+    ctx.lineWidth = isHoveringAny && hoveredNode.value.id === node.id ? 2.5 : 1;
     ctx.stroke();
   });
 
@@ -145,32 +154,42 @@ const draw = () => {
     if (isHoveringAny && node.type !== 'center') {
       if (hoveredNode.value.id === node.id) {
         nodeOpacity = 1;
-        drawSize = node.size * 1.5;
-        ctx.shadowBlur = 15;
+        drawSize = node.size * 1.8;
+        ctx.shadowBlur = 25;
         ctx.shadowColor = node.color;
       } else {
-        nodeOpacity = 0.2;
+        nodeOpacity = 0.15;
         ctx.shadowBlur = 0;
       }
     } else {
-      ctx.shadowBlur = node.type === 'center' ? 20 : 5;
+      ctx.shadowBlur = node.type === 'center' ? 30 : 12;
       ctx.shadowColor = node.color;
     }
 
     ctx.beginPath();
     ctx.arc(node.x, node.y, drawSize, 0, Math.PI * 2);
-    ctx.fillStyle = node.type === 'center' ? '#fff' : node.color;
+    ctx.fillStyle = node.type === 'center' ? '#b08d57' : node.color;
     ctx.globalAlpha = nodeOpacity;
     ctx.fill();
+
+    // Núcleo brillante interno para nodos satélites
+    if (node.type !== 'center' && nodeOpacity > 0.2) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, drawSize * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+
     ctx.globalAlpha = 1; // reset
     ctx.shadowBlur = 0;
 
     // Etiqueta del nodo central
     if (node.type === 'center') {
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 16px "Space Grotesk", sans-serif';
+      ctx.fillStyle = '#8a6d3d';
+      ctx.font = '800 18px Inter, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(node.text, node.x, node.y + 35);
+      ctx.shadowBlur = 0;
+      ctx.fillText(node.text, node.x, node.y + 45);
     }
   });
 
@@ -241,11 +260,17 @@ watch(() => props.workflow, () => {
   position: relative;
   width: 100%;
   height: 600px;
-  background: radial-gradient(circle at center, #12121a 0%, #08080c 100%);
-  border-radius: 12px;
+  background-color: var(--bg-tertiary);
+  /* Cuadrícula sutil */
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid rgba(0, 240, 255, 0.1);
-  box-shadow: 0 0 30px rgba(0, 240, 255, 0.05) inset;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
 }
 
 canvas {
@@ -256,32 +281,33 @@ canvas {
 
 .node-tooltip {
   position: absolute;
-  background: rgba(10, 10, 20, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
   backdrop-filter: blur(8px);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   width: 280px;
   pointer-events: none; /* No bloquear eventos del mouse */
   z-index: 100;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-50%);
 }
 
 .tooltip-badge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
   margin-bottom: 12px;
   letter-spacing: 0.5px;
+  font-family: var(--font-mono);
 }
 
 .tooltip-content {
-  color: #e2e8f0;
+  color: var(--ink-secondary);
   font-size: 0.95rem;
   line-height: 1.5;
 }

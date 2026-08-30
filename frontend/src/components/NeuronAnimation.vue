@@ -41,8 +41,8 @@ onMounted(() => {
       this.vx = (Math.random() - 0.5) * 1.5;
       this.vy = (Math.random() - 0.5) * 1.5;
       this.radius = Math.random() * 2 + 1;
-      // Use prometheus colors
-      this.color = Math.random() > 0.5 ? '#00f0ff' : '#7000ff';
+      // Use Elite Nutrition brand gold tones
+      this.color = Math.random() > 0.5 ? '#b08d57' : '#8a6d3d';
     }
 
     update() {
@@ -85,7 +85,7 @@ onMounted(() => {
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
           const opacity = 1 - (distance / maxDistance);
-          ctx.strokeStyle = `rgba(0, 240, 255, ${opacity * 0.5})`;
+          ctx.strokeStyle = `rgba(176, 141, 87, ${opacity * 0.5})`;
           ctx.lineWidth = 1;
           ctx.stroke();
         }
@@ -109,11 +109,11 @@ onMounted(() => {
   position: relative;
   width: 100%;
   height: 300px;
-  background: radial-gradient(circle at center, #111827 0%, #030712 100%);
-  border-radius: 12px;
+  background: radial-gradient(circle at center, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  box-shadow: 0 0 30px rgba(0, 240, 255, 0.1) inset;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -132,32 +132,32 @@ canvas {
   position: relative;
   z-index: 10;
   text-align: center;
-  background: rgba(3, 7, 18, 0.6);
+  background: var(--glass-bg);
   padding: 1.5rem 2rem;
-  border-radius: 8px;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .glow-text {
-  color: #fff;
+  color: var(--ink);
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 20px rgba(112, 0, 255, 0.8);
-  background: linear-gradient(90deg, #00f0ff, #7000ff);
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: pulse-glow 2s infinite alternate;
 }
 
 .overlay-text p {
-  color: #9ca3af;
+  color: var(--text-secondary);
   margin: 0;
   font-size: 0.9rem;
 }
 
 @keyframes pulse-glow {
   0% { filter: brightness(1); }
-  100% { filter: brightness(1.3); }
+  100% { filter: brightness(1.15); }
 }
 </style>

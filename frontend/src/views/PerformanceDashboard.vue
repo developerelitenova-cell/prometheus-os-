@@ -11,91 +11,99 @@
           <option value="2026-Q3">Trimestre Q3 - 2026</option>
           <option value="2026-Q2">Trimestre Q2 - 2026</option>
         </select>
-        <button class="btn-primary" @click="fetchKpis" :disabled="loading">
+        <button class="btn-primary" @click="fetchRoles" :disabled="loading">
           {{ loading ? 'Actualizando...' : 'Refrescar Datos' }}
         </button>
       </div>
     </header>
 
     <div class="dashboard-layout">
-      <!-- Panel Izquierdo: Selección de Rol -->
-      <aside class="glass-panel sidebar">
-        <h3>Roles Disponibles</h3>
-        <input type="text" v-model="searchQuery" placeholder="Buscar rol..." class="search-input" />
-        
-        <ul v-if="filteredRoles.length > 0">
-          <li v-for="role in filteredRoles" :key="role.id" 
-              @click="selectRole(role)" 
-              :class="{ active: selectedRole?.id === role.id }">
-            <span class="role-name">{{ role.name }}</span>
-            <span class="role-area">{{ role.areas?.name || 'General' }}</span>
-          </li>
-        </ul>
-        <div v-else class="empty-state">No hay roles</div>
-      </aside>
+      <!-- Selector Superior (Top Bar) -->
+      <div class="glass-panel role-selector-bar">
+        <h3>Seleccionar Rol</h3>
+        <select v-model="selectedRoleId" class="glass-select full-width-select">
+          <option value="" disabled>Elige un rol para analizar el rendimiento...</option>
+          <option v-for="role in roles" :key="role.id" :value="role.id">
+            {{ role.name }} ({{ role.areas?.name || 'General' }})
+          </option>
+        </select>
+      </div>
 
       <!-- Panel Central: Métricas -->
-      <main class="content">
-        <div v-if="!selectedRole" class="glass-panel welcome-state">
+      <main class="content full-width">
+        <div v-if="loading" class="glass-panel welcome-state">
+          <TechLoader text="Recopilando Métricas de Rendimiento" />
+        </div>
+        
+        <div v-else-if="!selectedRole" class="glass-panel welcome-state">
           <span class="icon">📈</span>
-          <h2>Selecciona un rol a la izquierda</h2>
+          <h2>Selecciona un rol en la barra superior</h2>
           <p>Para ver su historial de rendimiento, OKRs y el análisis predictivo de la IA.</p>
         </div>
 
         <div v-else class="metrics-grid">
-          <!-- Overview Card -->
-          <div class="glass-panel overview-card">
-            <div class="overview-header">
-              <div>
-                <h2>{{ selectedRole.name }}</h2>
-                <span class="badge">Nivel {{ selectedRole.access_level }}</span>
-              </div>
-              <div class="score-circle" :class="getScoreColor(currentKpi.overall_score)">
-                <span class="score-number">{{ currentKpi.overall_score.toFixed(1) }}</span>
-                <span class="score-label">Rendimiento</span>
-              </div>
-            </div>
-            
-            <div class="ai-insight">
-              <h4>🤖 Prometheus Insight</h4>
-              <p>{{ currentKpi.ai_evaluation_notes || 'La Inteligencia Artificial aún no ha generado observaciones para este periodo. Faltan datos de flujos operacionales.' }}</p>
-            </div>
-          </div>
-
-          <!-- Radar Chart para Balanced Scorecard -->
-          <div class="glass-panel chart-card">
-            <h3>Balanced Scorecard</h3>
-            <div class="chart-container">
-              <Radar v-if="chartData.datasets.length > 0" :data="chartData" :options="chartOptions" />
-              <div v-else class="no-data">Faltan datos de evaluación</div>
-            </div>
-          </div>
-
-          <!-- OKRs -->
-          <div class="glass-panel okr-card">
-            <h3>OKRs (Objetivos y Resultados Clave)</h3>
-            <div v-if="currentKpi.okr_details && currentKpi.okr_details.length > 0" class="okr-list">
-              <div v-for="(okr, idx) in currentKpi.okr_details" :key="idx" class="okr-item">
-                <div class="okr-title">
-                  <strong>O:</strong> {{ okr.objective }}
+          <!-- Fila 1: Resumen Inmediato -->
+          <div class="row-1">
+            <!-- Overview Card -->
+            <div class="glass-panel overview-card">
+              <div class="overview-header">
+                <div>
+                  <h2>{{ selectedRole.name }}</h2>
+                  <span class="badge">Nivel {{ selectedRole.access_level }}</span>
                 </div>
-                <div class="kr-list">
-                  <div v-for="(kr, kIdx) in okr.key_results" :key="kIdx" class="kr-item">
-                    <span class="kr-text"><strong>KR:</strong> {{ kr.text }}</span>
-                    <div class="progress-bar-container">
-                      <div class="progress-bar" :style="{ width: kr.progress + '%', background: getProgressColor(kr.progress) }"></div>
+                <div class="score-circle" :class="getScoreColor(currentKpi.overall_score)">
+                  <span class="score-number">{{ currentKpi.overall_score.toFixed(1) }}</span>
+                  <span class="score-label">Global</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Insight Card -->
+            <div class="glass-panel ai-insight-card">
+              <div class="ai-insight">
+                <h4>🤖 Prometheus Insight</h4>
+                <p>{{ currentKpi.ai_evaluation_notes || 'La Inteligencia Artificial aún no ha generado observaciones para este periodo. Faltan datos de flujos operacionales.' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila 2: Detalles Profundos -->
+          <div class="row-2">
+            <!-- Radar Chart para Balanced Scorecard -->
+            <div class="glass-panel chart-card">
+              <h3>Balanced Scorecard</h3>
+              <div class="chart-container">
+                <Radar v-if="chartData.datasets.length > 0" :data="chartData" :options="chartOptions" />
+                <div v-else class="no-data">Faltan datos de evaluación</div>
+              </div>
+            </div>
+
+            <!-- OKRs -->
+            <div class="glass-panel okr-card">
+              <h3>OKRs (Objetivos y Resultados Clave)</h3>
+              <div v-if="currentKpi.okr_details && currentKpi.okr_details.length > 0" class="okr-list">
+                <div v-for="(okr, idx) in currentKpi.okr_details" :key="idx" class="okr-item-wrapper">
+                  <div class="okr-title">
+                    <strong>O:</strong> {{ okr.objective }}
+                  </div>
+                  <div class="kr-list">
+                    <div v-for="(kr, kIdx) in okr.key_results" :key="kIdx" class="kr-item">
+                      <span class="kr-text"><strong>KR:</strong> {{ kr.text }}</span>
+                      <div class="progress-bar-container">
+                        <div class="progress-bar" :style="{ width: kr.progress + '%', background: getProgressColor(kr.progress) }"></div>
+                      </div>
+                      <span class="kr-progress">{{ kr.progress }}%</span>
                     </div>
-                    <span class="kr-progress">{{ kr.progress }}%</span>
                   </div>
                 </div>
               </div>
-            </div>
-            <div v-else class="no-data">
-              <p>No se han mapeado OKRs para este periodo.</p>
-              <button class="btn-secondary" @click="generateAIKpis" :disabled="generatingKpi">
-                {{ generatingKpi ? 'Analizando con IA...' : 'Generar con IA' }}
-              </button>
-              <p v-if="kpiError" class="error-text">{{ kpiError }}</p>
+              <div v-else class="no-data">
+                <p>No se han mapeado OKRs para este periodo.</p>
+                <button class="btn-secondary" @click="generateAIKpis" :disabled="generatingKpi">
+                  {{ generatingKpi ? 'Analizando con IA...' : 'Generar con IA' }}
+                </button>
+                <p v-if="kpiError" class="error-text">{{ kpiError }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -118,6 +126,8 @@ import {
   Legend
 } from 'chart.js';
 
+import TechLoader from '../components/TechLoader.vue';
+
 ChartJS.register(
   RadialLinearScale,
   PointElement,
@@ -130,6 +140,7 @@ ChartJS.register(
 const roles = ref([]);
 const filteredRoles = ref([]);
 const searchQuery = ref('');
+const selectedRoleId = ref('');
 const selectedRole = ref(null);
 const loading = ref(false);
 const selectedPeriod = ref('2026-Q3');
@@ -153,15 +164,12 @@ onMounted(async () => {
   await fetchRoles();
 });
 
-watch(searchQuery, (newVal) => {
-  if (!newVal) {
-    filteredRoles.value = roles.value;
-  } else {
-    const q = newVal.toLowerCase();
-    filteredRoles.value = roles.value.filter(r => 
-      r.name.toLowerCase().includes(q) || 
-      (r.areas?.name || '').toLowerCase().includes(q)
-    );
+watch(selectedRoleId, async (newId) => {
+  if (newId) {
+    const role = roles.value.find(r => r.id === newId);
+    if (role) {
+      await selectRole(role);
+    }
   }
 });
 
@@ -258,9 +266,9 @@ const getScoreColor = (score) => {
 };
 
 const getProgressColor = (progress) => {
-  if (progress >= 85) return '#00ff99';
-  if (progress >= 50) return '#00f0ff';
-  return '#ff3366';
+  if (progress >= 85) return '#34c759'; // var(--success)
+  if (progress >= 50) return '#ff9500'; // var(--warning)
+  return '#ff3b30'; // var(--danger)
 };
 
 // Configuración del Radar Chart (Chart.js)
@@ -272,12 +280,12 @@ const chartData = computed(() => {
     datasets: [
       {
         label: `Rendimiento - ${selectedPeriod.value}`,
-        backgroundColor: 'rgba(0, 240, 255, 0.2)',
-        borderColor: '#00f0ff',
-        pointBackgroundColor: '#00f0ff',
-        pointBorderColor: '#fff',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: '#00f0ff',
+        backgroundColor: 'rgba(176, 141, 87, 0.2)', // var(--gold) tint
+        borderColor: '#b08d57', // var(--gold)
+        pointBackgroundColor: '#b08d57',
+        pointBorderColor: '#ffffff',
+        pointHoverBackgroundColor: '#ffffff',
+        pointHoverBorderColor: '#b08d57',
         data: [
           currentKpi.value.score_financial,
           currentKpi.value.score_customer,
@@ -288,8 +296,8 @@ const chartData = computed(() => {
       // Target Baseline
       {
         label: 'Meta Corporativa',
-        backgroundColor: 'rgba(112, 0, 255, 0.1)',
-        borderColor: 'rgba(112, 0, 255, 0.5)',
+        backgroundColor: 'rgba(134, 134, 139, 0.08)', // neutral reference tint
+        borderColor: 'rgba(134, 134, 139, 0.5)', // var(--text-tertiary)
         borderDash: [5, 5],
         pointBackgroundColor: 'transparent',
         pointBorderColor: 'transparent',
@@ -304,9 +312,9 @@ const chartOptions = {
   maintainAspectRatio: false,
   scales: {
     r: {
-      angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-      grid: { color: 'rgba(255, 255, 255, 0.1)' },
-      pointLabels: { color: '#a0a0b0', font: { size: 12, family: "'Space Grotesk', sans-serif" } },
+      angleLines: { color: '#e8e8ed' }, // var(--border-subtle)
+      grid: { color: '#e8e8ed' }, // var(--border-subtle)
+      pointLabels: { color: '#6e6e73', font: { size: 12, family: "'Inter', sans-serif" } }, // var(--text-secondary)
       ticks: {
         color: 'transparent',
         backdropColor: 'transparent',
@@ -317,7 +325,7 @@ const chartOptions = {
     }
   },
   plugins: {
-    legend: { labels: { color: '#fff' } }
+    legend: { labels: { color: '#1d1d1f' } } // var(--ink)
   }
 };
 </script>
@@ -329,16 +337,34 @@ const chartOptions = {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  background: #12121a;
-  color: #fff;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.glass.okr-item-wrapper {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.okr-title {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 16px;
+  font-size: 1.05rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .hub-header {
@@ -346,26 +372,34 @@ const chartOptions = {
   justify-content: space-between;
   align-items: center;
   padding: 24px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .back-link {
-  color: #00f0ff;
+  color: var(--gold-deep);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   margin-bottom: 8px;
   display: inline-block;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.back-link:hover {
+  transform: translateX(-2px);
 }
 
 .hub-header h1 {
-  font-size: 1.5rem;
-  background: linear-gradient(90deg, #00f0ff, #7000ff);
+  font-size: 1.8rem;
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
+  letter-spacing: -0.5px;
 }
 
 .hub-header p {
-  color: #999;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-top: 4px;
 }
@@ -376,41 +410,41 @@ const chartOptions = {
 }
 
 .glass-select {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
 }
 
 .glass-select:focus {
   outline: none;
-  border-color: #00f0ff;
+  border-color: var(--gold);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--gold-gradient);
   color: #fff;
   border: none;
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   cursor: pointer;
 }
 
 .btn-secondary {
   background: transparent;
-  border: 1px solid #00f0ff;
-  color: #00f0ff;
+  border: 1px solid var(--gold);
+  color: var(--gold-deep);
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .btn-secondary:hover {
-  background: rgba(0, 240, 255, 0.1);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
 }
 
 .btn-secondary:disabled {
@@ -419,16 +453,44 @@ const chartOptions = {
 }
 
 .error-text {
-  color: #ff3366;
+  color: var(--danger);
   margin-top: 8px;
   font-size: 0.9rem;
 }
 
 .dashboard-layout {
   display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.role-selector-bar {
+  display: flex;
+  align-items: center;
   gap: 24px;
+  padding: 16px 24px;
+}
+
+.role-selector-bar h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.full-width-select {
   flex: 1;
-  min-height: 0;
+  font-size: 1.05rem;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+.full-width-select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 18%, transparent);
 }
 
 /* Sidebar */
@@ -442,17 +504,17 @@ const chartOptions = {
 .sidebar h3 {
   padding: 20px;
   margin: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #00f0ff;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--gold-deep);
 }
 
 .search-input {
   margin: 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink);
   padding: 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
 }
 
@@ -466,30 +528,35 @@ const chartOptions = {
 
 .sidebar li {
   padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-subtle);
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 3px solid transparent;
 }
 
 .sidebar li:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-secondary);
+  border-left-color: color-mix(in srgb, var(--gold) 30%, transparent);
 }
 
 .sidebar li.active {
-  background: rgba(0, 240, 255, 0.1);
-  border-left: 3px solid #00f0ff;
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  border-left: 3px solid var(--gold);
+  box-shadow: none;
 }
 
 .role-name {
   font-weight: 600;
   font-size: 0.95rem;
+  color: var(--ink);
+  letter-spacing: 0.3px;
 }
 
 .role-area {
   font-size: 0.8rem;
-  color: #999;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
@@ -498,7 +565,6 @@ const chartOptions = {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
 }
 
 .welcome-state {
@@ -506,9 +572,9 @@ const chartOptions = {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #a0a0b0;
   text-align: center;
+  padding: 60px;
+  min-height: 400px;
 }
 
 .welcome-state .icon {
@@ -517,17 +583,26 @@ const chartOptions = {
 }
 
 .metrics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.row-1 {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+}
+
+.row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
 }
 
-.overview-card {
-  grid-column: 1 / -1;
-  padding: 24px;
+.overview-card, .ai-insight-card, .chart-card, .okr-card {
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
 .overview-header {
@@ -542,9 +617,9 @@ const chartOptions = {
 }
 
 .badge {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 0.8rem;
 }
 
@@ -556,13 +631,13 @@ const chartOptions = {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 4px solid #333;
+  border: 4px solid var(--border);
 }
 
-.score-circle.green { border-color: #00ff99; box-shadow: 0 0 15px rgba(0,255,153,0.3); }
-.score-circle.yellow { border-color: #ffcc00; box-shadow: 0 0 15px rgba(255,204,0,0.3); }
-.score-circle.red { border-color: #ff3366; box-shadow: 0 0 15px rgba(255,51,102,0.3); }
-.score-circle.gray { border-color: #444; }
+.score-circle.green { border-color: var(--success); box-shadow: var(--shadow-sm); }
+.score-circle.yellow { border-color: var(--warning); box-shadow: var(--shadow-sm); }
+.score-circle.red { border-color: var(--danger); box-shadow: var(--shadow-sm); }
+.score-circle.gray { border-color: var(--border); }
 
 .score-number {
   font-size: 1.8rem;
@@ -573,27 +648,32 @@ const chartOptions = {
 .score-label {
   font-size: 0.7rem;
   text-transform: uppercase;
-  color: #999;
+  color: var(--text-tertiary);
   margin-top: 4px;
 }
 
 .ai-insight {
-  background: rgba(0, 240, 255, 0.05);
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  border-left: 4px solid #00f0ff;
-  padding: 16px;
-  border-radius: 0 8px 8px 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--gold);
+  padding: 24px;
+  border-radius: var(--radius-sm);
+  height: 100%;
 }
 
 .ai-insight h4 {
-  color: #00f0ff;
-  margin: 0 0 8px 0;
+  color: var(--gold-deep);
+  margin: 0 0 12px 0;
+  font-size: 1.2rem;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .ai-insight p {
-  margin: 0;
-  color: #ddd;
-  line-height: 1.5;
+  color: var(--ink-secondary);
+  line-height: 1.7;
   font-size: 0.95rem;
 }
 
@@ -605,8 +685,8 @@ const chartOptions = {
 
 .chart-card h3, .okr-card h3 {
   margin: 0 0 20px 0;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+  border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 12px;
 }
 
@@ -622,7 +702,7 @@ const chartOptions = {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--text-tertiary);
   font-style: italic;
   gap: 16px;
 }
@@ -634,15 +714,15 @@ const chartOptions = {
 }
 
 .okr-item {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg-secondary);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .okr-title {
   font-weight: 500;
   margin-bottom: 12px;
-  color: #00f0ff;
+  color: var(--gold-deep);
 }
 
 .kr-list {
@@ -653,22 +733,25 @@ const chartOptions = {
 
 .kr-item {
   display: grid;
-  grid-template-columns: 1fr 100px 40px;
+  grid-template-columns: 1fr 140px 50px;
   align-items: center;
-  gap: 12px;
-  font-size: 0.85rem;
+  gap: 16px;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
 }
 
 .progress-bar-container {
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  height: 8px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-sm);
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .progress-bar {
   height: 100%;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .kr-progress {

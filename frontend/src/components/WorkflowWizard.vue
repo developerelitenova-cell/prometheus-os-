@@ -106,14 +106,14 @@ const finish = () => {
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7000ff, #00f0ff);
+  background: var(--gold-gradient);
   transition: width 0.3s ease;
 }
 
@@ -125,38 +125,41 @@ const finish = () => {
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-sm);
 }
 
 .step-indicator {
-  color: #00f0ff;
+  color: var(--gold-deep);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  font-family: var(--font-mono);
 }
 
 .question-title {
-  color: #fff;
+  color: var(--ink);
   font-size: 1.4rem;
   line-height: 1.4;
   margin: 0;
 }
 
 .question-desc {
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   margin: 0;
 }
 
 textarea {
   width: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
   padding: 16px;
   font-family: inherit;
   font-size: 1.05rem;
@@ -167,7 +170,8 @@ textarea {
 
 textarea:focus {
   outline: none;
-  border-color: #00f0ff;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-light);
 }
 
 .wizard-actions {
@@ -177,14 +181,14 @@ textarea:focus {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--ink);
   color: #fff;
   border: none;
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
   min-width: 150px;
 }
 
@@ -195,27 +199,28 @@ textarea:focus {
 
 .btn-primary:hover:not(:disabled) {
   opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .finish-btn {
-  background: linear-gradient(135deg, #00f0ff, #00ffaa);
-  color: #000;
+  background: var(--success);
+  color: #fff;
 }
 
 .btn-edit {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .btn-edit:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #00f0ff;
-  color: #00f0ff;
+  background: var(--bg-secondary);
+  border-color: var(--gold);
+  color: var(--gold-deep);
 }
 
 .btn-edit:disabled {

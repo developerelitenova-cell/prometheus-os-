@@ -705,19 +705,19 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #FFFFFF;
-  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  background: var(--surface);
+  font-family: var(--font-sans);
   overflow: hidden;
 }
 
 /* --- Control Bar --- */
 .control-bar {
-  background: #FFF;
+  background: var(--surface);
   padding: 12px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #EAEAEA;
+  border-bottom: 1px solid var(--border-subtle);
   z-index: 10;
   height: 64px;
 }
@@ -733,9 +733,9 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 4px;
   padding: 6px 12px;
-  border-radius: 4px;
-  background: #FAFAFA;
-  border: 1px solid #EAEAEA;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
   opacity: 0.7;
   transition: all 0.3s;
   min-width: 140px;
@@ -745,14 +745,14 @@ onUnmounted(() => {
 
 .platform-status.active {
   opacity: 1;
-  border-color: #333;
-  background: #FFF;
+  border-color: var(--ink-secondary);
+  background: var(--surface);
 }
 
 .platform-status.completed {
   opacity: 1;
-  border-color: #1A936F;
-  background: #F2FAF6;
+  border-color: var(--success);
+  background: rgba(52, 199, 89, 0.06);
 }
 
 /* Actions Tooltip */
@@ -763,10 +763,10 @@ onUnmounted(() => {
   transform: translateX(-50%);
   margin-top: 8px;
   padding: 10px 14px;
-  background: #000;
+  background: var(--ink);
   color: #FFF;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease;
@@ -783,7 +783,7 @@ onUnmounted(() => {
   transform: translateX(-50%);
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-bottom: 6px solid #000;
+  border-bottom: 6px solid var(--ink);
 }
 
 .platform-status:hover .actions-tooltip {
@@ -794,7 +794,7 @@ onUnmounted(() => {
 .tooltip-title {
   font-size: 10px;
   font-weight: 600;
-  color: #999;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 8px;
@@ -814,6 +814,7 @@ onUnmounted(() => {
   border-radius: 2px;
   color: #FFF;
   letter-spacing: 0.03em;
+  font-family: var(--font-mono);
 }
 
 .platform-header {
@@ -826,13 +827,13 @@ onUnmounted(() => {
 .platform-name {
   font-size: 11px;
   font-weight: 700;
-  color: #000;
+  color: var(--ink);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.platform-status.twitter .platform-icon { color: #000; }
-.platform-status.reddit .platform-icon { color: #000; }
+.platform-status.twitter .platform-icon { color: var(--ink); }
+.platform-status.reddit .platform-icon { color: var(--ink); }
 
 .platform-stats {
   display: flex;
@@ -847,7 +848,7 @@ onUnmounted(() => {
 
 .stat-label {
   font-size: 8px;
-  color: #999;
+  color: var(--text-tertiary);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -856,18 +857,18 @@ onUnmounted(() => {
 .stat-value {
   font-size: 11px;
   font-weight: 600;
-  color: #333;
+  color: var(--ink-secondary);
 }
 
 .stat-total, .stat-unit {
   font-size: 9px;
-  color: #999;
+  color: var(--text-tertiary);
   font-weight: 400;
 }
 
 .status-badge {
   margin-left: auto;
-  color: #1A936F;
+  color: var(--success);
   display: flex;
   align-items: center;
 }
@@ -881,7 +882,7 @@ onUnmounted(() => {
   font-size: 13px;
   font-weight: 600;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.2s ease;
   text-transform: uppercase;
@@ -889,12 +890,12 @@ onUnmounted(() => {
 }
 
 .action-btn.primary {
-  background: #000;
+  background: var(--ink);
   color: #FFF;
 }
 
 .action-btn.primary:hover:not(:disabled) {
-  background: #333;
+  background: #000;
 }
 
 .action-btn:disabled {
@@ -907,7 +908,7 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   position: relative;
-  background: #FFF;
+  background: var(--surface);
 }
 
 /* Timeline Header */
@@ -917,7 +918,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(8px);
   padding: 12px 24px;
-  border-bottom: 1px solid #EAEAEA;
+  border-bottom: 1px solid var(--border-subtle);
   z-index: 5;
   display: flex;
   justify-content: center;
@@ -928,15 +929,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
   font-size: 11px;
-  color: #666;
-  background: #F5F5F5;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
 }
 
 .total-count {
   font-weight: 600;
-  color: #333;
+  color: var(--ink-secondary);
 }
 
 .platform-breakdown {
@@ -951,9 +952,9 @@ onUnmounted(() => {
   gap: 4px;
 }
 
-.breakdown-divider { color: #DDD; }
-.breakdown-item.twitter { color: #000; }
-.breakdown-item.reddit { color: #000; }
+.breakdown-divider { color: var(--border); }
+.breakdown-item.twitter { color: var(--ink); }
+.breakdown-item.reddit { color: var(--ink); }
 
 /* --- Timeline Feed --- */
 .timeline-feed {
@@ -970,7 +971,7 @@ onUnmounted(() => {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: #EAEAEA; /* Cleaner line */
+  background: var(--border-subtle); /* Cleaner line */
   transform: translateX(-50%);
 }
 
@@ -988,8 +989,8 @@ onUnmounted(() => {
   top: 24px;
   width: 10px;
   height: 10px;
-  background: #FFF;
-  border: 1px solid #CCC;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -1001,30 +1002,30 @@ onUnmounted(() => {
 .marker-dot {
   width: 4px;
   height: 4px;
-  background: #CCC;
+  background: var(--border);
   border-radius: 50%;
 }
 
-.timeline-item.twitter .marker-dot { background: #000; }
-.timeline-item.reddit .marker-dot { background: #000; }
-.timeline-item.twitter .timeline-marker { border-color: #000; }
-.timeline-item.reddit .timeline-marker { border-color: #000; }
+.timeline-item.twitter .marker-dot { background: var(--ink); }
+.timeline-item.reddit .marker-dot { background: var(--ink); }
+.timeline-item.twitter .timeline-marker { border-color: var(--ink); }
+.timeline-item.reddit .timeline-marker { border-color: var(--ink); }
 
 /* Card Layout */
 .timeline-card {
   width: calc(100% - 48px);
-  background: #FFF;
-  border-radius: 2px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
   padding: 16px 20px;
-  border: 1px solid #EAEAEA;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
   position: relative;
   transition: all 0.2s;
 }
 
 .timeline-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border-color: #DDD;
+  box-shadow: var(--shadow-md);
+  border-color: var(--border);
 }
 
 /* Left side (Twitter) */
@@ -1054,7 +1055,7 @@ onUnmounted(() => {
   align-items: flex-start;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #F5F5F5;
+  border-bottom: 1px solid var(--bg-secondary);
 }
 
 .agent-info {
@@ -1066,7 +1067,7 @@ onUnmounted(() => {
 .avatar-placeholder {
   width: 24px;
   height: 24px;
-  background: #000;
+  background: var(--ink);
   color: #FFF;
   border-radius: 50%;
   display: flex;
@@ -1080,7 +1081,7 @@ onUnmounted(() => {
 .agent-name {
   font-size: 13px;
   font-weight: 600;
-  color: #000;
+  color: var(--ink);
 }
 
 .header-meta {
@@ -1090,7 +1091,7 @@ onUnmounted(() => {
 }
 
 .platform-indicator {
-  color: #999;
+  color: var(--text-tertiary);
   display: flex;
   align-items: center;
 }
@@ -1103,36 +1104,37 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border: 1px solid transparent;
+  font-family: var(--font-mono);
 }
 
 /* Monochromatic Badges */
-.badge-post { background: #F0F0F0; color: #333; border-color: #E0E0E0; }
-.badge-comment { background: #F0F0F0; color: #666; border-color: #E0E0E0; }
-.badge-action { background: #FFF; color: #666; border: 1px solid #E0E0E0; }
-.badge-meta { background: #FAFAFA; color: #999; border: 1px dashed #DDD; }
+.badge-post { background: var(--bg-secondary); color: var(--ink-secondary); border-color: var(--border-subtle); }
+.badge-comment { background: var(--bg-secondary); color: var(--text-secondary); border-color: var(--border-subtle); }
+.badge-action { background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+.badge-meta { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px dashed var(--border); }
 .badge-idle { opacity: 0.5; }
 
 .content-text {
   font-size: 13px;
   line-height: 1.6;
-  color: #333;
+  color: var(--ink-secondary);
   margin-bottom: 10px;
 }
 
 .content-text.main-text {
   font-size: 14px;
-  color: #000;
+  color: var(--ink);
 }
 
 /* Info Blocks (Quote, Repost, etc) */
 .quoted-block, .repost-content {
-  background: #F9F9F9;
-  border: 1px solid #EEE;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
   padding: 10px 12px;
   border-radius: 2px;
   margin-top: 8px;
   font-size: 12px;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .quote-header, .repost-info, .like-info, .search-info, .follow-info, .vote-info, .idle-info, .comment-context {
@@ -1141,19 +1143,19 @@ onUnmounted(() => {
   gap: 6px;
   margin-bottom: 6px;
   font-size: 11px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .icon-small {
-  color: #999;
+  color: var(--text-tertiary);
 }
 .icon-small.filled {
-  color: #999; /* Keep icons neutral unless highlighted */
+  color: var(--text-tertiary); /* Keep icons neutral unless highlighted */
 }
 
 .search-query {
-  font-family: 'JetBrains Mono', monospace;
-  background: #F0F0F0;
+  font-family: var(--font-mono);
+  background: var(--bg-secondary);
   padding: 0 4px;
   border-radius: 2px;
 }
@@ -1163,8 +1165,8 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-end;
   font-size: 10px;
-  color: #BBB;
-  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
 }
 
 /* Waiting State */
@@ -1177,7 +1179,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  color: #CCC;
+  color: var(--text-tertiary);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -1187,13 +1189,13 @@ onUnmounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid #EAEAEA;
+  border: 1px solid var(--border-subtle);
   animation: ripple 2s infinite;
 }
 
 @keyframes ripple {
-  0% { transform: scale(0.8); opacity: 1; border-color: #CCC; }
-  100% { transform: scale(2.5); opacity: 0; border-color: #EAEAEA; }
+  0% { transform: scale(0.8); opacity: 1; border-color: var(--border); }
+  100% { transform: scale(2.5); opacity: 0; border-color: var(--border-subtle); }
 }
 
 /* Animation */
@@ -1213,22 +1215,22 @@ onUnmounted(() => {
 
 /* Logs */
 .system-logs {
-  background: #000;
-  color: #DDD;
+  background: var(--bg-secondary);
+  color: var(--ink-secondary);
   padding: 16px;
-  font-family: 'JetBrains Mono', monospace;
-  border-top: 1px solid #222;
+  font-family: var(--font-mono);
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .log-header {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 8px;
   margin-bottom: 8px;
   font-size: 10px;
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .log-content {
@@ -1241,7 +1243,7 @@ onUnmounted(() => {
 }
 
 .log-content::-webkit-scrollbar { width: 4px; }
-.log-content::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+.log-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 .log-line {
   font-size: 11px;
@@ -1250,9 +1252,9 @@ onUnmounted(() => {
   line-height: 1.5;
 }
 
-.log-time { color: #555; min-width: 75px; }
-.log-msg { color: #BBB; word-break: break-all; }
-.mono { font-family: 'JetBrains Mono', monospace; }
+.log-time { color: var(--text-tertiary); min-width: 75px; }
+.log-msg { color: var(--ink-secondary); word-break: break-all; }
+.mono { font-family: var(--font-mono); }
 
 /* Loading spinner for button */
 .loading-spinner-small {

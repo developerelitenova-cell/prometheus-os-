@@ -63,16 +63,17 @@ onUnmounted(() => {
 .language-switcher {
   position: relative;
   display: inline-block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 /* Light theme (default - for white header backgrounds) */
 .switcher-trigger {
   background: transparent;
-  color: #333;
-  border: 1px solid #CCC;
+  color: var(--ink-secondary);
+  border: 1px solid var(--border);
   padding: 4px 12px;
-  font-family: 'JetBrains Mono', monospace;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   cursor: pointer;
   display: flex;
@@ -82,7 +83,7 @@ onUnmounted(() => {
 }
 
 .switcher-trigger:hover {
-  border-color: #999;
+  border-color: var(--text-tertiary);
 }
 
 .caret {
@@ -94,30 +95,31 @@ onUnmounted(() => {
   top: 100%;
   right: 0;
   margin-top: 4px;
-  background: #FFFFFF;
-  border: 1px solid #DDD;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   list-style: none;
   padding: 4px 0;
   min-width: 100%;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .switcher-option {
   padding: 6px 12px;
   font-size: 0.8rem;
-  color: #333;
+  color: var(--ink-secondary);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
 }
 
 .switcher-option:hover {
-  background: #F0F0F0;
+  background: var(--bg-secondary);
 }
 
 .switcher-option.active {
-  color: var(--orange, #FF4500);
+  color: var(--gold-deep);
 }
 
 

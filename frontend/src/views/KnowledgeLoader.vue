@@ -204,28 +204,37 @@ const processFile = () => {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
-  color: #fff;
+  min-height: 100vh;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-sm);
   padding: 24px;
   margin-bottom: 24px;
 }
 
 .header h1 {
   font-size: 1.8rem;
-  background: linear-gradient(90deg, #00f0ff, #7000ff);
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 10px 0;
 }
 
+.header p {
+  color: var(--text-secondary);
+}
+
 .back-link {
-  color: #00f0ff;
+  color: var(--gold-deep);
   text-decoration: none;
   font-size: 0.9rem;
 }
@@ -244,17 +253,18 @@ const processFile = () => {
 
 .tab-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  font-family: var(--font-sans);
 }
 
 .tab-btn.active {
-  background: rgba(0, 240, 255, 0.1);
-  border-color: #00f0ff;
-  color: #00f0ff;
+  background: var(--gold-light);
+  border-color: var(--gold);
+  color: var(--gold-deep);
 }
 
 .text-input {
@@ -263,29 +273,42 @@ const processFile = () => {
   gap: 12px;
 }
 
+.text-input label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
 .text-input input, .text-input textarea, .text-input select {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
 }
 
 .text-input input:focus, .text-input textarea:focus, .text-input select:focus {
   outline: none;
-  border-color: #00f0ff;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-light);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--ink);
   color: #fff;
   border: none;
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   cursor: pointer;
   margin-top: 12px;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-primary:disabled {
@@ -294,8 +317,8 @@ const processFile = () => {
 }
 
 .drop-zone {
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
   padding: 40px;
   text-align: center;
   cursor: pointer;
@@ -303,8 +326,8 @@ const processFile = () => {
 }
 
 .drop-zone:hover {
-  border-color: #00f0ff;
-  background: rgba(0, 240, 255, 0.05);
+  border-color: var(--gold);
+  background: var(--gold-light);
 }
 
 .hidden-input {
@@ -319,35 +342,40 @@ const processFile = () => {
 
 .file-details {
   margin-top: 24px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg-secondary);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .log-container {
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   padding: 16px;
   height: 400px;
   overflow-y: auto;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
+}
+
+.empty-log {
+  color: var(--text-tertiary);
 }
 
 .log-item {
   margin-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 8px;
 }
 
 .time {
-  color: #666;
+  color: var(--text-tertiary);
   margin-right: 8px;
 }
 
-.log-item.info .msg { color: #fff; }
-.log-item.success .msg { color: #00ff99; }
-.log-item.error .msg { color: #ff3366; }
+.log-item.info .msg { color: var(--ink-secondary); }
+.log-item.success .msg { color: var(--success); }
+.log-item.error .msg { color: var(--danger); }
 
 @media (max-width: 768px) {
   .content-grid {

@@ -117,17 +117,17 @@
             <div class="data-block">
               <label>Indicadores de Éxito (KPIs):</label>
               <ul>
-                <li v-for="(item, idx) in extractedData.kpis" :key="idx" style="color: #00ffaa;">{{ item }}</li>
+                <li v-for="(item, idx) in extractedData.kpis" :key="idx" style="color: var(--success);">{{ item }}</li>
               </ul>
             </div>
-            <div class="data-block" style="border-left: 4px solid #3b82f6;">
+            <div class="data-block" style="border-left: 4px solid var(--gold);">
               <label>Reglas de Decisión (Bifurcaciones):</label>
               <ul>
                 <li v-for="(item, idx) in extractedData.decision_rules" :key="idx">{{ item }}</li>
               </ul>
             </div>
-            
-            <div class="data-block" style="border-left: 4px solid #f97316;">
+
+            <div class="data-block" style="border-left: 4px solid var(--gold-deep);">
               <label>Coordinación Interdepartamental (Puntos de contacto):</label>
               <ul>
                 <li v-for="(item, idx) in extractedData.coordination" :key="idx">{{ item }}</li>
@@ -265,9 +265,12 @@ const saveWorkflow = async () => {
         raw_transcript: lastSourceText.value
       }, { onConflict: 'role_id' });
 
-    if (error) throw error;
-
-    step.value = 4;
+      if (error) {
+        console.error('Error guardando mapeo en la red central:', error);
+        alert('Error conectando con la red central: ' + error.message);
+      } else {
+        step.value = 4;
+      }
   } catch (err) {
     console.error("Error saving workflow:", err);
     alert("Ocurrió un error al guardar: " + err.message);
@@ -282,16 +285,18 @@ const saveWorkflow = async () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  background: #12121a;
-  color: #fff;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-sm);
 }
 
 .hub-header {
@@ -299,7 +304,7 @@ const saveWorkflow = async () => {
 }
 
 .back-link {
-  color: #00f0ff;
+  color: var(--gold-deep);
   text-decoration: none;
   font-size: 0.9rem;
   margin-bottom: 8px;
@@ -312,14 +317,14 @@ const saveWorkflow = async () => {
 
 .hub-header h1 {
   font-size: 1.5rem;
-  background: linear-gradient(90deg, #00f0ff, #7000ff);
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
 }
 
 .hub-header p {
-  color: #999;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-top: 4px;
 }
@@ -340,12 +345,12 @@ const saveWorkflow = async () => {
 }
 
 .guide-panel h3 {
-  color: #fff;
+  color: var(--ink);
   margin-bottom: 8px;
 }
 
 .guide-desc {
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-bottom: 20px;
 }
@@ -353,7 +358,7 @@ const saveWorkflow = async () => {
 .questions-list {
   padding-left: 16px;
   margin: 0;
-  color: #ccc;
+  color: var(--ink-secondary);
   font-size: 0.9rem;
 }
 
@@ -363,20 +368,20 @@ const saveWorkflow = async () => {
 }
 
 .questions-list li strong {
-  color: #00f0ff;
+  color: var(--gold-deep);
   display: block;
   margin-bottom: 4px;
 }
 
 .recording-tip {
   margin-top: auto;
-  background: rgba(0, 240, 255, 0.1);
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: var(--gold-light);
+  border: 1px solid var(--gold-light);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   gap: 12px;
-  color: #00f0ff;
+  color: var(--gold-deep);
 }
 
 .process-panel {
@@ -403,17 +408,18 @@ const saveWorkflow = async () => {
 
 .tab-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  font-family: var(--font-sans);
 }
 
 .tab-btn.active {
-  background: rgba(0, 240, 255, 0.1);
-  border-color: #00f0ff;
-  color: #00f0ff;
+  background: var(--gold-light);
+  border-color: var(--gold);
+  color: var(--gold-deep);
 }
 
 .fields-form, .transcript-form {
@@ -423,14 +429,14 @@ const saveWorkflow = async () => {
 }
 
 .error-text {
-  color: #ff3366;
+  color: var(--danger);
   font-size: 0.9rem;
   margin: 0;
 }
 
 .drop-zone {
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
   padding: 40px;
   text-align: center;
   cursor: pointer;
@@ -438,8 +444,8 @@ const saveWorkflow = async () => {
 }
 
 .drop-zone:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: #00f0ff;
+  background: var(--bg-secondary);
+  border-color: var(--gold);
 }
 
 .drop-zone .icon {
@@ -450,7 +456,7 @@ const saveWorkflow = async () => {
 
 .or-divider {
   text-align: center;
-  color: #666;
+  color: var(--text-tertiary);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -458,10 +464,10 @@ const saveWorkflow = async () => {
 
 textarea {
   width: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
   padding: 16px;
   font-family: inherit;
   resize: vertical;
@@ -469,20 +475,22 @@ textarea {
 
 textarea:focus {
   outline: none;
-  border-color: #00f0ff;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-light);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--ink);
   color: #fff;
   border: none;
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
   width: 100%;
   font-size: 1rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:disabled {
@@ -492,41 +500,29 @@ textarea:focus {
 
 .btn-primary:hover:not(:disabled) {
   opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-edit {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .btn-edit:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #00f0ff;
-  color: #00f0ff;
+  background: var(--bg-secondary);
+  border-color: var(--gold);
+  color: var(--gold-deep);
 }
 
 .processing-section, .success-section {
   text-align: center;
   margin-top: 60px;
-}
-
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-left-color: #00f0ff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 24px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 .results-section {
@@ -535,28 +531,29 @@ textarea:focus {
 }
 
 .results-section h2 {
-  color: #00f0ff;
+  color: var(--ink);
   margin-bottom: 8px;
 }
 
 .results-section p {
-  color: #999;
+  color: var(--text-secondary);
   margin-bottom: 24px;
 }
 
 .data-block {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   padding: 20px;
   margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 .data-block label {
   display: block;
   font-size: 0.85rem;
   text-transform: uppercase;
-  color: #00f0ff;
+  color: var(--gold-deep);
   letter-spacing: 1px;
   margin-bottom: 12px;
 }
@@ -564,7 +561,7 @@ textarea:focus {
 .data-block ul {
   margin: 0;
   padding-left: 20px;
-  color: #ccc;
+  color: var(--ink-secondary);
 }
 
 .data-block li {
@@ -572,7 +569,7 @@ textarea:focus {
 }
 
 .warning-item {
-  color: #ff3366;
+  color: var(--danger);
 }
 
 .tags {
@@ -582,10 +579,12 @@ textarea:focus {
 }
 
 .tag {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
+  color: var(--ink-secondary);
   padding: 4px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-pill);
   font-size: 0.85rem;
+  font-family: var(--font-mono);
 }
 
 .actions {

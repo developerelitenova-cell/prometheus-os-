@@ -48,8 +48,10 @@
       <aside class="glass-panel memory-stats">
         <h3>Estado de la Memoria</h3>
         <div class="stat-card">
-          <div class="stat-value">Activa</div>
-          <div class="stat-label">Conexión Supabase Vector</div>
+          <div class="stat-value" :class="{ 'connected': dbStatus, 'disconnected': !dbStatus }">
+            {{ dbStatus ? 'Establecida' : 'Desconectada' }}
+          </div>
+          <div class="stat-label">Conexión Neuronal Vectorial</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">PROMETHEUS</div>
@@ -140,16 +142,18 @@ const formatMessage = (text) => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  background: #12121a;
-  color: #fff;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-sm);
 }
 
 .hub-header {
@@ -157,7 +161,7 @@ const formatMessage = (text) => {
 }
 
 .back-link {
-  color: #00f0ff;
+  color: var(--gold-deep);
   text-decoration: none;
   font-size: 0.9rem;
   margin-bottom: 8px;
@@ -170,14 +174,14 @@ const formatMessage = (text) => {
 
 .hub-header h1 {
   font-size: 1.5rem;
-  background: linear-gradient(90deg, #00f0ff, #7000ff);
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
 }
 
 .hub-header p {
-  color: #999;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-top: 4px;
 }
@@ -223,30 +227,33 @@ const formatMessage = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .message.ai .avatar {
-  background: rgba(0, 240, 255, 0.2);
+  background: var(--gold-light);
 }
 
 .bubble {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   line-height: 1.5;
+  color: var(--ink-secondary);
+  box-shadow: var(--shadow-sm);
 }
 
 .message.user .bubble {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--gold-light);
+  color: var(--ink);
   border-bottom-right-radius: 0;
 }
 
 .message.ai .bubble {
   border-bottom-left-radius: 0;
-  border: 1px solid rgba(0, 240, 255, 0.2);
 }
 
 .bubble :deep(p) {
@@ -267,7 +274,7 @@ const formatMessage = (text) => {
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: #00f0ff;
+  background: var(--gold);
   border-radius: 50%;
   margin: 0 2px;
   animation: bounce 1.4s infinite ease-in-out both;
@@ -283,7 +290,7 @@ const formatMessage = (text) => {
 
 .chat-input-area {
   padding: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .input-wrapper {
@@ -293,29 +300,30 @@ const formatMessage = (text) => {
 
 .input-wrapper input {
   flex: 1;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 1rem;
 }
 
 .input-wrapper input:focus {
   outline: none;
-  border-color: #00f0ff;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-light);
 }
 
 .btn-send {
-  background: linear-gradient(135deg, #7000ff, #00f0ff);
+  background: var(--ink);
   color: #fff;
   border: none;
   padding: 0 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .btn-send:disabled {
@@ -325,12 +333,13 @@ const formatMessage = (text) => {
 
 .btn-send:hover:not(:disabled) {
   opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .hint {
   display: block;
   margin-top: 8px;
-  color: #666;
+  color: var(--text-tertiary);
   text-align: center;
 }
 
@@ -343,33 +352,36 @@ const formatMessage = (text) => {
 }
 
 .memory-stats h3 {
-  color: #00f0ff;
+  color: var(--ink);
   margin-bottom: 8px;
 }
 
 .stat-card {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg-secondary);
   padding: 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
 }
 
 .stat-value {
   font-size: 1.2rem;
   font-weight: bold;
-  color: #fff;
+  color: var(--ink);
 }
+
+.stat-value.connected { color: var(--success); }
+.stat-value.disconnected { color: var(--danger); }
 
 .stat-label {
   font-size: 0.8rem;
-  color: #999;
+  color: var(--text-secondary);
   text-transform: uppercase;
   margin-top: 4px;
 }
 
 .info-text {
   margin-top: auto;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
