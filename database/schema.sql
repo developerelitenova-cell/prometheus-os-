@@ -70,7 +70,7 @@ CREATE TABLE shared_process_roles (
 -- 9. ROLE_WORKFLOWS (Mapeo de flujos estructurados descubiertos por IA)
 CREATE TABLE role_workflows (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
+  role_id UUID UNIQUE REFERENCES roles(id) ON DELETE CASCADE,
   tasks JSONB DEFAULT '[]'::jsonb,
   inputs JSONB DEFAULT '[]'::jsonb,
   outputs JSONB DEFAULT '[]'::jsonb,
