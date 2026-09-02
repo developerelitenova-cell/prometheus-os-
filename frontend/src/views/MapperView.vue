@@ -2,7 +2,7 @@
   <div class="mapper-view">
     <header class="glass-panel hub-header">
       <div class="header-content">
-        <router-link to="/data-hub" class="back-link">← Volver al Directorio</router-link>
+        <router-link to="/mapa-cargos" class="back-link">← Volver al Directorio</router-link>
         <h1>Mapeo de Flujo: {{ role?.name || 'Cargando...' }}</h1>
         <p>Área: {{ role?.areas?.name || 'Cargando...' }}</p>
       </div>
@@ -146,7 +146,7 @@
           <h2>¡Flujo Mapeado y Estandarizado con Éxito!</h2>
           <p>El perfil operativo y modelo "AS-IS" del rol <strong>{{ role?.name }}</strong> se ha guardado en el DataHub.</p>
           <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para auditoría. No podrás volver a editarla — ya tenés acceso a tu Portal del Empleado.</p>
-          <router-link :to="lockedForSelf ? '/workspace' : '/data-hub'" class="btn-primary">
+          <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="btn-primary">
             {{ lockedForSelf ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
           </router-link>
         </div>

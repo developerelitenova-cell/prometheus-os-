@@ -1,8 +1,9 @@
 <template>
-  <div class="data-hub">
+  <div class="mapa-de-cargos">
     <header class="glass-panel hub-header">
       <div class="header-content">
-        <h1>PROMETHEUS OS | Inteligencia Operativa</h1>
+        <h1>Mapa de Cargos</h1>
+        <p class="subtitle">Directorio organizacional y base de conocimiento de procesos.</p>
         <p>Red de Arquitectura Organizacional ({{ roles.length }} Nodos)</p>
       </div>
       <div class="header-actions">

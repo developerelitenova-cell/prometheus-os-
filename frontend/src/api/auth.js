@@ -32,6 +32,29 @@ export const signIn = async (email, password) => {
   return { success: true, data }
 }
 
+export const signUp = async (email, password, fullName, roleId = null) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password
+  })
+  if (error) return { success: false, error: error.message }
+  
+  if (data.user) {
+    const profileData = {
+      id: data.user.id,
+      full_name: fullName,
+      approval_status: 'pending'
+    }
+    if (roleId) {
+      profileData.role_id = roleId
+    }
+    await supabase.from('profiles').insert([profileData])
+  }
+  
+  await loadCurrentProfile()
+  return { success: true, data }
+}
+
 export const signOut = async () => {
   await supabase.auth.signOut()
   currentProfile.value = null

@@ -4,7 +4,7 @@
     <header class="glass-panel workspace-header">
       <div class="header-left">
         <router-link to="/" class="back-link">← Volver al Inicio</router-link>
-        <h1>Portal del Empleado</h1>
+        <h1>Mi Espacio Elite</h1>
       </div>
       <div class="header-right">
         <!-- Campana de Notificaciones -->
@@ -63,7 +63,7 @@
 
     <div v-else-if="!currentProfile" class="empty-state glass-panel">
       <span class="icon">👋</span>
-      <h2>Bienvenido al Portal de Elite Nutrition</h2>
+      <h2>Bienvenido a Mi Espacio Elite</h2>
       <p>No pudimos cargar tu perfil. Iniciá sesión nuevamente.</p>
       <router-link to="/login" class="btn-primary" style="margin-top: 16px;">Ir a iniciar sesión</router-link>
     </div>
@@ -93,6 +93,11 @@
           <div class="profile-info">
             <h2>{{ currentProfile?.full_name }}</h2>
             <p>{{ currentRole?.name }} - {{ currentRole?.areas?.name || 'Área General' }}</p>
+            <div v-if="isLeader" style="margin-top: 12px;">
+              <router-link to="/team" class="btn-primary" style="font-size: 0.85rem; padding: 8px 12px; display: inline-block;">
+                👑 Panel de Liderazgo (Aprobaciones y Tareas)
+              </router-link>
+            </div>
           </div>
         </div>
 
@@ -224,7 +229,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../api/supabase';
 import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../api/auth';
@@ -352,6 +357,35 @@ const unifiedFeed = computed(() => {
 });
 
 const unreadCount = computed(() => unifiedFeed.value.filter(i => i.unread).length);
+
+watch(unreadCount, (newVal, oldVal) => {
+  if (oldVal !== undefined && newVal > oldVal) {
+    playNotificationSound();
+  }
+});
+
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime); 
+    osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1); 
+    
+    gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } catch (e) {
+    console.error('No se pudo reproducir el sonido de notificación', e);
+  }
+};
 
 const bannerItems = computed(() => unifiedFeed.value.filter(i => i.unread).slice(0, 3));
 

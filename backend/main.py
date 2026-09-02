@@ -94,7 +94,11 @@ def create_employee(req: CreateEmployeeRequest):
             "full_name": req.full_name,
             "role_id": req.role_id,
             "is_master_admin": req.is_master_admin,
-            "mapping_completed": False
+            "mapping_completed": False,
+            # Cuentas creadas por un admin quedan aprobadas de entrada -- la cola
+            # de aprobacion (approval_status default 'pending') es solo para el
+            # auto-registro publico (signUp) en LoginView.vue.
+            "approval_status": "approved"
         }
         supabase.table("profiles").insert(profile_payload).execute()
     except Exception as e:

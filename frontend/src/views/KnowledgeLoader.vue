@@ -1,7 +1,7 @@
 <template>
   <div class="knowledge-loader">
     <header class="glass-panel header">
-      <router-link to="/data-hub" class="back-link">← Volver al DataHub</router-link>
+      <router-link to="/mapa-cargos" class="back-link">← Volver al DataHub</router-link>
       <h1>Cargador de Conocimiento 🧠</h1>
       <p>Sube manuales, políticas y procesos para entrenar el Cerebro Corporativo.</p>
     </header>

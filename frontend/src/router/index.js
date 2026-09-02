@@ -23,9 +23,9 @@ const routes = [
     meta: { public: true }
   },
   {
-    path: '/data-hub',
+    path: '/mapa-cargos',
     name: 'DataHub',
-    component: () => import('../views/DataHub.vue')
+    component: () => import('../views/MapaCargos.vue')
   },
   {
     path: '/academia',
@@ -149,6 +149,18 @@ router.beforeEach(async (to) => {
 
   const profile = currentProfile.value
   if (!profile) return true // La sesión es válida; si el perfil no cargó, RLS igual protege los datos.
+
+  // Cuentas auto-registradas (signUp) pendientes de aprobación por un líder --
+  // LoginView.vue ya avisa esto en el flujo normal de login, pero eso es solo
+  // UX: si la persona entra directo por URL con una sesión válida, sin este
+  // chequeo se saltaría el bloqueo. Perfiles sin approval_status (creados
+  // antes de esta migración, o por el endpoint de admin) se tratan como
+  // aprobados -- solo bloquea un valor explícito no aprobado.
+  const blockedStatuses = ['pending', 'rejected', 'suspended'];
+  if (!profile.is_master_admin && blockedStatuses.includes(profile.approval_status)) {
+    await supabase.auth.signOut();
+    return { path: '/login', query: { pending: profile.approval_status } };
+  }
 
   if (to.meta.masterAdminOnly && !profile.is_master_admin) {
     return { path: '/workspace' }

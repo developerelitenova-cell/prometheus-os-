@@ -17,9 +17,17 @@
     </div>
 
     <div class="team-grid" v-else>
-      <div v-if="teamMembers.length === 0" class="empty-state glass-panel">
-        No hay trabajadores registrados en tu área.
+      <div class="dashboard-tabs">
+        <button :class="{ active: currentTab === 'equipo' }" @click="currentTab = 'equipo'">Mi Equipo</button>
+        <button :class="{ active: currentTab === 'aprobaciones' }" @click="currentTab = 'aprobaciones'">
+          Aprobaciones Pendientes <span v-if="pendingUsers.length" class="badge">{{ pendingUsers.length }}</span>
+        </button>
       </div>
+
+      <template v-if="currentTab === 'equipo'">
+        <div v-if="teamMembers.length === 0" class="empty-state glass-panel">
+          No hay trabajadores registrados en tu área.
+        </div>
       
       <div v-for="member in teamMembers" :key="member.id" class="member-card glass-panel">
         <div class="member-header">
@@ -64,6 +72,30 @@
           <button class="btn-text-small primary" @click="openTaskModal(member)">Configurar Checklists / Tarea</button>
         </div>
       </div>
+      </template>
+
+      <template v-if="currentTab === 'aprobaciones'">
+        <div v-if="pendingUsers.length === 0" class="empty-state glass-panel">
+          No hay usuarios pendientes de aprobación.
+        </div>
+        
+        <div v-for="user in pendingUsers" :key="user.id" class="member-card glass-panel">
+          <div class="member-header">
+            <div class="avatar-large">{{ user.full_name.charAt(0) }}</div>
+            <div class="info">
+              <h3>{{ user.full_name }}</h3>
+              <span class="role">{{ user.roles?.name || 'Sin rol asignado' }}</span>
+            </div>
+          </div>
+          <div class="member-body" style="padding-top: 12px; font-size: 0.9rem;">
+            <p><strong>Fecha de registro:</strong> {{ new Date(user.created_at).toLocaleDateString() }}</p>
+          </div>
+          <div class="member-footer">
+            <button class="btn-text-small" @click="handleApproval(user.id, 'rejected')" style="color: var(--danger)">Rechazar</button>
+            <button class="btn-text-small primary" @click="handleApproval(user.id, 'approved')" style="background: #10b981; color: white;">Aprobar Acceso</button>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Modal Nueva Tarea / Checklist -->
@@ -126,6 +158,8 @@ import { supabase } from '@/api/supabase';
 const isLeader = ref(false);
 const leaderArea = ref(null);
 const teamMembers = ref([]);
+const pendingUsers = ref([]);
+const currentTab = ref('equipo');
 
 // Task Modal State
 const showTaskModal = ref(false);
@@ -197,6 +231,34 @@ const fetchData = async () => {
       }));
       teamMembers.value = enrichedMembers;
     }
+
+    // Obtener usuarios pendientes de aprobación
+    // Si es master admin, obtiene todos. Si es leader, solo de su área.
+    let pendingQuery = supabase
+      .from('profiles')
+      .select('id, full_name, created_at, roles(name, area_id)')
+      .eq('approval_status', 'pending');
+
+    if (profile?.roles?.access_level !== 1 && !profile.is_master_admin) {
+      pendingQuery = pendingQuery.eq('roles.area_id', profile.roles.area_id);
+    }
+    
+    const { data: pUsers, error: pError } = await pendingQuery;
+    if (pUsers && !pError) {
+      pendingUsers.value = pUsers;
+    }
+  }
+};
+
+const handleApproval = async (userId, status) => {
+  const { error } = await supabase.from('profiles').update({ approval_status: status }).eq('id', userId);
+  if (!error) {
+    pendingUsers.value = pendingUsers.value.filter(u => u.id !== userId);
+    if (status === 'approved') {
+      fetchData(); // Recargar equipo
+    }
+  } else {
+    alert('Error al actualizar estado del usuario: ' + error.message);
   }
 };
 
@@ -358,4 +420,38 @@ li.completed .task-title { text-decoration: line-through; color: var(--text-tert
 .form-row { display: flex; gap: 16px; }
 .half { flex: 1; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 24px; }
+.dashboard-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.dashboard-tabs button {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-tabs button.active {
+  background: var(--bg-tertiary);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.badge {
+  background: var(--danger);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
 </style>

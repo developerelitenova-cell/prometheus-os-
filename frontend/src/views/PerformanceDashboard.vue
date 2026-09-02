@@ -2,7 +2,7 @@
   <div class="performance-dashboard">
     <header class="glass-panel hub-header">
       <div class="header-content">
-        <router-link to="/data-hub" class="back-link">← Volver al DataHub</router-link>
+        <router-link to="/mapa-cargos" class="back-link">← Volver al DataHub</router-link>
         <h1>Centro de Evaluación Corporativa (KPIs)</h1>
         <p>Balanced Scorecard & OKRs - Basado en la IA de PROMETHEUS OS</p>
       </div>

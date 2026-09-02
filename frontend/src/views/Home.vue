@@ -35,8 +35,8 @@
           </div>
            
           <div class="btn-group" v-if="isLoggedIn">
-            <router-link to="/data-hub" class="btn-primary">Ir al DataHub</router-link>
-            <router-link to="/workspace" class="btn-tertiary">Portal del Empleado</router-link>
+            <router-link to="/mapa-cargos" class="btn-primary">Mapa de Cargos</router-link>
+            <router-link to="/workspace" class="btn-tertiary">Mi Espacio Elite</router-link>
             <router-link to="/performance" class="btn-quaternary">KPIs y Rendimiento</router-link>
             <router-link to="/oracle" class="oracle-btn">Preguntar al Oráculo</router-link>
           </div>
@@ -147,7 +147,7 @@ onMounted(() => {
 })
 
 const goToDataHub = () => {
-  router.push('/data-hub')
+  router.push('/mapa-cargos')
 }
 
 const goToOracle = () => {
