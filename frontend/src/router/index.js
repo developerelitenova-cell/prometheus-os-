@@ -121,6 +121,12 @@ const routes = [
     meta: { leaderOnly: true }
   },
   {
+    path: '/support-contacts',
+    name: 'SupportContactsManager',
+    component: () => import('../views/SupportContactsManager.vue'),
+    meta: { leaderOnly: true }
+  },
+  {
     path: '/:catchAll(.*)',
     redirect: '/'
   }

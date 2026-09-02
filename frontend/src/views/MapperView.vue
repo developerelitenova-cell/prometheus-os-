@@ -133,6 +133,13 @@
                 <li v-for="(item, idx) in extractedData.coordination" :key="idx">{{ item }}</li>
               </ul>
             </div>
+
+            <div class="data-block" style="border-left: 4px solid var(--danger);">
+              <label>Necesidades Operativas (Falta de herramientas/procesos):</label>
+              <ul>
+                <li v-for="(item, idx) in extractedData.unmet_needs" :key="idx" class="warning-item">{{ item }}</li>
+              </ul>
+            </div>
             
           </div>
           
@@ -188,7 +195,8 @@ const extractedData = ref({
   bottlenecks: [],
   kpis: [],
   decision_rules: [],
-  coordination: []
+  coordination: [],
+  unmet_needs: []
 });
 
 onMounted(async () => {
@@ -293,6 +301,7 @@ const saveWorkflow = async () => {
         kpis: extractedData.value.kpis,
         decision_rules: extractedData.value.decision_rules,
         coordination: extractedData.value.coordination,
+        unmet_needs: extractedData.value.unmet_needs,
         raw_transcript: lastSourceText.value
       }, { onConflict: 'role_id' });
 

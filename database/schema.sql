@@ -77,6 +77,9 @@ CREATE TABLE role_workflows (
   tools_used JSONB DEFAULT '[]'::jsonb,
   bottlenecks JSONB DEFAULT '[]'::jsonb,
   kpis JSONB DEFAULT '[]'::jsonb,
+  decision_rules JSONB DEFAULT '[]'::jsonb,
+  coordination JSONB DEFAULT '[]'::jsonb,
+  unmet_needs JSONB DEFAULT '[]'::jsonb,
   raw_transcript TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

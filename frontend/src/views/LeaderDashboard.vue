@@ -5,8 +5,11 @@
         <h1>¿Cómo va tu equipo?</h1>
         <p class="subtitle">Visión general del desempeño, tareas y KPIs de tu área.</p>
       </div>
-      <div class="area-badge" v-if="leaderArea">
-        Área: <strong>{{ leaderArea.name }}</strong>
+      <div class="header-actions">
+        <router-link to="/support-contacts" class="btn-secondary-link">📇 Directorio de Soporte</router-link>
+        <div class="area-badge" v-if="leaderArea">
+          Área: <strong>{{ leaderArea.name }}</strong>
+        </div>
       </div>
     </header>
 
@@ -326,6 +329,21 @@ onMounted(() => fetchData());
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
 .header-content h1 { font-size: 28px; color: var(--text-primary); margin-bottom: 4px; }
 .subtitle { color: var(--text-secondary); }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.btn-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-secondary-link:hover { background: var(--bg-secondary); border-color: var(--gold); color: var(--gold-deep); }
 .area-badge { padding: 8px 16px; background: rgba(176, 141, 87, 0.1); color: var(--gold-deep); border-radius: var(--radius-pill); font-size: 14px; }
 
 .error-panel { padding: 48px; text-align: center; max-width: 500px; margin: 60px auto; color: var(--text-secondary); }
