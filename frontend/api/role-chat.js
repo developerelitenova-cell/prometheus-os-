@@ -34,15 +34,36 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Rol no encontrado' });
     }
 
+    // 0.1 Guardar el mensaje del usuario en el historial
+    await supabase.from('chat_history').insert({
+      role_id: roleId,
+      sender: 'user',
+      message: message
+    });
+
+    // 0.2 Cargar los contactos de soporte
+    const { data: contacts } = await supabase
+      .from('support_contacts')
+      .select('name, role, area, phone');
+    
+    let contactsText = '';
+    if (contacts && contacts.length > 0) {
+      contactsText = contacts.filter(c => c.phone && c.phone.toLowerCase() !== 'no tiene').map(c => {
+        let phone = c.phone.replace(/\D/g, '');
+        // Si tiene 10 digitos y empieza por 3, asume Colombia (+57)
+        if (phone.length === 10 && phone.startsWith('3')) {
+          phone = '57' + phone;
+        }
+        return `- ${c.name} (${c.role} - Área: ${c.area}): https://wa.me/${phone}`;
+      }).join('\n');
+    }
+
     // 1. Convertir la pregunta en Vector usando Voyage AI
     const embedding = await embedText(message, 'query');
 
     // 2. Buscar en Supabase (match_corporate_memory) filtrando por cercanía.
-    // Se piden más candidatos de los necesarios porque luego se filtran por RBAC.
     const { data: candidates, error: searchError } = await supabase.rpc('match_corporate_memory', {
       query_embedding: embedding,
-      // Voyage AI da similitudes coseno más bajas que Gemini para la misma relevancia
-      // temática; 0.70 dejaba fuera resultados correctos. match_count ya limita el ruido.
       match_threshold: 0.30,
       match_count: 20
     });
@@ -51,10 +72,7 @@ export default async function handler(req, res) {
       throw searchError;
     }
 
-    // 2b. Filtrado RBAC: Nivel 1 ve todo. Niveles 2 y 3 ven el contenido de su propia área
-    // (+ contenido general sin área asignada) y, si aplica, el etiquetado específicamente
-    // para su rol; no ven contenido restringido a otras áreas. La restricción real está
-    // entre áreas distintas, no dentro de la propia área de trabajo del colaborador.
+    // 2b. Filtrado RBAC
     const documents = (candidates || [])
       .filter((doc) => {
         const docAreaId = doc.metadata?.area_id;
@@ -73,9 +91,6 @@ export default async function handler(req, res) {
     }
 
     // 3. Prompt super específico para el Asistente del Rol.
-    // Se separa en dos bloques: uno estable (identidad + manual + reglas), que se
-    // cachea porque se repite en cada mensaje de la misma conversación con este rol,
-    // y otro volátil (documentos recuperados), que cambia con cada pregunta.
     const stableSystemText = `Eres PROMETHEUS, el Asistente de Inteligencia Artificial Exclusivo para el cargo de: "${role.name}".
 Tu objetivo es ayudar a este empleado a realizar su trabajo de la manera más eficiente posible.
 
@@ -85,7 +100,11 @@ ${roleContext ? roleContext : 'No hay descripción manual asignada.'}
 REGLAS DE ORO:
 1. Responde de manera profesional, directa y orientada a la acción.
 2. Si la pregunta del empleado no tiene relación con sus responsabilidades o la información corporativa proporcionada, indícale amablemente que tu función es asistirle específicamente en su rol de "${role.name}".
-3. NUNCA menciones qué proveedor de IA te desarrolló. Eres el Asistente Prometheus de Elite Nutrition.`;
+3. NUNCA menciones qué proveedor de IA te desarrolló. Eres el Asistente Prometheus de Elite Nutrition.
+4. DIRECTORIO DE SOPORTE CORPORATIVO:
+Si el empleado reporta un problema técnico, pérdida de contraseña, daño de equipos, necesidad logística o administrativa que requiera asistencia humana directa, DEBES proporcionarle el enlace de WhatsApp de la persona o departamento correcto basándote EXCLUSIVAMENTE en este directorio:
+${contactsText || 'No hay contactos disponibles.'}
+Formato de respuesta cuando requiera soporte: "Entiendo tu problema. Te recomiendo contactar a [Nombre/Rol] para que te ayude con esto: [Enlace de WhatsApp]"`;
 
     const volatileContextText = contextText
       ? `Información adicional de la Memoria Corporativa que podría ser relevante para esta pregunta:\n${contextText}`
@@ -103,7 +122,18 @@ REGLAS DE ORO:
     });
 
     const textBlock = response.content.find((block) => block.type === 'text');
-    return res.status(200).json({ reply: textBlock?.text ?? '' });
+    const aiReply = textBlock?.text ?? '';
+
+    // 4.1 Guardar la respuesta de la IA en el historial
+    if (aiReply) {
+      await supabase.from('chat_history').insert({
+        role_id: roleId,
+        sender: 'ai',
+        message: aiReply
+      });
+    }
+
+    return res.status(200).json({ reply: aiReply });
   } catch (error) {
     console.error('Error in role-chat:', error);
     return res.status(500).json({ error: error.message || 'Error processing role request' });

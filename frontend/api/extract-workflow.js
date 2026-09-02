@@ -22,14 +22,16 @@ REGLAS DE ORO:
 7. "tools_used" son software, plataformas, aplicaciones o equipos mencionados explícitamente.
 8. "bottlenecks" son cuellos de botella, ineficiencias, riesgos u oportunidades de mejora mencionados.
 9. "kpis" son indicadores de desempeño o metas mencionados explícitamente, con su meta si se menciona.
-10. Responde EXCLUSIVAMENTE en JSON válido, sin texto adicional ni bloques de código, con este esquema exacto:
+10. "unmet_needs" son carencias operativas, herramientas que faltan o procesos manuales que el empleado reporta como ausentes (ej. "no tengo una herramienta que me avise"). Extrae estas ausencias operativas aquí.
+11. Responde EXCLUSIVAMENTE en JSON válido, sin texto adicional ni bloques de código, con este esquema exacto:
 {
   "tasks": [string],
   "inputs": [string],
   "outputs": [string],
   "tools_used": [string],
   "bottlenecks": [string],
-  "kpis": [string]
+  "kpis": [string],
+  "unmet_needs": [string]
 }`;
 
 export default async function handler(req, res) {
@@ -105,6 +107,7 @@ ${sourceText}`;
       tools_used: asStringArray(extracted.tools_used),
       bottlenecks: asStringArray(extracted.bottlenecks),
       kpis: asStringArray(extracted.kpis),
+      unmet_needs: asStringArray(extracted.unmet_needs),
     };
 
     return res.status(200).json({ workflow });
