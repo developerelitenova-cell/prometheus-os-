@@ -145,7 +145,10 @@
         <div class="success-section" v-if="step === 4">
           <h2>¡Flujo Mapeado y Estandarizado con Éxito!</h2>
           <p>El perfil operativo y modelo "AS-IS" del rol <strong>{{ role?.name }}</strong> se ha guardado en el DataHub.</p>
-          <router-link to="/data-hub" class="btn-primary">Volver al Directorio</router-link>
+          <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para auditoría. No podrás volver a editarla — ya tenés acceso a tu Portal del Empleado.</p>
+          <router-link :to="lockedForSelf ? '/workspace' : '/data-hub'" class="btn-primary">
+            {{ lockedForSelf ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
+          </router-link>
         </div>
       </main>
     </div>
@@ -153,14 +156,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { supabase } from '../api/supabase';
+import { currentProfile, loadCurrentProfile } from '../api/auth';
 import WorkflowWizard from '../components/WorkflowWizard.vue';
 import NeuronAnimation from '../components/NeuronAnimation.vue';
 
 const route = useRoute();
 const role_id = route.params.role_id;
+
+// Si quien mapea es el dueño del rol (no un admin editando por otra persona),
+// al guardar se le cierra el acceso a esta pantalla (ver saveWorkflow).
+const lockedForSelf = computed(() => currentProfile.value?.role_id === role_id && !currentProfile.value?.is_master_admin);
 
 const role = ref(null);
 const step = ref(1);
@@ -184,16 +192,38 @@ const extractedData = ref({
 });
 
 onMounted(async () => {
+  if (!currentProfile.value) {
+    await loadCurrentProfile();
+  }
+
   const { data } = await supabase
     .from('roles')
     .select('*, areas(name)')
     .eq('id', role_id)
     .single();
-    
+
   if (data) {
     role.value = data;
   }
 });
+
+// Auditoría del proceso de mapeo -- queda registrado quién sube qué archivo
+// y cuándo se guarda el flujo, para revisión de ciberseguridad posterior.
+const logMappingAudit = async (action, fileName = null) => {
+  const profileId = currentProfile.value?.id;
+  if (!profileId) return; // Sin sesión (ej. entorno de pruebas) -- no bloquea el flujo, solo no queda registro.
+  try {
+    await supabase.from('mapping_audit_log').insert({
+      profile_id: profileId,
+      role_id: role_id,
+      action,
+      file_name: fileName,
+      user_agent: navigator.userAgent
+    });
+  } catch (e) {
+    console.error('Error registrando auditoría de mapeo:', e);
+  }
+};
 
 const triggerFileInput = () => {
   fileInput.value.click();
@@ -208,6 +238,7 @@ const handleFileUpload = (event) => {
       rawTranscript.value = e.target.result;
     };
     reader.readAsText(file);
+    logMappingAudit('file_uploaded', file.name);
   }
 };
 
@@ -269,6 +300,15 @@ const saveWorkflow = async () => {
         console.error('Error guardando mapeo en la red central:', error);
         alert('Error conectando con la red central: ' + error.message);
       } else {
+        await logMappingAudit('workflow_saved');
+
+        // Si quien mapeó es el dueño del rol, se le cierra el acceso a esta
+        // pantalla -- de ahora en más solo entra a su Portal del Empleado.
+        if (lockedForSelf.value) {
+          await supabase.from('profiles').update({ mapping_completed: true }).eq('id', currentProfile.value.id);
+          await loadCurrentProfile();
+        }
+
         step.value = 4;
       }
   } catch (err) {
@@ -523,6 +563,17 @@ textarea:focus {
 .processing-section, .success-section {
   text-align: center;
   margin-top: 60px;
+}
+
+.lock-note {
+  max-width: 480px;
+  margin: 16px auto 24px auto;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
 }
 
 .results-section {

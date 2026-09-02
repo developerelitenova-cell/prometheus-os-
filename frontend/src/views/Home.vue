@@ -6,6 +6,8 @@
         <img src="../assets/elite-logo.png" alt="Elite Nutrition Logo" class="brand-logo" />
         <span class="brand-wordmark">PROMETHEUS OS</span>
       </div>
+      <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
+      <router-link v-else to="/workspace" class="nav-login-link">Ir a mi Portal</router-link>
     </nav>
 
     <div class="main-content">
@@ -32,11 +34,14 @@
             </p>
           </div>
            
-          <div class="btn-group">
+          <div class="btn-group" v-if="isLoggedIn">
             <router-link to="/data-hub" class="btn-primary">Ir al DataHub</router-link>
             <router-link to="/workspace" class="btn-tertiary">Portal del Empleado</router-link>
             <router-link to="/performance" class="btn-quaternary">KPIs y Rendimiento</router-link>
             <router-link to="/oracle" class="oracle-btn">Preguntar al Oráculo</router-link>
+          </div>
+          <div class="btn-group" v-else>
+            <router-link to="/login" class="btn-primary" style="padding: 1rem 3rem; font-size: 1.1rem;">Iniciar Sesión para Continuar</router-link>
           </div>
 
           <!-- Módulo de Simulación Corporativa: oculto hasta que exista un backend real (antes apuntaba a localhost:5001, que no existe en ningún entorno) -->
@@ -94,8 +99,16 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { setPendingUpload } from '../store/pendingUpload'
+import { supabase } from '../api/supabase'
 
 const router = useRouter()
+const isLoggedIn = ref(false)
+
+onMounted(async () => {
+  const { data } = await supabase.auth.getSession()
+  isLoggedIn.value = !!data.session
+})
+
 // El módulo de Simulación Corporativa no tiene backend en ningún entorno (ver /process, /simulation, /report).
 // Se mantiene el código para retomarlo cuando exista un servicio real detrás de él.
 const SIMULATION_ENABLED = false
@@ -197,6 +210,23 @@ const startSimulation = () => {
   font-size: 0.95rem;
   letter-spacing: 1.5px;
   color: var(--text-secondary);
+}
+
+.nav-login-link {
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 9px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  transition: all 0.2s ease;
+}
+
+.nav-login-link:hover {
+  background: var(--bg-secondary);
+  border-color: var(--gold);
+  color: var(--gold-deep);
 }
 
 .main-content {

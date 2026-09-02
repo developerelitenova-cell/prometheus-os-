@@ -63,6 +63,61 @@ def create_role(role_data: dict):
 def update_role(role_id: str, role_data: dict):
     return {"status": "updated", "role_id": role_id}
 
+# --- Módulo de Administración: Cuentas de Empleados ---
+# Usa la Service Role Key (solo disponible aquí, en el backend) para crear
+# usuarios de Supabase Auth. Nunca se debe exponer esta llave al frontend.
+class CreateEmployeeRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    role_id: Optional[str] = None
+    is_master_admin: bool = False
+
+@app.post("/api/v1/admin/create-employee")
+def create_employee(req: CreateEmployeeRequest):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend (falta SUPABASE_SERVICE_ROLE_KEY)")
+
+    try:
+        auth_res = supabase.auth.admin.create_user({
+            "email": req.email,
+            "password": req.password,
+            "email_confirm": True
+        })
+        user_id = auth_res.user.id
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error creando el usuario de acceso: {str(e)}")
+
+    try:
+        profile_payload = {
+            "id": user_id,
+            "full_name": req.full_name,
+            "role_id": req.role_id,
+            "is_master_admin": req.is_master_admin,
+            "mapping_completed": False
+        }
+        supabase.table("profiles").insert(profile_payload).execute()
+    except Exception as e:
+        # Rollback: si falla crear el perfil, no dejamos un usuario de Auth huérfano.
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception:
+            pass
+        raise HTTPException(status_code=400, detail=f"Error creando el perfil: {str(e)}")
+
+    return {"status": "created", "user_id": user_id}
+
+@app.delete("/api/v1/admin/employee/{user_id}")
+def delete_employee(user_id: str):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+    try:
+        supabase.table("profiles").delete().eq("id", user_id).execute()
+        supabase.auth.admin.delete_user(user_id)
+        return {"status": "deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # --- Módulo de Desempeño: Tareas y KPIs ---
 class TaskCreate(BaseModel):
     role_id: str
@@ -124,7 +179,8 @@ REGLAS DE ORO:
 9. "kpis" son indicadores de desempeño o metas mencionados explícitamente, con su meta si se menciona.
 10. "decision_rules" son las condiciones, bifurcaciones o reglas lógicas de negocio (ej. "si X es verdadero, entonces Y").
 11. "coordination" son las interacciones interdepartamentales, flujos de aprobación o puntos de contacto con otras personas.
-12. Responde EXCLUSIVAMENTE en JSON válido, sin texto adicional ni bloques de código, con este esquema exacto:
+12. "unmet_needs" son carencias operativas, herramientas que faltan o procesos manuales que el empleado reporta como ausentes (ej. "no tengo una herramienta que me avise"). Extrae estas ausencias operativas aquí.
+13. Responde EXCLUSIVAMENTE en JSON válido, sin texto adicional ni bloques de código, con este esquema exacto:
 {
   "tasks": [string],
   "inputs": [string],
@@ -133,7 +189,8 @@ REGLAS DE ORO:
   "bottlenecks": [string],
   "kpis": [string],
   "decision_rules": [string],
-  "coordination": [string]
+  "coordination": [string],
+  "unmet_needs": [string]
 }"""
 
 @app.post("/api/v1/extract-workflow")
@@ -184,6 +241,7 @@ def extract_workflow(req: ExtractWorkflowRequest):
             "kpis": as_list("kpis"),
             "decision_rules": as_list("decision_rules"),
             "coordination": as_list("coordination"),
+            "unmet_needs": as_list("unmet_needs"),
         }
 
         return {"workflow": workflow}

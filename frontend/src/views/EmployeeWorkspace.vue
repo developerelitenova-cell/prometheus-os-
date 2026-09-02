@@ -7,34 +7,92 @@
         <h1>Portal del Empleado</h1>
       </div>
       <div class="header-right">
-        <!-- Selector de Rol (Simulador) -->
-        <div class="role-selector">
-          <label>Identidad Activa:</label>
-          <select v-model="selectedRoleId" @change="changeRole" class="glass-select" :disabled="loadingRoles">
-            <option value="" disabled>Selecciona tu rol...</option>
-            <option v-for="role in roles" :key="role.id" :value="role.id">
-              {{ role.name }}
-            </option>
-          </select>
+        <!-- Campana de Notificaciones -->
+        <div class="notif-bell-wrapper">
+          <button
+            class="notif-bell"
+            @click="showNotifPanel = !showNotifPanel"
+            :disabled="!currentProfile"
+            title="Notificaciones"
+          >
+            🔔
+            <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+          </button>
+
+          <div v-if="showNotifPanel" class="notif-panel-backdrop" @click="showNotifPanel = false"></div>
+
+          <div v-if="showNotifPanel" class="notif-panel glass-panel">
+            <div class="notif-panel-header">
+              <h4>Notificaciones</h4>
+              <button class="mark-all-btn" v-if="unreadCount > 0" @click="markAllRead">Marcar todas como leídas</button>
+            </div>
+            <div class="notif-panel-list">
+              <div v-if="loadingNotifications" class="loading-text">Cargando...</div>
+              <div v-else-if="unifiedFeed.length === 0" class="empty-state-mini">No tienes notificaciones.</div>
+              <div
+                v-else
+                v-for="item in unifiedFeed"
+                :key="item.id"
+                class="notif-item"
+                :class="{ unread: item.unread }"
+                @click="handleNotifClick(item)"
+              >
+                <span class="notif-icon">{{ notifIcon(item) }}</span>
+                <div class="notif-body">
+                  <div class="notif-source">{{ notifSourceLabel(item) }}</div>
+                  <p class="notif-text">{{ item.text }}</p>
+                  <span class="notif-time">{{ formatRelativeTime(item.created_at) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Identidad de la sesión -->
+        <div class="session-identity" v-if="currentProfile">
+          <span class="session-name">{{ currentProfile.full_name }}</span>
+          <button class="signout-btn" @click="handleSignOut" title="Cerrar sesión">Salir</button>
         </div>
       </div>
     </header>
 
-    <div v-if="!selectedRoleId" class="empty-state glass-panel">
-      <span class="icon">👋</span>
-      <h2>Bienvenido al Portal de Elite Nutrition</h2>
-      <p>Por favor, selecciona tu cargo en el menú superior para acceder a tu espacio de trabajo.</p>
+    <div v-if="loadingProfile" class="empty-state glass-panel">
+      <span class="icon">⏳</span>
+      <h2>Cargando tu espacio de trabajo...</h2>
     </div>
 
-    <div v-else class="workspace-content">
+    <div v-else-if="!currentProfile" class="empty-state glass-panel">
+      <span class="icon">👋</span>
+      <h2>Bienvenido al Portal de Elite Nutrition</h2>
+      <p>No pudimos cargar tu perfil. Iniciá sesión nuevamente.</p>
+      <router-link to="/login" class="btn-primary" style="margin-top: 16px;">Ir a iniciar sesión</router-link>
+    </div>
+
+    <div v-else-if="currentProfile && bannerItems.length" class="announce-banner">
+      <div
+        v-for="item in bannerItems"
+        :key="'b-' + item.id"
+        class="announce-card glass-panel"
+        :class="{ urgente: item.category === 'urgente' }"
+      >
+        <span class="announce-icon">{{ notifIcon(item) }}</span>
+        <div class="announce-content">
+          <strong>{{ notifSourceLabel(item) }}</strong>
+          <p>{{ item.text }}</p>
+        </div>
+        <button class="announce-dismiss" @click="handleNotifClick(item)" title="Descartar">✕</button>
+      </div>
+    </div>
+
+    <div v-if="currentProfile" class="workspace-content">
       <!-- Columna Izquierda: KPIs y Tareas -->
       <div class="sidebar-column">
         <!-- Tarjeta de Identidad -->
         <div class="glass-panel profile-card">
-          <div class="avatar">{{ getInitials(currentRole?.name) }}</div>
+          <div class="avatar">{{ getInitials(currentProfile?.full_name) }}</div>
           <div class="profile-info">
-            <h2>{{ currentRole?.name }}</h2>
-            <p>{{ currentRole?.areas?.name || 'Área General' }}</p>
+            <h2>{{ currentProfile?.full_name }}</h2>
+            <p>{{ currentRole?.name }} - {{ currentRole?.areas?.name || 'Área General' }}</p>
           </div>
         </div>
 
@@ -52,17 +110,41 @@
         </div>
 
         <!-- Flujos / Tareas Asignadas -->
-        <div class="glass-panel tasks-card">
-          <h3>Mis Responsabilidades</h3>
-          <ul class="task-list">
-            <li v-for="(task, idx) in roleTasks" :key="idx">
-              <span class="check-icon">✓</span>
-              {{ task }}
-            </li>
-            <li v-if="roleTasks.length === 0" class="no-tasks">
-              No hay tareas mapeadas para este rol.
-            </li>
-          </ul>
+        <div class="glass-panel tasks-card checklist-card">
+          <h3>Mis Checklists</h3>
+          
+          <div class="checklist-section">
+            <h4>📅 Diario</h4>
+            <ul class="task-list interactive">
+              <li v-for="task in dailyTasks" :key="task.id" :class="task.status">
+                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
+                <span class="task-title">{{ task.title }}</span>
+              </li>
+              <li v-if="dailyTasks.length === 0" class="no-tasks">No hay tareas diarias.</li>
+            </ul>
+          </div>
+
+          <div class="checklist-section">
+            <h4>🗓 Semanal</h4>
+            <ul class="task-list interactive">
+              <li v-for="task in weeklyTasks" :key="task.id" :class="task.status">
+                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
+                <span class="task-title">{{ task.title }}</span>
+              </li>
+              <li v-if="weeklyTasks.length === 0" class="no-tasks">No hay tareas semanales.</li>
+            </ul>
+          </div>
+
+          <div class="checklist-section">
+            <h4>📆 Mensual</h4>
+            <ul class="task-list interactive">
+              <li v-for="task in monthlyTasks" :key="task.id" :class="task.status">
+                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
+                <span class="task-title">{{ task.title }}</span>
+              </li>
+              <li v-if="monthlyTasks.length === 0" class="no-tasks">No hay tareas mensuales.</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -142,20 +224,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import { supabase } from '../api/supabase';
+import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../api/auth';
 import { marked } from 'marked';
 
-const roles = ref([]);
-const selectedRoleId = ref('');
+const router = useRouter();
+
+const currentProfile = ref(null);
 const currentRole = ref(null);
-const loadingRoles = ref(true);
+const loadingProfile = ref(true);
+
+// Notificaciones (avisos de la empresa / notifications) y mensajes del líder de área (categorization_messages)
+const notifications = ref([]);
+const categorizationMessages = ref([]);
+const showNotifPanel = ref(false);
+const loadingNotifications = ref(false);
+const dismissedMessageIds = ref(new Set());
 
 // Datos del rol
 const currentKpi = ref({ overall_score: 0, ai_evaluation_notes: null });
 const loadingKpis = ref(false);
-const roleTasks = ref([]);
 const roleContextStr = ref('');
+
+// Tareas / Checklists
+const dailyTasks = ref([]);
+const weeklyTasks = ref([]);
+const monthlyTasks = ref([]);
 
 // Plantillas
 const templates = ref([]);
@@ -167,32 +263,210 @@ const isTyping = ref(false);
 const chatContainer = ref(null);
 
 onMounted(async () => {
-  await fetchRoles();
+  loadDismissed();
+  await initWorkspace();
 });
 
-const fetchRoles = async () => {
+const handleSignOut = async () => {
+  await signOut();
+  router.push('/login');
+};
+
+// --- Notificaciones ---
+
+const DISMISSED_MESSAGES_KEY = 'prometheus_dismissed_messages';
+
+const loadDismissed = () => {
   try {
-    const { data, error } = await supabase
-      .from('roles')
-      .select('*, areas(name)')
-      .order('name');
-    if (!error) {
-      roles.value = data || [];
-    }
+    const raw = localStorage.getItem(DISMISSED_MESSAGES_KEY);
+    dismissedMessageIds.value = new Set(raw ? JSON.parse(raw) : []);
   } catch (e) {
-    console.error(e);
-  } finally {
-    loadingRoles.value = false;
+    dismissedMessageIds.value = new Set();
   }
 };
 
-const changeRole = async () => {
-  if (!selectedRoleId.value) return;
+const persistDismissed = () => {
+  try {
+    localStorage.setItem(DISMISSED_MESSAGES_KEY, JSON.stringify(Array.from(dismissedMessageIds.value)));
+  } catch (e) {
+    // localStorage no disponible (modo privado, etc.) - no es crítico, se pierde solo la marca de "leído" local
+  }
+};
+
+const fetchNotifications = async (profileId, role) => {
+  loadingNotifications.value = true;
+  try {
+    const { data: notifData } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    notifications.value = notifData || [];
+
+    if (role?.id) {
+      const orFilter = role.area_id
+        ? `target_role_id.eq.${role.id},target_area_id.eq.${role.area_id}`
+        : `target_role_id.eq.${role.id}`;
+      const { data: msgData } = await supabase
+        .from('categorization_messages')
+        .select('*')
+        .or(orFilter)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      categorizationMessages.value = msgData || [];
+    } else {
+      categorizationMessages.value = [];
+    }
+  } catch (e) {
+    console.error('Error cargando notificaciones:', e);
+    notifications.value = [];
+    categorizationMessages.value = [];
+  } finally {
+    loadingNotifications.value = false;
+  }
+};
+
+const unifiedFeed = computed(() => {
+  const fromNotifications = notifications.value.map(n => ({
+    id: `n-${n.id}`,
+    rawId: n.id,
+    source: 'notification',
+    type: n.type,
+    text: n.message,
+    created_at: n.created_at,
+    unread: !n.is_read
+  }));
+  const fromMessages = categorizationMessages.value.map(m => ({
+    id: `m-${m.id}`,
+    rawId: m.id,
+    source: 'message',
+    category: m.category,
+    text: m.content,
+    created_at: m.created_at,
+    unread: !dismissedMessageIds.value.has(m.id)
+  }));
+  return [...fromNotifications, ...fromMessages].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+});
+
+const unreadCount = computed(() => unifiedFeed.value.filter(i => i.unread).length);
+
+const bannerItems = computed(() => unifiedFeed.value.filter(i => i.unread).slice(0, 3));
+
+const notifIcon = (item) => {
+  if (item.source === 'message') {
+    if (item.category === 'urgente') return '🚨';
+    if (item.category === 'operativo') return '⚙️';
+    return '📢';
+  }
+  const map = { manual_update: '📘', new_task: '✅', system_alert: '⚠️', message: '💬' };
+  return map[item.type] || '🔔';
+};
+
+const notifSourceLabel = (item) => {
+  return item.source === 'message' ? 'Tu líder / Elite Nutrition' : 'Notificación del sistema';
+};
+
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return '';
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return `hace ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `hace ${days} d`;
+  return new Date(dateStr).toLocaleDateString('es-CO');
+};
+
+const markNotificationRead = async (notifId) => {
+  const target = notifications.value.find(n => n.id === notifId);
+  if (!target || target.is_read) return;
+  target.is_read = true; // Optimista
+  try {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+  } catch (e) {
+    target.is_read = false; // Revertir si falla
+    console.error('Error marcando notificación como leída:', e);
+  }
+};
+
+const handleNotifClick = (item) => {
+  if (item.source === 'notification') {
+    markNotificationRead(item.rawId);
+  } else {
+    dismissedMessageIds.value.add(item.rawId);
+    persistDismissed();
+  }
+};
+
+const markAllRead = async () => {
+  const unreadIds = notifications.value.filter(n => !n.is_read).map(n => n.id);
+  notifications.value.forEach(n => { n.is_read = true; }); // Optimista
+  categorizationMessages.value.forEach(m => dismissedMessageIds.value.add(m.id));
+  persistDismissed();
+
+  if (unreadIds.length) {
+    try {
+      await supabase.from('notifications').update({ is_read: true }).in('id', unreadIds);
+    } catch (e) {
+      console.error('Error marcando todas como leídas:', e);
+    }
+  }
+};
+
+const initWorkspace = async () => {
+  loadingProfile.value = true;
+  try {
+    if (!authProfile.value) {
+      await loadCurrentProfile();
+    }
+    currentProfile.value = authProfile.value;
+    currentRole.value = currentProfile.value?.roles || null;
+
+    if (!currentProfile.value) return;
+
+    if (currentRole.value) {
+      await fetchRoleData(currentRole.value.id);
+    }
+    await fetchChecklists(currentProfile.value.id);
+    await fetchNotifications(currentProfile.value.id, currentRole.value);
+  } finally {
+    loadingProfile.value = false;
+  }
+};
+
+const fetchChecklists = async (profileId) => {
+  try {
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('assigned_to', profileId);
+      
+    if (tasks) {
+      dailyTasks.value = tasks.filter(t => t.task_type === 'daily');
+      weeklyTasks.value = tasks.filter(t => t.task_type === 'weekly');
+      monthlyTasks.value = tasks.filter(t => t.task_type === 'monthly');
+    }
+  } catch (e) {
+    console.error('Error fetching tasks:', e);
+  }
+};
+
+const toggleTaskStatus = async (task) => {
+  const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+  const oldStatus = task.status;
+  task.status = newStatus; // Optimistic update
   
-  currentRole.value = roles.value.find(r => r.id === selectedRoleId.value);
-  messages.value = []; // Reset chat when changing role
-  
-  await fetchRoleData(selectedRoleId.value);
+  try {
+    await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id);
+  } catch (e) {
+    task.status = oldStatus; // Revert on fail
+    console.error(e);
+  }
 };
 
 const fetchRoleData = async (roleId) => {
@@ -225,7 +499,6 @@ const fetchRoleData = async (roleId) => {
       .single();
 
     if (flowData) {
-      roleTasks.value = flowData.tasks || [];
       // Prepare context string for the AI
       roleContextStr.value = `
 Tareas Principales: ${JSON.stringify(flowData.tasks)}
@@ -234,7 +507,6 @@ Outputs entregables: ${JSON.stringify(flowData.outputs)}
 KPIs esperados: ${JSON.stringify(flowData.kpis)}
       `.trim();
     } else {
-      roleTasks.value = [];
       roleContextStr.value = '';
     }
 
@@ -247,10 +519,32 @@ KPIs esperados: ${JSON.stringify(flowData.kpis)}
       
     templates.value = templateData || [];
 
+    await fetchChatHistory(roleId);
+
   } catch (error) {
     console.error('Error fetching role data:', error);
   } finally {
     loadingKpis.value = false;
+  }
+};
+
+const fetchChatHistory = async (roleId) => {
+  try {
+    const { data: history, error } = await supabase
+      .from('chat_history')
+      .select('sender, message, created_at')
+      .eq('role_id', roleId)
+      .order('created_at', { ascending: true });
+      
+    if (history && !error) {
+      messages.value = history.map(msg => ({
+        sender: msg.sender,
+        text: msg.message
+      }));
+      scrollToBottom();
+    }
+  } catch (e) {
+    console.error('Error fetching chat history:', e);
   }
 };
 
@@ -356,10 +650,258 @@ const getScoreColor = (score) => {
   color: var(--ink);
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .role-selector {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.session-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.session-name {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.signout-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.signout-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Notificaciones */
+.notif-bell-wrapper {
+  position: relative;
+}
+
+.notif-bell {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.notif-bell:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--gold);
+}
+
+.notif-bell:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--bg-primary);
+}
+
+.notif-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 360px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notif-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.notif-panel-header h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.mark-all-btn {
+  background: none;
+  border: none;
+  color: var(--gold-deep);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mark-all-btn:hover {
+  text-decoration: underline;
+}
+
+.notif-panel-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item:hover {
+  background: var(--bg-secondary);
+}
+
+.notif-item.unread {
+  background: var(--gold-light);
+}
+
+.notif-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-source {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gold-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.notif-text {
+  margin: 0 0 4px 0;
+  font-size: 0.87rem;
+  color: var(--ink-secondary);
+  line-height: 1.4;
+}
+
+.notif-time {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+/* Banner de anuncios importantes */
+.announce-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.announce-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  border-left: 4px solid var(--gold);
+}
+
+.announce-card.urgente {
+  border-left-color: var(--danger);
+}
+
+.announce-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.announce-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.announce-content strong {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gold-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.announce-content p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.announce-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.announce-dismiss:hover {
+  color: var(--ink);
 }
 
 .role-selector label {
@@ -397,6 +939,23 @@ const getScoreColor = (score) => {
 .empty-state .icon {
   font-size: 4rem;
   margin-bottom: 20px;
+}
+
+.empty-state .btn-primary {
+  display: inline-block;
+  background: var(--ink);
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 28px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s var(--ease-apple);
+}
+
+.empty-state .btn-primary:hover {
+  background: #000;
+  transform: translateY(-1px);
 }
 
 .workspace-content {
@@ -500,31 +1059,63 @@ const getScoreColor = (score) => {
   flex: 1;
 }
 
+/* Tasks Checklist Styles */
+.checklist-card {
+  padding: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.checklist-section {
+  margin-bottom: 20px;
+}
+
+.checklist-section h4 {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .task-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.task-list li {
+.task-list.interactive li {
   padding: 10px 0;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   color: var(--ink-secondary);
 }
 
-.check-icon {
-  color: var(--gold);
-  font-weight: bold;
+.task-list.interactive li:last-child {
+  border-bottom: none;
+}
+
+.task-list.interactive input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--gold);
+}
+
+.task-list.interactive li.completed .task-title {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
 }
 
 .no-tasks {
   color: var(--text-tertiary);
   font-style: italic;
-  justify-content: center;
+  font-size: 0.85rem;
+  padding: 8px 0;
 }
 
 /* Documents Column */
