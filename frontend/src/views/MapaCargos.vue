@@ -1,6 +1,9 @@
 <template>
   <div class="mapa-de-cargos">
     <header class="glass-panel hub-header">
+      <div class="header-left-nav" style="margin-bottom: 12px;">
+        <router-link to="/" class="back-link" style="color: var(--gold-deep); text-decoration: none; font-size: 0.9rem;">← Volver al Inicio</router-link>
+      </div>
       <div class="header-content">
         <h1>Mapa de Cargos</h1>
         <p class="subtitle">Directorio organizacional y base de conocimiento de procesos.</p>

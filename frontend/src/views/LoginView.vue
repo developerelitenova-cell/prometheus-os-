@@ -5,7 +5,7 @@
       <h1>PROMETHEUS OS</h1>
       <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
 
-      <div class="tabs">
+      <div class="tabs" v-if="showRegisterTab">
         <button :class="{ active: isLogin }" @click="isLogin = true">Ingresar</button>
         <button :class="{ active: !isLogin }" @click="isLogin = false">Registrarse</button>
       </div>
@@ -50,6 +50,7 @@ const password = ref('');
 const loading = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
+const showRegisterTab = ref(false);
 
 const PENDING_STATUS_MESSAGES = {
   pending: 'Tu cuenta está pendiente de aprobación por un administrador.',
@@ -61,6 +62,13 @@ onMounted(() => {
   const status = route.query.pending;
   if (typeof status === 'string' && PENDING_STATUS_MESSAGES[status]) {
     errorMsg.value = PENDING_STATUS_MESSAGES[status];
+  }
+
+  // Solo mostrar la pestaña de registro si viene de un enlace de invitación (redirect al mapper)
+  const redirect = route.query.redirect || '';
+  if (redirect.startsWith('/mapper/')) {
+    showRegisterTab.value = true;
+    isLogin.value = false;
   }
 });
 
@@ -86,9 +94,9 @@ const handleSubmit = async () => {
       }
       
       const redirect = route.query.redirect;
-      if (profile && !profile.mapping_completed && profile.role_id && !profile.is_master_admin) {
-        router.replace(`/mapper/${profile.role_id}`);
-      } else if (typeof redirect === 'string' && redirect) {
+      
+      // Enrutamiento directo al portal siempre
+      if (typeof redirect === 'string' && redirect) {
         router.replace(redirect);
       } else {
         router.replace('/workspace');

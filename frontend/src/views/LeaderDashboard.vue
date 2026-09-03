@@ -1,14 +1,21 @@
 <template>
   <div class="dashboard-container">
     <header class="page-header">
+      <div class="header-left-nav" style="margin-bottom: 12px;">
+        <router-link to="/" class="back-link" style="color: var(--gold-deep); text-decoration: none; font-size: 0.9rem;">← Volver al Inicio</router-link>
+      </div>
       <div class="header-content">
-        <h1>¿Cómo va tu equipo?</h1>
-        <p class="subtitle">Visión general del desempeño, tareas y KPIs de tu área.</p>
+        <h1>{{ isMaster ? 'Ecosistema Global (Panel Master)' : '¿Cómo va tu equipo?' }}</h1>
+        <p class="subtitle">{{ isMaster ? 'Visión omnisciente de toda la corporación.' : 'Visión general del desempeño, tareas y KPIs de tu área.' }}</p>
       </div>
       <div class="header-actions">
+        <router-link to="/kpis" class="btn-secondary-link">📊 KPIs Reales</router-link>
         <router-link to="/support-contacts" class="btn-secondary-link">📇 Directorio de Soporte</router-link>
-        <div class="area-badge" v-if="leaderArea">
+        <div class="area-badge" v-if="leaderArea && !isMaster">
           Área: <strong>{{ leaderArea.name }}</strong>
+        </div>
+        <div class="area-badge" v-if="isMaster" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+          <strong>ADMINISTRADOR GLOBAL</strong>
         </div>
       </div>
     </header>
@@ -71,7 +78,8 @@
         </div>
         
         <div class="member-footer">
-          <button class="btn-text-small">Ver Historial Completo</button>
+          <button v-if="isMaster" class="btn-text-small primary" @click="auditWorkspace(member.id)" style="color: var(--danger);">🕵️‍♂️ Auditar Espacio</button>
+          <button v-else class="btn-text-small">Ver Historial Completo</button>
           <button class="btn-text-small primary" @click="openTaskModal(member)">Configurar Checklists / Tarea</button>
         </div>
       </div>
@@ -159,6 +167,7 @@ import { ref, onMounted } from 'vue';
 import { supabase } from '@/api/supabase';
 
 const isLeader = ref(false);
+const isMaster = ref(false);
 const leaderArea = ref(null);
 const teamMembers = ref([]);
 const pendingUsers = ref([]);
@@ -184,23 +193,30 @@ const fetchData = async () => {
   // Obtener perfil del líder
   const { data: profile } = await supabase.from('profiles').select('*, roles(area_id, access_level)').eq('id', userId).single();
   
-  if (profile?.roles?.access_level === 1 || profile?.roles?.access_level === 2) {
+  if (profile?.is_master_admin) {
+    isMaster.value = true;
     isLeader.value = true;
-    
-    // Obtener área
-    const { data: area } = await supabase.from('areas').select('*').eq('id', profile.roles.area_id).single();
-    leaderArea.value = area;
+  } else if (profile?.roles?.access_level === 1 || profile?.roles?.access_level === 2) {
+    isLeader.value = true;
+  }
 
-    // Obtener miembros del equipo (roles en la misma área)
-    // Para simplificar, buscamos los perfiles cuyos roles pertenecen a esta área.
-    const { data: members, error } = await supabase
+  if (isLeader.value) {
+    let membersQuery = supabase
       .from('profiles')
       .select(`
         id, full_name,
         roles!inner(name, area_id)
       `)
-      .eq('roles.area_id', profile.roles.area_id)
-      .neq('id', userId); // Excluir al líder mismo
+      .neq('id', userId); // Excluirse a sí mismo
+
+    if (!isMaster.value) {
+      // Obtener área del líder
+      const { data: area } = await supabase.from('areas').select('*').eq('id', profile.roles.area_id).single();
+      leaderArea.value = area;
+      membersQuery = membersQuery.eq('roles.area_id', profile.roles.area_id);
+    }
+
+    const { data: members, error } = await membersQuery;
 
     if (members) {
       // Para cada miembro, traemos sus KPIs recientes y tareas
@@ -319,6 +335,13 @@ const submitTask = async () => {
   } finally {
     isSaving.value = false;
   }
+};
+
+import { useRouter } from 'vue-router';
+const router = useRouter();
+
+const auditWorkspace = (employeeId) => {
+  router.push(`/workspace?view_as=${employeeId}`);
 };
 
 onMounted(() => fetchData());

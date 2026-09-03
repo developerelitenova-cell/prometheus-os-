@@ -26,9 +26,9 @@
         </div>
       </aside>
 
-      <!-- Sección 2: Carga y Procesamiento -->
+      <!-- Sección 1: Carga y Procesamiento -->
       <main class="glass-panel process-panel">
-        <div class="upload-section" v-if="step === 1">
+        <div class="upload-section" v-show="step === 1">
           <h2>1. Cuéntanos tu proceso</h2>
 
           <div class="tabs">
@@ -48,6 +48,7 @@
 
           <div v-if="inputMode === 'wizard'" class="fields-form">
             <WorkflowWizard @submit="handleWizardSubmit" />
+            <p v-if="processError" class="error-text" style="margin-top: 15px; font-weight: bold;">{{ processError }}</p>
           </div>
 
           <div v-else class="transcript-form">
@@ -264,9 +265,15 @@ const processWithAI = async (sourceText) => {
 
   try {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const sessionResponse = await supabase.auth.getSession();
+    const token = sessionResponse.data.session?.access_token;
+    
     const response = await fetch(`${apiUrl}/api/v1/extract-workflow`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({ roleId: role_id, sourceText }),
     });
 

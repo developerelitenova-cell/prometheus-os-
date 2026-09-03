@@ -5,6 +5,11 @@
       <div class="header-left">
         <router-link to="/" class="back-link">← Volver al Inicio</router-link>
         <h1>Mi Espacio Elite</h1>
+        
+        <div v-if="isAuditMode" class="audit-badge">
+          🕵️‍♂️ <strong>MODO AUDITORÍA:</strong> Estás viendo el espacio de {{ currentProfile?.full_name }}
+          <button class="btn-exit-audit" @click="exitAuditMode">Salir</button>
+        </div>
       </div>
       <div class="header-right">
         <!-- Campana de Notificaciones -->
@@ -84,6 +89,20 @@
       </div>
     </div>
 
+    <!-- Alerta de Mapeo Incompleto -->
+    <div v-if="currentProfile && !currentProfile.mapping_completed && !currentProfile.is_master_admin" class="announce-banner">
+      <div class="announce-card glass-panel urgente">
+        <span class="announce-icon">⚠️</span>
+        <div class="announce-content">
+          <strong>Acción Requerida: Mapeo de Cargo Pendiente</strong>
+          <p>Para personalizar tu IA y activar todas las funciones de tu Espacio Elite, necesitamos conocer los detalles de tus responsabilidades.</p>
+        </div>
+        <router-link :to="`/mapper/${currentProfile.role_id}`" class="btn-primary" style="margin-left: auto;">
+          Completar Mapeo Ahora
+        </router-link>
+      </div>
+    </div>
+
     <div v-if="currentProfile" class="workspace-content">
       <!-- Columna Izquierda: KPIs y Tareas -->
       <div class="sidebar-column">
@@ -109,9 +128,11 @@
             <span class="score-number">{{ currentKpi.overall_score.toFixed(1) }}</span>
             <span class="score-label">Rendimiento General</span>
           </div>
-          <p class="kpi-insight" v-if="currentKpi.ai_evaluation_notes">
-            {{ currentKpi.ai_evaluation_notes }}
-          </p>
+          
+          <div class="kpi-insight" v-if="currentKpi.ai_evaluation_notes">
+            <h4>Análisis de la IA:</h4>
+            <div class="markdown-content kpi-notes-scroll" v-html="DOMPurify.sanitize(marked.parse(currentKpi.ai_evaluation_notes))"></div>
+          </div>
         </div>
 
         <!-- Flujos / Tareas Asignadas -->
@@ -192,8 +213,7 @@
         
         <div class="chat-messages" ref="chatContainer">
           <div v-if="messages.length === 0" class="empty-chat">
-            <p>Hola. Soy tu asistente IA exclusivo.</p>
-            <p>Conozco el manual de tu cargo y los procesos de la empresa. ¿En qué te puedo ayudar hoy?</p>
+            <p>Hola. Hazme preguntas o pídeme ayuda para completar tus tareas y objetivos.</p>
           </div>
           
           <div 
@@ -202,7 +222,7 @@
             :class="['message', msg.sender]"
           >
             <div class="avatar-small">{{ msg.sender === 'user' ? 'TÚ' : 'IA' }}</div>
-            <div class="bubble" v-html="formatMessage(msg.text)"></div>
+            <div class="bubble" v-html="DOMPurify.sanitize(formatMessage(msg.text))"></div>
           </div>
           
           <div v-if="isTyping" class="message ai typing">
@@ -230,16 +250,19 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../api/supabase';
 import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../api/auth';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 const router = useRouter();
+const route = useRoute();
 
 const currentProfile = ref(null);
 const currentRole = ref(null);
 const loadingProfile = ref(true);
+const isAuditMode = ref(false);
 
 // Notificaciones (avisos de la empresa / notifications) y mensajes del líder de área (categorization_messages)
 const notifications = ref([]);
@@ -458,7 +481,25 @@ const initWorkspace = async () => {
     if (!authProfile.value) {
       await loadCurrentProfile();
     }
-    currentProfile.value = authProfile.value;
+    
+    // Lógica de Modo Auditoría (Impersonation)
+    if (authProfile.value?.is_master_admin && route.query.view_as) {
+      const { data: auditProfile } = await supabase
+        .from('profiles')
+        .select('*, roles(id, name, area_id)')
+        .eq('id', route.query.view_as)
+        .single();
+        
+      if (auditProfile) {
+        currentProfile.value = auditProfile;
+        isAuditMode.value = true;
+      } else {
+        currentProfile.value = authProfile.value;
+      }
+    } else {
+      currentProfile.value = authProfile.value;
+    }
+
     currentRole.value = currentProfile.value?.roles || null;
 
     if (!currentProfile.value) return;
@@ -592,9 +633,13 @@ const sendMessage = async () => {
   scrollToBottom();
 
   try {
+    const session = await supabase.auth.getSession();
     const response = await fetch('/api/role-chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.data.session?.access_token || ''}`
+      },
       body: JSON.stringify({ 
         message: text,
         roleId: currentRole.value.id,
@@ -640,6 +685,11 @@ const getScoreColor = (score) => {
   if (score >= 70) return 'yellow';
   return 'red';
 };
+
+const exitAuditMode = () => {
+  router.push('/workspace');
+  setTimeout(() => { window.location.reload(); }, 100);
+};
 </script>
 
 <style scoped>
@@ -682,6 +732,30 @@ const getScoreColor = (score) => {
   margin: 0;
   font-size: 1.5rem;
   color: var(--ink);
+}
+
+.audit-badge {
+  margin-top: 10px;
+  background: rgba(255, 149, 0, 0.15);
+  border: 1px solid var(--warning);
+  color: #b46b00;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-exit-audit {
+  background: var(--warning);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .header-right {
@@ -1407,5 +1481,23 @@ const getScoreColor = (score) => {
 :deep(.bubble ul) {
   margin: 10px 0;
   padding-left: 20px;
+}
+
+.kpi-notes-scroll {
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.2);
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+.kpi-notes-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.kpi-notes-scroll::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
 }
 </style>

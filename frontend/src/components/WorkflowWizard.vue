@@ -30,11 +30,15 @@ import { ref, computed } from 'vue';
 const emit = defineEmits(['submit']);
 
 const currentStep = ref(1);
-const answers = ref(Array(8).fill(''));
+const answers = ref(Array(9).fill(''));
 
 const questions = [
   {
-    title: "¿Qué situación, mensaje o documento te avisa que es momento de empezar a trabajar en esta tarea, y quién te lo entrega o envía?",
+    title: "Antes de hablar de un proceso específico, ¿cuáles son TODAS las responsabilidades, tareas diarias, semanales o mensuales por las que respondes en tu cargo?",
+    desc: "Mapeo General de Responsabilidades"
+  },
+  {
+    title: "Ahora, pensando en la tarea o proceso más crítico que haces: ¿Qué situación, mensaje o documento te avisa que es momento de empezar, y quién te lo entrega?",
     desc: "El Disparador del Trabajo (Inicio del proceso)"
   },
   {

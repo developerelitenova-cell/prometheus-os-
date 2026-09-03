@@ -134,4 +134,4 @@ CREATE POLICY "Enable read access for user tasks" ON tasks FOR SELECT TO authent
 
 CREATE POLICY "Enable read access for anon on areas" ON areas FOR SELECT TO anon USING (true);
 CREATE POLICY "Enable read access for anon on roles" ON roles FOR SELECT TO anon USING (true);
-CREATE POLICY "Enable public access for role_workflows" ON role_workflows FOR ALL TO public USING (true);
+CREATE POLICY "Enable access for authenticated on role_workflows" ON role_workflows FOR ALL TO authenticated USING (true);

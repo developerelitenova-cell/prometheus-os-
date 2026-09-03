@@ -15,7 +15,7 @@
           <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.role]">
             <div class="avatar">{{ msg.role === 'ai' ? '🤖' : '👤' }}</div>
             <div class="bubble">
-              <div v-html="formatMessage(msg.text)"></div>
+              <div v-html="DOMPurify.sanitize(formatMessage(msg.text))"></div>
             </div>
           </div>
           <div v-if="loading" class="message ai loading-msg">
@@ -73,10 +73,12 @@
 <script setup>
 import { ref, nextTick } from 'vue';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 const currentQuery = ref('');
 const loading = ref(false);
 const chatHistory = ref(null);
+const dbStatus = ref(true);
 
 const messages = ref([
   {

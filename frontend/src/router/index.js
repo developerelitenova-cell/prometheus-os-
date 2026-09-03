@@ -127,6 +127,12 @@ const routes = [
     meta: { leaderOnly: true }
   },
   {
+    path: '/kpis',
+    name: 'KpiManager',
+    component: () => import('../views/KpiManager.vue'),
+    meta: { leaderOnly: true }
+  },
+  {
     path: '/:catchAll(.*)',
     redirect: '/'
   }

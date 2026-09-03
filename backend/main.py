@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional
@@ -7,6 +8,9 @@ import json
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from anthropic import Anthropic
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Imports de los nuevos módulos propietarios
 from performance.task_manager import task_manager
@@ -45,6 +49,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Configurar Rate Limiting (SlowAPI)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# --- Dependencia de Autenticación JWT ---
+security = HTTPBearer()
+
+def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Verifica que el JWT provisto en el header 'Authorization: Bearer <token>' 
+    sea válido usando Supabase.
+    """
+    token = credentials.credentials
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en backend")
+    
+    try:
+        # get_user verifica la firma JWT contra el servidor de Supabase
+        user_response = supabase.auth.get_user(token)
+        if not user_response.user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token JWT inválido o expirado",
+            )
+        return user_response.user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Autenticación fallida: {str(e)}",
+        )
 
 @app.get("/")
 def read_root():
@@ -153,7 +189,8 @@ class ChatQuery(BaseModel):
     query: str
 
 @app.post("/api/v1/chat")
-def chat_with_agent(chat_query: ChatQuery):
+@limiter.limit("10/minute")
+def chat_with_agent(request: Request, chat_query: ChatQuery, user=Depends(verify_jwt)):
     if chat_query.role_id not in orchestrator.active_agents:
         # Instanciar el agente si no existe (Normalmente leyendo la DB)
         orchestrator.spawn_agent({"role": chat_query.role_id, "access_level": 3, "area": "Desconocida", "name": "Usuario"})
@@ -198,7 +235,8 @@ REGLAS DE ORO:
 }"""
 
 @app.post("/api/v1/extract-workflow")
-def extract_workflow(req: ExtractWorkflowRequest):
+@limiter.limit("5/minute")
+def extract_workflow(request: Request, req: ExtractWorkflowRequest, user=Depends(verify_jwt)):
     if not supabase or not anthropic:
         raise HTTPException(status_code=500, detail="Supabase o Anthropic no configurados")
     
