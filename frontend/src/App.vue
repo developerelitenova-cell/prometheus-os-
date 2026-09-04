@@ -7,13 +7,26 @@
       </transition>
     </router-view>
 
+    <!-- Marca de agua global -- las pantallas de identidad (Home, Login, Bienvenida,
+         Pendiente de aprobación) ya muestran el logo en grande, así que se omite ahí
+         para no duplicarlo. -->
+    <router-link v-if="showBrandMark" to="/" class="global-brand-mark" title="PROMETHEUS OS · Elite Nutrition">
+      <img src="@/assets/elite-logo.jpeg" alt="Elite Nutrition" />
+    </router-link>
+
     <!-- Modal Global de Eventos Obligatorios -->
     <MandatoryEventModal />
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import MandatoryEventModal from '@/components/MandatoryEventModal.vue';
+
+const route = useRoute();
+const NO_BRAND_MARK_ROUTES = ['/', '/login', '/welcome', '/pending-approval'];
+const showBrandMark = computed(() => !NO_BRAND_MARK_ROUTES.includes(route.path));
 </script>
 
 <style>

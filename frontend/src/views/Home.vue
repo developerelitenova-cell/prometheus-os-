@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 / Navbar -->
     <nav class="navbar">
       <div class="nav-brand">
-        <img src="../assets/elite-logo.png" alt="Elite Nutrition Logo" class="brand-logo" />
+        <img src="../assets/elite-logo.jpeg" alt="Elite Nutrition Logo" class="brand-logo" />
         <span class="brand-wordmark">PROMETHEUS OS</span>
       </div>
       <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
@@ -27,8 +27,8 @@
           
           <div class="hero-desc">
             <p>
-              El cerebro digital de <strong>Elite Nutrition & Futupro</strong>. Administra, consulta y automatiza 
-              el flujo de trabajo de <span class="highlight-orange">115 Roles</span> con total precisión.
+              El cerebro digital de <strong>Elite Nutrition & Futupro</strong>. Administra, consulta y automatiza
+              el flujo de trabajo de <span class="highlight-orange">{{ statRoles }} Roles</span> con total precisión.
             </p>
             <p class="slogan-text">
               Directorio de Roles y Manuales de Cargo<span class="blinking-cursor">_</span>
@@ -85,9 +85,9 @@
               <h3 class="glow-text">{{ statAreas }}</h3>
               <p>Áreas Funcionales</p>
             </div>
-            <div class="stat-item">
-              <h3 class="glow-text">{{ statAccuracy }}%</h3>
-              <p>Precisión Estructural</p>
+            <div class="stat-item" v-if="statCoverage !== null">
+              <h3 class="glow-text">{{ statCoverage }}%</h3>
+              <p>Cobertura de Mapeo</p>
             </div>
           </div>
         </div>
@@ -123,34 +123,54 @@ const simRequirement = ref('')
 const selectedFiles = ref([])
 const fileInput = ref(null)
 
-// Stats Animation Logic
+// Stats Animation Logic -- valores reales desde Supabase (roles y áreas son
+// legibles por cualquiera; la cobertura de mapeo requiere sesión, así que se
+// omite esa tarjeta si no se puede leer role_workflows).
 const statRoles = ref(0)
 const statAreas = ref(0)
-const statAccuracy = ref(0)
+const statCoverage = ref(null)
 
-onMounted(() => {
-  // Simple Count up animation
-  const animateValue = (targetRef, endValue, duration) => {
-    let startTimestamp = null;
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      targetRef.value = Math.floor(progress * endValue);
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      } else {
-        targetRef.value = endValue;
-      }
-    };
-    window.requestAnimationFrame(step);
+// Simple Count up animation
+const animateValue = (targetRef, endValue, duration) => {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    targetRef.value = Math.floor(progress * endValue);
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    } else {
+      targetRef.value = endValue;
+    }
   };
+  window.requestAnimationFrame(step);
+};
 
-  // Trigger animations after a short delay
-  setTimeout(() => {
-    animateValue(statRoles, 115, 1500);
-    animateValue(statAreas, 11, 1500);
-    animateValue(statAccuracy, 100, 2000);
-  }, 300);
+onMounted(async () => {
+  try {
+    const [{ count: rolesCount }, { count: areasCount }] = await Promise.all([
+      supabase.from('roles').select('id', { count: 'exact', head: true }),
+      supabase.from('areas').select('id', { count: 'exact', head: true }),
+    ]);
+
+    setTimeout(() => {
+      animateValue(statRoles, rolesCount || 0, 1500);
+      animateValue(statAreas, areasCount || 0, 1500);
+    }, 300);
+
+    if (rolesCount) {
+      const { count: mappedCount, error } = await supabase
+        .from('role_workflows')
+        .select('role_id', { count: 'exact', head: true });
+      if (!error && typeof mappedCount === 'number') {
+        setTimeout(() => {
+          animateValue(statCoverage, Math.round((mappedCount / rolesCount) * 100), 2000);
+        }, 300);
+      }
+    }
+  } catch (e) {
+    console.error('Error cargando estadísticas reales:', e);
+  }
 })
 
 const goToDataHub = () => {

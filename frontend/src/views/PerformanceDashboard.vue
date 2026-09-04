@@ -2,16 +2,27 @@
   <div class="performance-dashboard">
     <header class="glass-panel hub-header">
       <div class="header-content">
-        <router-link to="/mapa-cargos" class="back-link">← Volver al DataHub</router-link>
+        <router-link to="/" class="back-link">← Volver al Inicio</router-link>
         <h1>Centro de Evaluación Corporativa (KPIs)</h1>
         <p>Balanced Scorecard & OKRs - Basado en la IA de PROMETHEUS OS</p>
       </div>
       <div class="header-actions">
         <select v-model="selectedPeriod" class="glass-select">
-          <option value="2026-Q3">Trimestre Q3 - 2026</option>
-          <option value="2026-Q2">Trimestre Q2 - 2026</option>
+          <optgroup label="Diario">
+            <option :value="todayPeriod">Hoy ({{ todayLabel }})</option>
+          </optgroup>
+          <optgroup label="Semanal">
+            <option :value="currentWeekPeriod">Semana actual ({{ currentWeekPeriod }})</option>
+          </optgroup>
+          <optgroup label="Mensual">
+            <option :value="currentMonthPeriod">{{ currentMonthLabel }}</option>
+          </optgroup>
+          <optgroup label="Trimestral">
+            <option value="2026-Q3">Trimestre Q3 - 2026</option>
+            <option value="2026-Q2">Trimestre Q2 - 2026</option>
+          </optgroup>
         </select>
-        <button class="btn-primary" @click="fetchRoles" :disabled="loading">
+        <button class="btn-primary" @click="refreshAll" :disabled="loading">
           {{ loading ? 'Actualizando...' : 'Refrescar Datos' }}
         </button>
       </div>
@@ -49,7 +60,8 @@
               <div class="overview-header">
                 <div>
                   <h2>{{ selectedRole.name }}</h2>
-                  <span class="badge">Nivel {{ selectedRole.access_level }}</span>
+                  <span class="role-level-badge" :class="'level-' + selectedRole.access_level">Nivel {{ selectedRole.access_level }}</span>
+                  <span class="area-tag">{{ selectedRole.areas?.name || 'General' }}</span>
                 </div>
                 <div class="score-circle" :class="getScoreColor(currentKpi.overall_score)">
                   <span class="score-number">{{ currentKpi.overall_score.toFixed(1) }}</span>
@@ -72,6 +84,24 @@
             <!-- Radar Chart para Balanced Scorecard -->
             <div class="glass-panel chart-card">
               <h3>Balanced Scorecard</h3>
+              <div class="dimension-stats-grid" v-if="chartData.datasets.length > 0">
+                <div class="dimension-stat">
+                  <span class="dimension-value">{{ currentKpi.score_financial }}</span>
+                  <span class="dimension-label">Financiero</span>
+                </div>
+                <div class="dimension-stat">
+                  <span class="dimension-value">{{ currentKpi.score_customer }}</span>
+                  <span class="dimension-label">Cliente</span>
+                </div>
+                <div class="dimension-stat">
+                  <span class="dimension-value">{{ currentKpi.score_process }}</span>
+                  <span class="dimension-label">Procesos</span>
+                </div>
+                <div class="dimension-stat">
+                  <span class="dimension-value">{{ currentKpi.score_growth }}</span>
+                  <span class="dimension-label">Crecimiento</span>
+                </div>
+              </div>
               <div class="chart-container">
                 <Radar v-if="chartData.datasets.length > 0" :data="chartData" :options="chartOptions" />
                 <div v-else class="no-data">Faltan datos de evaluación</div>
@@ -145,6 +175,22 @@ const selectedRole = ref(null);
 const loading = ref(false);
 const selectedPeriod = ref('2026-Q3');
 
+// Periodos "actuales" para las opciones Diario/Semanal/Mensual del filtro --
+// evaluation_period es un texto libre (ver kpi_migration.sql), así que estos
+// valores son válidos igual que los trimestres ya cargados a mano.
+const todayPeriod = computed(() => new Date().toISOString().slice(0, 10)); // YYYY-MM-DD
+const currentMonthPeriod = computed(() => new Date().toISOString().slice(0, 7)); // YYYY-MM
+const currentWeekPeriod = computed(() => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7)); // jueves de la semana ISO actual
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const weekNum = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+});
+const todayLabel = computed(() => new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }));
+const currentMonthLabel = computed(() => new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }));
+
 // Default KPI si no existe en DB
 const defaultKpi = {
   overall_score: 0,
@@ -170,6 +216,16 @@ watch(selectedRoleId, async (newId) => {
     if (role) {
       await selectRole(role);
     }
+  }
+});
+
+// Cambiar el período del filtro debe recargar el KPI del rol seleccionado --
+// antes no había ningún watcher acá, así que el select no hacía nada visible.
+watch(selectedPeriod, async () => {
+  if (selectedRole.value) {
+    loading.value = true;
+    await fetchKpisForRole(selectedRole.value.id, selectedPeriod.value);
+    loading.value = false;
   }
 });
 
@@ -221,11 +277,12 @@ const fetchKpisForRole = async (roleId, period) => {
   }
 };
 
-const fetchKpis = async () => {
+// "Refrescar Datos": recarga el directorio de roles y, si hay uno seleccionado,
+// también su KPI del período actual (antes el botón solo recargaba el directorio).
+const refreshAll = async () => {
+  await fetchRoles();
   if (selectedRole.value) {
-    loading.value = true;
     await fetchKpisForRole(selectedRole.value.id, selectedPeriod.value);
-    loading.value = false;
   }
 };
 
@@ -616,11 +673,56 @@ const chartOptions = {
   font-size: 1.8rem;
 }
 
-.badge {
-  background: var(--bg-secondary);
-  padding: 4px 10px;
-  border-radius: var(--radius-md);
+.role-level-badge {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+}
+
+.role-level-badge.level-1 { background: var(--danger); }
+.role-level-badge.level-2 { background: var(--warning); }
+.role-level-badge.level-3 { background: var(--success); }
+
+.area-tag {
   font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.dimension-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dimension-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.dimension-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.dimension-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-tertiary);
+  text-align: center;
 }
 
 .score-circle {

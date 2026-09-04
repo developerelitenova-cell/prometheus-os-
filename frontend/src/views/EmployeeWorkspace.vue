@@ -714,8 +714,7 @@ const exitAuditMode = () => {
 
 <style scoped>
 .workspace-container {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--bg-tertiary);
@@ -1156,7 +1155,6 @@ const exitAuditMode = () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  overflow-y: auto;
 }
 
 .profile-card {
@@ -1292,7 +1290,6 @@ const exitAuditMode = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .documents-header {
@@ -1315,7 +1312,6 @@ const exitAuditMode = () => {
 .documents-list {
   flex: 1;
   padding: 24px;
-  overflow-y: auto;
 }
 
 .template-grid {
@@ -1389,7 +1385,6 @@ const exitAuditMode = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .chat-header {

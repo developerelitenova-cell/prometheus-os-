@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-card glass-panel">
-      <img src="../assets/elite-logo.png" alt="Elite Nutrition" class="login-logo" />
+      <img src="../assets/elite-logo.jpeg" alt="Elite Nutrition" class="login-logo" />
       <h1>PROMETHEUS OS</h1>
       <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
 

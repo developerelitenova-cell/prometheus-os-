@@ -1,7 +1,7 @@
 <template>
   <div class="welcome-container">
     <div class="welcome-card glass-panel">
-      <img src="../assets/elite-logo.png" alt="Elite Nutrition" class="welcome-logo" />
+      <img src="../assets/elite-logo.jpeg" alt="Elite Nutrition" class="welcome-logo" />
       <div class="status-icon">🎉</div>
       <h1>¡Bienvenido a Elite Nutrition!</h1>
       <p class="subtitle" v-if="profile">

@@ -1,7 +1,7 @@
 <template>
   <div class="pending-container">
     <div class="pending-card glass-panel">
-      <img src="../assets/elite-logo.png" alt="Elite Nutrition" class="pending-logo" />
+      <img src="../assets/elite-logo.jpeg" alt="Elite Nutrition" class="pending-logo" />
       <div class="status-icon">⏳</div>
       <h1>Registro exitoso</h1>
       <p class="subtitle">Tu solicitud de acceso quedó registrada.</p>
