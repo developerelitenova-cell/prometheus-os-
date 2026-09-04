@@ -36,7 +36,7 @@
 }
 
 .pending-logo {
-  height: 56px;
+  height: 110px;
   margin-bottom: 20px;
 }
 

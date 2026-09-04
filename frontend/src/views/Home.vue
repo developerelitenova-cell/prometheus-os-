@@ -3,12 +3,15 @@
     <!-- 顶部导航栏 / Navbar -->
     <nav class="navbar">
       <div class="nav-brand">
-        <img src="../assets/elite-logo.jpeg" alt="Elite Nutrition Logo" class="brand-logo" />
+        <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="brand-logo" />
         <span class="brand-wordmark">PROMETHEUS OS</span>
       </div>
-      <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
-      <router-link v-else-if="isControlUser" to="/team" class="nav-login-link">Centro de Control</router-link>
-      <router-link v-else to="/workspace" class="nav-login-link">Ir a mi Portal</router-link>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
+        <router-link v-else-if="isControlUser" to="/team" class="nav-login-link">Centro de Control</router-link>
+        <router-link v-else-if="isLoggedIn" to="/workspace" class="nav-login-link">Ir a mi Portal</router-link>
+        <button v-if="isLoggedIn" class="nav-login-link" @click="handleSignOut" style="cursor: pointer; background: transparent; color: var(--danger); border-color: rgba(220, 38, 38, 0.3);">Salir</button>
+      </div>
     </nav>
 
     <div class="main-content">
@@ -102,7 +105,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { setPendingUpload } from '../store/pendingUpload'
 import { supabase } from '../api/supabase'
-import { currentProfile, loadCurrentProfile, isMasterAdmin, isLeader } from '../api/auth'
+import { currentProfile, loadCurrentProfile, isMasterAdmin, isLeader, signOut } from '../api/auth'
 
 const router = useRouter()
 const isLoggedIn = ref(false)
@@ -115,6 +118,12 @@ onMounted(async () => {
     await loadCurrentProfile()
   }
 })
+
+const handleSignOut = async () => {
+  await signOut()
+  isLoggedIn.value = false
+  router.push('/login')
+}
 
 // El módulo de Simulación Corporativa no tiene backend en ningún entorno (ver /process, /simulation, /report).
 // Se mantiene el código para retomarlo cuando exista un servicio real detrás de él.

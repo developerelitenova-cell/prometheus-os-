@@ -11,7 +11,7 @@
          Pendiente de aprobación) ya muestran el logo en grande, así que se omite ahí
          para no duplicarlo. -->
     <router-link v-if="showBrandMark" to="/" class="global-brand-mark" title="PROMETHEUS OS · Elite Nutrition">
-      <img src="@/assets/elite-logo.jpeg" alt="Elite Nutrition" />
+      <img src="@/assets/elite-mark.png" alt="Elite Nutrition" />
     </router-link>
 
     <!-- Modal Global de Eventos Obligatorios -->
@@ -146,6 +146,38 @@ body {
 .fade-up-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* --- Marca de agua global --- */
+.global-brand-mark {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 0.2s var(--ease-apple);
+  z-index: 500;
+}
+
+.global-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.15); /* recorta el margen blanco alrededor del hexágono */
+}
+
+.global-brand-mark:hover {
+  transform: scale(1.08);
 }
 
 /* --- Scrollbar --- */

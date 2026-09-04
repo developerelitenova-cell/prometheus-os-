@@ -204,6 +204,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/api/supabase';
+import { signOut } from '@/api/auth';
 
 const isLeader = ref(false);
 const isMaster = ref(false);
@@ -434,6 +435,11 @@ const router = useRouter();
 
 const auditWorkspace = (employeeId) => {
   router.push(`/workspace?view_as=${employeeId}`);
+};
+
+const handleSignOut = async () => {
+  await signOut();
+  router.push('/login');
 };
 
 onMounted(() => fetchData());
