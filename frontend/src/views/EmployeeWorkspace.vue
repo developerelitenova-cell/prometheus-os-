@@ -103,16 +103,42 @@
       </div>
     </div>
 
-    <div v-if="currentProfile" class="workspace-content">
-      <!-- Columna Izquierda: KPIs y Tareas -->
+    <div v-if="currentProfile" class="workspace-body">
+      <!-- Resumen rápido -->
+      <div class="workspace-stats-grid">
+        <div class="stat-card glass-panel" :class="getScoreColor(currentKpi.overall_score)">
+          <span class="stat-card-value">{{ currentKpi.overall_score.toFixed(1) }}</span>
+          <span class="stat-card-label">Rendimiento General</span>
+        </div>
+        <div class="stat-card glass-panel">
+          <span class="stat-card-value">{{ totalPendingTasks }}</span>
+          <span class="stat-card-label">Tareas Pendientes</span>
+        </div>
+        <div class="stat-card glass-panel">
+          <span class="stat-card-value">{{ totalCompletedTasks }}</span>
+          <span class="stat-card-label">Tareas Completadas</span>
+        </div>
+        <div class="stat-card glass-panel">
+          <span class="stat-card-value">{{ templates.length }}</span>
+          <span class="stat-card-label">Documentos Disponibles</span>
+        </div>
+      </div>
+
+    <div class="workspace-content">
+      <!-- Columna Izquierda: Perfil y Tareas -->
       <div class="sidebar-column">
         <!-- Tarjeta de Identidad -->
         <div class="glass-panel profile-card">
           <div class="avatar">{{ getInitials(currentProfile?.full_name) }}</div>
           <div class="profile-info">
             <h2>{{ currentProfile?.full_name }}</h2>
-            <p>{{ currentRole?.name }} - {{ currentRole?.areas?.name || 'Área General' }}</p>
-            <div v-if="isLeader" style="margin-top: 12px;">
+            <p>
+              {{ currentRole?.name }} - {{ currentRole?.areas?.name || 'Área General' }}
+              <span v-if="currentRole?.access_level" class="role-level-badge" :class="'level-' + currentRole.access_level">
+                Nivel {{ currentRole.access_level }}
+              </span>
+            </p>
+            <div v-if="isLeaderRole" style="margin-top: 12px;">
               <router-link to="/team" class="btn-primary" style="font-size: 0.85rem; padding: 8px 12px; display: inline-block;">
                 👑 Panel de Liderazgo (Aprobaciones y Tareas)
               </router-link>
@@ -120,17 +146,10 @@
           </div>
         </div>
 
-        <!-- Mini Dashboard de KPIs -->
-        <div class="glass-panel mini-kpi">
-          <h3>Mis Métricas Actuales</h3>
-          <div v-if="loadingKpis" class="loading-text">Cargando métricas...</div>
-          <div v-else class="kpi-score" :class="getScoreColor(currentKpi.overall_score)">
-            <span class="score-number">{{ currentKpi.overall_score.toFixed(1) }}</span>
-            <span class="score-label">Rendimiento General</span>
-          </div>
-          
-          <div class="kpi-insight" v-if="currentKpi.ai_evaluation_notes">
-            <h4>Análisis de la IA:</h4>
+        <!-- Análisis de IA sobre el desempeño -->
+        <div class="glass-panel mini-kpi" v-if="currentKpi.ai_evaluation_notes">
+          <h3>Análisis de la IA</h3>
+          <div class="kpi-insight">
             <div class="markdown-content kpi-notes-scroll" v-html="DOMPurify.sanitize(marked.parse(currentKpi.ai_evaluation_notes))"></div>
           </div>
         </div>
@@ -138,39 +157,20 @@
         <!-- Flujos / Tareas Asignadas -->
         <div class="glass-panel tasks-card checklist-card">
           <h3>Mis Checklists</h3>
-          
-          <div class="checklist-section">
-            <h4>📅 Diario</h4>
-            <ul class="task-list interactive">
-              <li v-for="task in dailyTasks" :key="task.id" :class="task.status">
-                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
-                <span class="task-title">{{ task.title }}</span>
-              </li>
-              <li v-if="dailyTasks.length === 0" class="no-tasks">No hay tareas diarias.</li>
-            </ul>
+
+          <div class="checklist-tabs">
+            <button :class="{ active: taskTab === 'daily' }" @click="taskTab = 'daily'">📅 Diario</button>
+            <button :class="{ active: taskTab === 'weekly' }" @click="taskTab = 'weekly'">🗓 Semanal</button>
+            <button :class="{ active: taskTab === 'monthly' }" @click="taskTab = 'monthly'">📆 Mensual</button>
           </div>
 
-          <div class="checklist-section">
-            <h4>🗓 Semanal</h4>
-            <ul class="task-list interactive">
-              <li v-for="task in weeklyTasks" :key="task.id" :class="task.status">
-                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
-                <span class="task-title">{{ task.title }}</span>
-              </li>
-              <li v-if="weeklyTasks.length === 0" class="no-tasks">No hay tareas semanales.</li>
-            </ul>
-          </div>
-
-          <div class="checklist-section">
-            <h4>📆 Mensual</h4>
-            <ul class="task-list interactive">
-              <li v-for="task in monthlyTasks" :key="task.id" :class="task.status">
-                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
-                <span class="task-title">{{ task.title }}</span>
-              </li>
-              <li v-if="monthlyTasks.length === 0" class="no-tasks">No hay tareas mensuales.</li>
-            </ul>
-          </div>
+          <ul class="task-list interactive">
+            <li v-for="task in activeTaskList" :key="task.id" :class="task.status">
+              <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
+              <span class="task-title">{{ task.title }}</span>
+            </li>
+            <li v-if="activeTaskList.length === 0" class="no-tasks">No hay tareas en este período.</li>
+          </ul>
         </div>
       </div>
 
@@ -245,6 +245,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -263,6 +264,25 @@ const currentProfile = ref(null);
 const currentRole = ref(null);
 const loadingProfile = ref(true);
 const isAuditMode = ref(false);
+
+// Nivel de acceso del rol que se está viendo (el propio, o el auditado en Modo
+// Auditoría) -- determina si se muestra el acceso directo al Panel de Liderazgo.
+const isLeaderRole = computed(() => currentRole.value && [1, 2].includes(currentRole.value.access_level));
+
+// Tareas: se muestran en un único bloque con pestañas (Diario/Semanal/Mensual)
+// en vez de tres secciones apiladas, para reducir el ruido visual.
+const taskTab = ref('daily');
+const activeTaskList = computed(() => {
+  if (taskTab.value === 'weekly') return weeklyTasks.value;
+  if (taskTab.value === 'monthly') return monthlyTasks.value;
+  return dailyTasks.value;
+});
+const totalPendingTasks = computed(() =>
+  [...dailyTasks.value, ...weeklyTasks.value, ...monthlyTasks.value].filter(t => t.status !== 'completed').length
+);
+const totalCompletedTasks = computed(() =>
+  [...dailyTasks.value, ...weeklyTasks.value, ...monthlyTasks.value].filter(t => t.status === 'completed').length
+);
 
 // Notificaciones (avisos de la empresa / notifications) y mensajes del líder de área (categorization_messages)
 const notifications = ref([]);
@@ -486,7 +506,7 @@ const initWorkspace = async () => {
     if (authProfile.value?.is_master_admin && route.query.view_as) {
       const { data: auditProfile } = await supabase
         .from('profiles')
-        .select('*, roles(id, name, area_id)')
+        .select('*, roles(id, name, area_id, access_level)')
         .eq('id', route.query.view_as)
         .single();
         
@@ -1067,6 +1087,62 @@ const exitAuditMode = () => {
   transform: translateY(-1px);
 }
 
+.workspace-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 24px;
+  min-height: 0;
+}
+
+.workspace-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.stat-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.stat-card.green .stat-card-value { color: var(--success); }
+.stat-card.yellow .stat-card-value { color: var(--warning); }
+.stat-card.red .stat-card-value { color: var(--danger); }
+.stat-card.gray .stat-card-value { color: var(--text-tertiary); }
+
+.role-level-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+}
+
+.role-level-badge.level-1 { background: var(--danger); }
+.role-level-badge.level-2 { background: var(--warning); }
+.role-level-badge.level-3 { background: var(--success); }
+
 .workspace-content {
   display: flex;
   flex: 1;
@@ -1117,41 +1193,12 @@ const exitAuditMode = () => {
 
 .mini-kpi {
   padding: 24px;
-  text-align: center;
 }
 
 .mini-kpi h3, .tasks-card h3 {
   margin: 0 0 16px 0;
   color: var(--ink);
   font-size: 1.1rem;
-}
-
-.kpi-score {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 4px solid var(--border-subtle);
-  margin: 0 auto 16px auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.kpi-score.gray { border-color: var(--border); color: var(--text-tertiary); }
-.kpi-score.green { border-color: var(--success); color: var(--success); }
-.kpi-score.yellow { border-color: var(--warning); color: var(--warning); }
-.kpi-score.red { border-color: var(--danger); color: var(--danger); }
-
-.score-number {
-  font-size: 2.2rem;
-  font-weight: bold;
-}
-
-.score-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
 }
 
 .kpi-insight {
@@ -1176,16 +1223,29 @@ const exitAuditMode = () => {
   flex-direction: column;
 }
 
-.checklist-section {
-  margin-bottom: 20px;
+.checklist-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.checklist-section h4 {
-  font-size: 13px;
-  color: var(--text-tertiary);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.checklist-tabs button {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.checklist-tabs button.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
 }
 
 .task-list {
