@@ -264,7 +264,7 @@ const processWithAI = async (sourceText) => {
   step.value = 2;
 
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://prometheus-os.onrender.com';
     const sessionResponse = await supabase.auth.getSession();
     const token = sessionResponse.data.session?.access_token;
     
