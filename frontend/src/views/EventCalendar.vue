@@ -2,6 +2,7 @@
   <div class="calendar-container">
     <header class="page-header">
       <div class="header-content">
+        <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
         <h1>Programador de Eventos</h1>
         <p class="subtitle">Gestiona fechas especiales, capacitaciones y comunicados obligatorios.</p>
       </div>
@@ -178,6 +179,7 @@ onMounted(() => fetchData());
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
 .header-content h1 { font-size: 28px; color: var(--text-primary); }
 .subtitle { color: var(--text-secondary); }
+.back-link { color: var(--gold-deep); text-decoration: none; font-size: 0.85rem; margin-bottom: 8px; display: inline-block; }
 
 .events-list { display: flex; flex-direction: column; gap: 16px; }
 .event-card { display: flex; padding: 20px; align-items: center; gap: 24px; border-radius: var(--radius-md); }

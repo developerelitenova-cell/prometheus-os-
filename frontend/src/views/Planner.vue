@@ -2,6 +2,7 @@
   <div class="planner-container">
     <header class="page-header">
       <div class="header-content">
+        <router-link to="/workspace" class="back-link">← Volver a Mi Espacio</router-link>
         <h1>Planner y Productividad</h1>
         <p class="subtitle">Gestiona tus tareas diarias, semanales y mensuales.</p>
       </div>
@@ -249,6 +250,7 @@ onMounted(() => fetchData());
 .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
 .header-content h1 { font-size: 28px; color: var(--text-primary); }
 .subtitle { color: var(--text-secondary); }
+.back-link { color: var(--gold-deep); text-decoration: none; font-size: 0.85rem; margin-bottom: 8px; display: inline-block; }
 
 .header-actions { display: flex; gap: 16px; align-items: center; }
 .filter-group { display: flex; background: var(--bg-secondary); border-radius: var(--radius-pill); padding: 4px; }

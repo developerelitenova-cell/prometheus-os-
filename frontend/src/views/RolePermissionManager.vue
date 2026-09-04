@@ -2,6 +2,7 @@
   <div class="role-manager-container">
     <header class="page-header">
       <div class="header-content">
+        <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
         <h1>Asignación de Roles y Permisos</h1>
         <p class="subtitle">Administración de jerarquías y estructura organizacional (Estilo Discord)</p>
       </div>
@@ -259,6 +260,14 @@ onMounted(() => {
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.back-link {
+  color: var(--gold-deep);
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  display: inline-block;
 }
 
 .subtitle {

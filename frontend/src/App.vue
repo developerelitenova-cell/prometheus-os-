@@ -7,35 +7,13 @@
       </transition>
     </router-view>
 
-    <!-- Botón global de retroceso -- visible en todo el sistema salvo el Home -->
-    <button v-if="showBackButton" class="global-back-btn" @click="goBack" title="Volver" aria-label="Volver">
-      ←
-    </button>
-
     <!-- Modal Global de Eventos Obligatorios -->
     <MandatoryEventModal />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import MandatoryEventModal from '@/components/MandatoryEventModal.vue';
-
-const route = useRoute();
-const router = useRouter();
-
-const showBackButton = computed(() => route.path !== '/');
-
-const goBack = () => {
-  // Si no hay historial propio de la app (ej. se abrió el link directo en una
-  // pestaña nueva), router.back() no hace nada -- en ese caso vamos al Home.
-  if (window.history.state && window.history.state.back) {
-    router.back();
-  } else {
-    router.push('/');
-  }
-};
 </script>
 
 <style>
@@ -155,39 +133,6 @@ body {
 .fade-up-leave-to {
   opacity: 0;
   transform: translateY(-8px);
-}
-
-/* --- Botón global de retroceso --- */
-.global-back-btn {
-  position: fixed;
-  left: 20px;
-  bottom: 20px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  color: var(--ink);
-  font-size: 1.2rem;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-md);
-  transition: transform 0.2s var(--ease-apple), background 0.2s ease;
-  z-index: 500;
-}
-
-.global-back-btn:hover {
-  transform: translateX(-2px) scale(1.05);
-  background: var(--surface);
-}
-
-.global-back-btn:active {
-  transform: scale(0.95);
 }
 
 /* --- Scrollbar --- */

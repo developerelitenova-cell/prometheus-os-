@@ -695,6 +695,7 @@ const exitAuditMode = () => {
 <style scoped>
 .workspace-container {
   height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--bg-tertiary);
