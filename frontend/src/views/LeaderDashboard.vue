@@ -15,6 +15,7 @@
         <router-link v-if="isMaster" to="/roles" class="btn-secondary-link btn-manage-levels">⚙️ Gestionar Roles y Niveles</router-link>
         <router-link to="/kpis" class="btn-secondary-link">📊 KPIs Reales</router-link>
         <router-link to="/support-contacts" class="btn-secondary-link">📇 Directorio de Soporte</router-link>
+        <button class="btn-secondary-link signout-btn" @click="handleSignOut" style="color: var(--danger); border-color: rgba(220, 38, 38, 0.3);">🚪 Salir</button>
         <div class="area-badge" v-if="leaderArea && !isMaster">
           Área: <strong>{{ leaderArea.name }}</strong>
         </div>
