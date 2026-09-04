@@ -21,6 +21,18 @@
         <button class="btn-primary finish-btn" @click="finish" v-if="currentStep === questions.length" :disabled="!answers[currentStep - 1].trim()">Finalizar y Procesar</button>
       </div>
     </div>
+
+    <!-- Confirmación cuando hay respuestas muy breves para que la IA extraiga algo útil -->
+    <div v-if="showConfirmModal" class="modal-overlay" @click.self="showConfirmModal = false">
+      <div class="confirm-modal glass-panel">
+        <h3>Algunas respuestas son muy breves</h3>
+        <p>Con respuestas tan cortas, la Inteligencia Artificial podría no lograr extraer un mapeo útil de tu proceso real. Te recomendamos volver y ampliarlas un poco.</p>
+        <div class="confirm-actions">
+          <button class="btn-edit" @click="showConfirmModal = false">Revisar respuestas</button>
+          <button class="btn-primary finish-btn" @click="submitWizard">Continuar de todas formas</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -31,6 +43,8 @@ const emit = defineEmits(['submit']);
 
 const currentStep = ref(1);
 const answers = ref(Array(9).fill(''));
+const showConfirmModal = ref(false);
+const MIN_ANSWER_LENGTH = 15; // caracteres -- por debajo de esto, la respuesta suele ser demasiado vaga para que la IA extraiga algo real
 
 const questions = [
   {
@@ -86,13 +100,23 @@ const prevStep = () => {
 };
 
 const finish = () => {
+  const hasShortAnswers = answers.value.some(a => a.trim().length < MIN_ANSWER_LENGTH);
+  if (hasShortAnswers) {
+    showConfirmModal.value = true;
+    return;
+  }
+  submitWizard();
+};
+
+const submitWizard = () => {
+  showConfirmModal.value = false;
   // Combine all answers into a single structured narrative
   let combinedSourceText = "";
   questions.forEach((q, index) => {
     combinedSourceText += `Pregunta: ${q.title}\n`;
     combinedSourceText += `Respuesta: ${answers.value[index]}\n\n`;
   });
-  
+
   emit('submit', combinedSourceText);
 };
 </script>
@@ -230,5 +254,47 @@ textarea:focus {
 .btn-edit:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.confirm-modal {
+  width: 90%;
+  max-width: 440px;
+  padding: 32px;
+  text-align: left;
+}
+
+.confirm-modal h3 {
+  margin: 0 0 12px 0;
+  color: var(--ink);
+  font-size: 1.15rem;
+}
+
+.confirm-modal p {
+  margin: 0 0 24px 0;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirm-actions .btn-primary,
+.confirm-actions .btn-edit {
+  min-width: 0;
 }
 </style>

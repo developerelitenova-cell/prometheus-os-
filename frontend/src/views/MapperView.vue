@@ -280,7 +280,7 @@ const processWithAI = async (sourceText) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'No se pudo procesar la información.');
+      throw new Error(data.detail || data.error || 'No se pudo procesar la información.');
     }
 
     extractedData.value = data.workflow;
