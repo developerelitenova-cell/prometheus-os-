@@ -25,7 +25,6 @@
         </label>
 
         <p v-if="errorMsg" class="error-text">{{ errorMsg }}</p>
-        <p v-if="successMsg" class="success-text">{{ successMsg }}</p>
 
         <button type="submit" class="btn-primary" :disabled="loading">
           {{ loading ? 'Procesando...' : (isLogin ? 'Ingresar' : 'Registrarse') }}
@@ -38,7 +37,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { signIn, signUp, loadCurrentProfile } from '../api/auth';
+import { signIn, signUp, signOut, loadCurrentProfile } from '../api/auth';
 
 const router = useRouter();
 const route = useRoute();
@@ -49,7 +48,6 @@ const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMsg = ref('');
-const successMsg = ref('');
 const showRegisterTab = ref(false);
 
 const PENDING_STATUS_MESSAGES = {
@@ -74,7 +72,6 @@ onMounted(() => {
 
 const handleSubmit = async () => {
   errorMsg.value = '';
-  successMsg.value = '';
   loading.value = true;
   
   try {
@@ -114,10 +111,13 @@ const handleSubmit = async () => {
         errorMsg.value = res.error;
         return;
       }
-      
-      successMsg.value = 'Registro exitoso. Tu cuenta está pendiente de aprobación.';
-      isLogin.value = true; // Switch to login view
-      password.value = '';
+
+      // La cuenta queda 'pending' hasta que un líder la apruebe -- no tiene
+      // sentido dejarla logueada en ese estado, así que cerramos la sesión
+      // y la mandamos a la pantalla de espera en vez de al login normal.
+      await signOut();
+      router.replace('/pending-approval');
+      return;
     }
   } finally {
     loading.value = false;

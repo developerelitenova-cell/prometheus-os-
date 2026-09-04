@@ -7,6 +7,7 @@
         <span class="brand-wordmark">PROMETHEUS OS</span>
       </div>
       <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
+      <router-link v-else-if="isControlUser" to="/team" class="nav-login-link">Centro de Control</router-link>
       <router-link v-else to="/workspace" class="nav-login-link">Ir a mi Portal</router-link>
     </nav>
 
@@ -35,10 +36,11 @@
           </div>
            
           <div class="btn-group" v-if="isLoggedIn">
-            <router-link to="/mapa-cargos" class="btn-primary">Mapa de Cargos</router-link>
+            <router-link v-if="isControlUser" to="/team" class="btn-primary">🧭 Centro de Control</router-link>
+            <router-link to="/mapa-cargos" class="btn-primary" :class="{ 'btn-secondary': isControlUser }">Mapa de Cargos</router-link>
             <router-link to="/workspace" class="btn-tertiary">Mi Espacio Elite</router-link>
             <router-link to="/performance" class="btn-quaternary">KPIs y Rendimiento</router-link>
-            <router-link to="/oracle" class="oracle-btn">Preguntar al Oráculo</router-link>
+            <router-link v-if="isMasterAdmin()" to="/oracle" class="oracle-btn">Preguntar al Oráculo</router-link>
           </div>
           <div class="btn-group" v-else>
             <router-link to="/login" class="btn-primary" style="padding: 1rem 3rem; font-size: 1.1rem;">Iniciar Sesión para Continuar</router-link>
@@ -96,17 +98,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { setPendingUpload } from '../store/pendingUpload'
 import { supabase } from '../api/supabase'
+import { currentProfile, loadCurrentProfile, isMasterAdmin, isLeader } from '../api/auth'
 
 const router = useRouter()
 const isLoggedIn = ref(false)
+const isControlUser = computed(() => isMasterAdmin() || isLeader())
 
 onMounted(async () => {
   const { data } = await supabase.auth.getSession()
   isLoggedIn.value = !!data.session
+  if (isLoggedIn.value && !currentProfile.value) {
+    await loadCurrentProfile()
+  }
 })
 
 // El módulo de Simulación Corporativa no tiene backend en ningún entorno (ver /process, /simulation, /report).

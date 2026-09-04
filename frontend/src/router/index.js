@@ -23,6 +23,17 @@ const routes = [
     meta: { public: true }
   },
   {
+    path: '/pending-approval',
+    name: 'PendingApproval',
+    component: () => import('../views/PendingApprovalView.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/welcome',
+    name: 'Welcome',
+    component: () => import('../views/WelcomeView.vue')
+  },
+  {
     path: '/mapa-cargos',
     name: 'DataHub',
     component: () => import('../views/MapaCargos.vue')
@@ -172,6 +183,12 @@ router.beforeEach(async (to) => {
   if (!profile.is_master_admin && blockedStatuses.includes(profile.approval_status)) {
     await supabase.auth.signOut();
     return { path: '/login', query: { pending: profile.approval_status } };
+  }
+
+  // Primera vez que entra con la cuenta ya aprobada: pantalla de bienvenida
+  // única, antes de seguir a su cuestionario de mapeo o a su portal.
+  if (!profile.is_master_admin && profile.approval_status === 'approved' && !profile.welcome_seen && to.path !== '/welcome') {
+    return { path: '/welcome' };
   }
 
   if (to.meta.masterAdminOnly && !profile.is_master_admin) {

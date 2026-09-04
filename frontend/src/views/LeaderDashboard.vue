@@ -9,6 +9,10 @@
         <p class="subtitle">{{ isMaster ? 'Visión omnisciente de toda la corporación.' : 'Visión general del desempeño, tareas y KPIs de tu área.' }}</p>
       </div>
       <div class="header-actions">
+        <button v-if="unreadNotifCount > 0" class="btn-secondary-link notif-bell" @click="openApprovalsFromNotif">
+          🔔 {{ unreadNotifCount }} nueva{{ unreadNotifCount > 1 ? 's' : '' }} solicitud{{ unreadNotifCount > 1 ? 'es' : '' }} de acceso
+        </button>
+        <router-link v-if="isMaster" to="/roles" class="btn-secondary-link btn-manage-levels">⚙️ Gestionar Roles y Niveles</router-link>
         <router-link to="/kpis" class="btn-secondary-link">📊 KPIs Reales</router-link>
         <router-link to="/support-contacts" class="btn-secondary-link">📇 Directorio de Soporte</router-link>
         <div class="area-badge" v-if="leaderArea && !isMaster">
@@ -35,75 +39,109 @@
       </div>
 
       <template v-if="currentTab === 'equipo'">
+        <div v-if="isMaster" class="system-stats-grid">
+          <div class="stat-card glass-panel">
+            <span class="stat-card-value">{{ systemStats.areas }}</span>
+            <span class="stat-card-label">Áreas</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <span class="stat-card-value">{{ systemStats.roles }}</span>
+            <span class="stat-card-label">Cargos</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <span class="stat-card-value">{{ teamMembers.length }}</span>
+            <span class="stat-card-label">Colaboradores</span>
+          </div>
+          <div class="stat-card glass-panel" :class="{ 'stat-card-alert': pendingUsers.length > 0 }">
+            <span class="stat-card-value">{{ pendingUsers.length }}</span>
+            <span class="stat-card-label">Pendientes de Aprobación</span>
+          </div>
+        </div>
+
         <div v-if="teamMembers.length === 0" class="empty-state glass-panel">
-          No hay trabajadores registrados en tu área.
+          No hay trabajadores registrados{{ isMaster ? ' todavía' : ' en tu área' }}.
         </div>
-      
-      <div v-for="member in teamMembers" :key="member.id" class="member-card glass-panel">
-        <div class="member-header">
-          <div class="avatar-large">{{ member.full_name.charAt(0) }}</div>
-          <div class="info">
-            <h3>{{ member.full_name }}</h3>
-            <span class="role">{{ member.roles?.name || 'Sin rol' }}</span>
-          </div>
-          <div class="score-badge" :class="getScoreColor(member.latest_score)">
-            {{ member.latest_score }}%
-          </div>
-        </div>
-        
-        <div class="member-body">
-          <div class="stats-row">
-            <div class="stat">
-              <span class="label">Tareas Pendientes</span>
-              <span class="val">{{ member.pending_tasks_count }}</span>
+
+        <div v-for="group in groupedTeam" :key="group.areaId" class="area-section">
+          <h3 v-if="isMaster" class="area-section-title">
+            {{ group.areaName }} <span class="area-count">{{ group.members.length }}</span>
+          </h3>
+
+          <div class="member-grid">
+            <div v-for="member in group.members" :key="member.id" class="member-card glass-panel">
+              <div class="member-header">
+                <div class="avatar-large">{{ member.full_name.charAt(0) }}</div>
+                <div class="info">
+                  <h3>{{ member.full_name }}</h3>
+                  <span class="role">
+                    {{ member.roles?.name || 'Sin rol' }}
+                    <span v-if="member.roles?.access_level" class="role-level-badge" :class="'level-' + member.roles.access_level">
+                      Nivel {{ member.roles.access_level }}
+                    </span>
+                  </span>
+                </div>
+                <div class="score-badge" :class="getScoreColor(member.latest_score)">
+                  {{ member.latest_score }}%
+                </div>
+              </div>
+
+              <div class="member-body">
+                <div class="stats-row">
+                  <div class="stat">
+                    <span class="label">Tareas Pendientes</span>
+                    <span class="val">{{ member.pending_tasks_count }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Tareas Completadas</span>
+                    <span class="val">{{ member.completed_tasks_count }}</span>
+                  </div>
+                </div>
+
+                <div class="recent-activity">
+                  <h4>Actividad Reciente</h4>
+                  <ul class="task-list">
+                    <li v-for="task in member.recent_tasks" :key="task.id" :class="task.status">
+                      <span class="status-dot"></span>
+                      <span class="task-title">{{ task.title }}</span>
+                    </li>
+                    <li v-if="!member.recent_tasks || member.recent_tasks.length === 0" class="no-tasks">
+                      Sin actividad reciente.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="member-footer">
+                <button v-if="isMaster" class="btn-text-small primary" @click="auditWorkspace(member.id)" style="color: var(--danger);">🕵️‍♂️ Auditar Espacio</button>
+                <button v-else class="btn-text-small">Ver Historial Completo</button>
+                <button class="btn-text-small primary" @click="openTaskModal(member)">Configurar Checklists / Tarea</button>
+              </div>
             </div>
-            <div class="stat">
-              <span class="label">Tareas Completadas</span>
-              <span class="val">{{ member.completed_tasks_count }}</span>
-            </div>
-          </div>
-          
-          <div class="recent-activity">
-            <h4>Actividad Reciente</h4>
-            <ul class="task-list">
-              <li v-for="task in member.recent_tasks" :key="task.id" :class="task.status">
-                <span class="status-dot"></span>
-                <span class="task-title">{{ task.title }}</span>
-              </li>
-              <li v-if="!member.recent_tasks || member.recent_tasks.length === 0" class="no-tasks">
-                Sin actividad reciente.
-              </li>
-            </ul>
           </div>
         </div>
-        
-        <div class="member-footer">
-          <button v-if="isMaster" class="btn-text-small primary" @click="auditWorkspace(member.id)" style="color: var(--danger);">🕵️‍♂️ Auditar Espacio</button>
-          <button v-else class="btn-text-small">Ver Historial Completo</button>
-          <button class="btn-text-small primary" @click="openTaskModal(member)">Configurar Checklists / Tarea</button>
-        </div>
-      </div>
       </template>
 
       <template v-if="currentTab === 'aprobaciones'">
         <div v-if="pendingUsers.length === 0" class="empty-state glass-panel">
           No hay usuarios pendientes de aprobación.
         </div>
-        
-        <div v-for="user in pendingUsers" :key="user.id" class="member-card glass-panel">
-          <div class="member-header">
-            <div class="avatar-large">{{ user.full_name.charAt(0) }}</div>
-            <div class="info">
-              <h3>{{ user.full_name }}</h3>
-              <span class="role">{{ user.roles?.name || 'Sin rol asignado' }}</span>
+
+        <div v-else class="member-grid">
+          <div v-for="user in pendingUsers" :key="user.id" class="member-card glass-panel">
+            <div class="member-header">
+              <div class="avatar-large">{{ user.full_name.charAt(0) }}</div>
+              <div class="info">
+                <h3>{{ user.full_name }}</h3>
+                <span class="role">{{ user.roles?.name || 'Sin rol asignado' }}</span>
+              </div>
             </div>
-          </div>
-          <div class="member-body" style="padding-top: 12px; font-size: 0.9rem;">
-            <p><strong>Fecha de registro:</strong> {{ new Date(user.created_at).toLocaleDateString() }}</p>
-          </div>
-          <div class="member-footer">
-            <button class="btn-text-small" @click="handleApproval(user.id, 'rejected')" style="color: var(--danger)">Rechazar</button>
-            <button class="btn-text-small primary" @click="handleApproval(user.id, 'approved')" style="background: #10b981; color: white;">Aprobar Acceso</button>
+            <div class="member-body" style="padding-top: 12px; font-size: 0.9rem;">
+              <p><strong>Fecha de registro:</strong> {{ new Date(user.created_at).toLocaleDateString() }}</p>
+            </div>
+            <div class="member-footer">
+              <button class="btn-text-small" @click="handleApproval(user.id, 'rejected')" style="color: var(--danger)">Rechazar</button>
+              <button class="btn-text-small primary" @click="handleApproval(user.id, 'approved')" style="background: #10b981; color: white;">Aprobar Acceso</button>
+            </div>
           </div>
         </div>
       </template>
@@ -163,7 +201,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/api/supabase';
 
 const isLeader = ref(false);
@@ -172,6 +210,33 @@ const leaderArea = ref(null);
 const teamMembers = ref([]);
 const pendingUsers = ref([]);
 const currentTab = ref('equipo');
+const sysNotifications = ref([]);
+const unreadNotifCount = computed(() => sysNotifications.value.filter(n => !n.is_read).length);
+const areaNames = ref({});
+const systemStats = ref({ areas: 0, roles: 0 });
+
+// Para el admin master, el equipo se ve agrupado por área (visión real del
+// organigrama completo); para un líder de área, un único grupo con su gente.
+const groupedTeam = computed(() => {
+  if (!isMaster.value) {
+    return teamMembers.value.length
+      ? [{ areaId: 'own', areaName: leaderArea.value?.name || '', members: teamMembers.value }]
+      : [];
+  }
+  const groups = new Map();
+  for (const member of teamMembers.value) {
+    const areaId = member.roles?.area_id || 'sin-area';
+    if (!groups.has(areaId)) {
+      groups.set(areaId, {
+        areaId,
+        areaName: areaNames.value[areaId] || 'Sin área asignada',
+        members: []
+      });
+    }
+    groups.get(areaId).members.push(member);
+  }
+  return Array.from(groups.values()).sort((a, b) => a.areaName.localeCompare(b.areaName));
+});
 
 // Task Modal State
 const showTaskModal = ref(false);
@@ -205,7 +270,7 @@ const fetchData = async () => {
       .from('profiles')
       .select(`
         id, full_name,
-        roles!inner(name, area_id)
+        roles!inner(id, name, area_id, access_level)
       `)
       .neq('id', userId); // Excluirse a sí mismo
 
@@ -214,6 +279,14 @@ const fetchData = async () => {
       const { data: area } = await supabase.from('areas').select('*').eq('id', profile.roles.area_id).single();
       leaderArea.value = area;
       membersQuery = membersQuery.eq('roles.area_id', profile.roles.area_id);
+    } else {
+      // Visión global: nombres de área (para agrupar el equipo) y conteo de cargos.
+      const { data: areasData } = await supabase.from('areas').select('id, name');
+      areaNames.value = Object.fromEntries((areasData || []).map(a => [a.id, a.name]));
+      systemStats.value.areas = areasData?.length || 0;
+
+      const { count: rolesCount } = await supabase.from('roles').select('id', { count: 'exact', head: true });
+      systemStats.value.roles = rolesCount || 0;
     }
 
     const { data: members, error } = await membersQuery;
@@ -266,6 +339,24 @@ const fetchData = async () => {
     if (pUsers && !pError) {
       pendingUsers.value = pUsers;
     }
+
+    const { data: notifs } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('profile_id', userId)
+      .eq('type', 'new_registration')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    sysNotifications.value = notifs || [];
+  }
+};
+
+const openApprovalsFromNotif = async () => {
+  currentTab.value = 'aprobaciones';
+  const unreadIds = sysNotifications.value.filter(n => !n.is_read).map(n => n.id);
+  sysNotifications.value.forEach(n => { n.is_read = true; }); // Optimista
+  if (unreadIds.length) {
+    await supabase.from('notifications').update({ is_read: true }).in('id', unreadIds);
   }
 };
 
@@ -367,16 +458,113 @@ onMounted(() => fetchData());
   transition: all 0.2s ease;
 }
 .btn-secondary-link:hover { background: var(--bg-secondary); border-color: var(--gold); color: var(--gold-deep); }
+.notif-bell {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: var(--danger);
+  cursor: pointer;
+  font-family: inherit;
+}
+.notif-bell:hover { background: rgba(220, 38, 38, 0.14); border-color: var(--danger); color: var(--danger); }
 .area-badge { padding: 8px 16px; background: rgba(176, 141, 87, 0.1); color: var(--gold-deep); border-radius: var(--radius-pill); font-size: 14px; }
 
 .error-panel { padding: 48px; text-align: center; max-width: 500px; margin: 60px auto; color: var(--text-secondary); }
 .error-panel h2 { color: var(--text-primary); margin: 16px 0 8px; }
 
 .team-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.member-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 24px;
 }
+
+.system-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.stat-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.stat-card-alert .stat-card-value,
+.stat-card-alert .stat-card-label {
+  color: var(--danger);
+}
+
+.area-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.area-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gold-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.area-count {
+  background: var(--gold-light);
+  color: var(--gold-deep);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.role-level-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+}
+
+.role-level-badge.level-1 { background: var(--danger); }
+.role-level-badge.level-2 { background: var(--warning); }
+.role-level-badge.level-3 { background: var(--success); }
+
+.btn-manage-levels {
+  background: rgba(176, 141, 87, 0.1);
+  border-color: var(--gold);
+  color: var(--gold-deep);
+}
+.btn-manage-levels:hover { background: var(--gold-light); }
 
 .member-card {
   padding: 24px;
