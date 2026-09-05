@@ -175,7 +175,10 @@ const selectRole = async (role) => {
 
 const updateRoleLevel = async () => {
   if (!selectedRole.value) return;
-  await supabase.from('roles').update({ access_level: selectedRole.value.access_level }).eq('id', selectedRole.value.id);
+  const { error } = await supabase.from('roles').update({ access_level: selectedRole.value.access_level }).eq('id', selectedRole.value.id);
+  if (error) {
+    alert('No se pudo cambiar el nivel: ' + error.message);
+  }
 };
 
 const removeMember = async (profileId) => {
@@ -227,7 +230,11 @@ const createMember = async () => {
 const promptNewArea = async () => {
   const name = prompt("Nombre de la nueva área:");
   if (name) {
-    await supabase.from('areas').insert([{ name }]);
+    const { error } = await supabase.from('areas').insert([{ name }]);
+    if (error) {
+      alert('No se pudo crear el área: ' + error.message);
+      return;
+    }
     fetchData();
   }
 };
@@ -235,7 +242,11 @@ const promptNewArea = async () => {
 const promptNewRole = async (areaId) => {
   const name = prompt("Nombre del nuevo rol:");
   if (name) {
-    await supabase.from('roles').insert([{ name, area_id: areaId, access_level: 3 }]);
+    const { error } = await supabase.from('roles').insert([{ name, area_id: areaId, access_level: 3 }]);
+    if (error) {
+      alert('No se pudo crear el rol: ' + error.message);
+      return;
+    }
     fetchData();
   }
 };

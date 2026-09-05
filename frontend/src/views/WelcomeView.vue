@@ -2,8 +2,7 @@
   <div class="welcome-container">
     <TechNodesBackground />
     <div class="welcome-card glass-panel">
-      <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="welcome-logo" />
-      <span class="brand-caption">Elite Nutrition</span>
+      <img src="../assets/prometheus-os-logo.jpeg" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
       <div class="status-icon">🎉</div>
       <h1>¡Bienvenido a Elite Nutrition!</h1>
       <p class="subtitle" v-if="profile">
@@ -76,22 +75,13 @@ const continueOnboarding = async () => {
   z-index: 1;
 }
 
-.welcome-logo {
-  height: 84px;
-  width: 84px;
-  border-radius: 18px;
-  object-fit: cover;
-  transform: scale(1.15);
-}
-
-.brand-caption {
+.brand-lockup {
   display: block;
-  margin: 12px 0 8px 0;
-  color: var(--gold-deep);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .status-icon {

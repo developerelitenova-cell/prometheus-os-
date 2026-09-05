@@ -11,25 +11,63 @@
     <div class="mapper-layout">
       <!-- Sección 1: Preguntas Guía -->
       <aside class="glass-panel guide-panel">
-        <h3>Metodología PROMETHEUS</h3>
-        <p class="guide-desc">Estamos extrayendo el perfil operativo usando la metodología Lean Six Sigma y BPMN adaptada. Responde las preguntas de forma natural y la Inteligencia Artificial se encargará de la estructuración técnica.</p>
+        <div class="guide-badge">✨ Guía rápida</div>
+        <h3>Cuéntanos cómo es tu día a día</h3>
+        <p class="guide-desc">No hace falta preparar nada especial: contesta con tus propias palabras, como si se lo explicaras a un compañero nuevo. Nosotros nos encargamos de organizar toda la información por ti.</p>
 
         <ul class="questions-list">
-          <li><strong>Precisión:</strong> La IA leerá entre líneas para identificar entregables y cuellos de botella.</li>
-          <li><strong>Estandarización:</strong> Al finalizar, tus respuestas se convertirán en un JSON estructurado para el DataHub.</li>
-          <li><strong>Soporte:</strong> Si tienes dudas, consulta a tu líder directo.</li>
+          <li>
+            <span class="q-icon">🗣️</span>
+            <div>
+              <strong>Sé natural</strong>
+              <p>No necesitas usar términos técnicos ni seguir un formato. Simplemente cuenta lo que haces.</p>
+            </div>
+          </li>
+          <li>
+            <span class="q-icon">🔍</span>
+            <div>
+              <strong>Nosotros ordenamos los detalles</strong>
+              <p>Identificamos tus tareas, lo que entregas y los puntos donde el proceso se traba.</p>
+            </div>
+          </li>
+          <li>
+            <span class="q-icon">📁</span>
+            <div>
+              <strong>Queda listo para tu equipo</strong>
+              <p>Al terminar, tu información aparecerá organizada en el Mapa de Cargos.</p>
+            </div>
+          </li>
+          <li>
+            <span class="q-icon">🤝</span>
+            <div>
+              <strong>¿Tienes dudas?</strong>
+              <p>Consulta a tu líder directo en cualquier momento.</p>
+            </div>
+          </li>
         </ul>
 
         <div class="recording-tip">
           <span class="icon">💡</span>
-          <small>Si prefieres, alguien puede grabar la entrevista en audio, transcribirla, y pegar todo el texto en la pestaña "Transcripción".</small>
+          <small>Si prefieres, alguien puede grabar la conversación, pasarla a texto y pegarla en la pestaña "Subir Transcripción / Archivo".</small>
         </div>
       </aside>
 
       <!-- Sección 1: Carga y Procesamiento -->
       <main class="glass-panel process-panel">
+        <ol class="step-tracker">
+          <li :class="{ active: step === 1, done: step > 1 }">
+            <span class="step-dot">{{ step > 1 ? '✓' : '1' }}</span> Cuéntanos
+          </li>
+          <li :class="{ active: step === 2 || step === 3, done: step > 3 }">
+            <span class="step-dot">{{ step > 3 ? '✓' : '2' }}</span> Revisar
+          </li>
+          <li :class="{ active: step === 4 }">
+            <span class="step-dot">3</span> Listo
+          </li>
+        </ol>
+
         <div class="upload-section" v-show="step === 1">
-          <h2>1. Cuéntanos tu proceso</h2>
+          <h2>Cuéntanos tu proceso</h2>
 
           <div class="tabs">
             <button
@@ -76,8 +114,8 @@
 
         <!-- Resultados del Procesamiento -->
         <div class="results-section" v-if="step === 3">
-          <h2>2. Revisar Flujo Estructurado</h2>
-          <p>Verifica el mapeo "AS-IS" extraído antes de guardarlo de forma permanente en el DataHub.</p>
+          <h2>Revisa lo que entendimos</h2>
+          <p>Así organizamos tu proceso. Revísalo y, si todo está correcto, guárdalo.</p>
           
           <div class="extracted-data">
             <div class="data-block">
@@ -151,9 +189,10 @@
         </div>
 
         <div class="success-section" v-if="step === 4">
-          <h2>¡Flujo Mapeado y Estandarizado con Éxito!</h2>
-          <p>El perfil operativo y modelo "AS-IS" del rol <strong>{{ role?.name }}</strong> se ha guardado en el DataHub.</p>
-          <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para auditoría. No podrás volver a editarla — ya tenés acceso a tu Portal del Empleado.</p>
+          <span class="success-icon">🎉</span>
+          <h2>¡Listo! Tu proceso quedó registrado</h2>
+          <p>Guardamos la información del cargo <strong>{{ role?.name }}</strong>. Ya está disponible para tu equipo en el Mapa de Cargos.</p>
+          <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para futuras consultas. No podrás volver a editarla — ya tienes acceso a tu Portal del Empleado.</p>
           <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="btn-primary">
             {{ lockedForSelf ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
           </router-link>
@@ -393,51 +432,93 @@ const saveWorkflow = async () => {
 }
 
 .guide-panel {
-  width: 320px;
-  padding: 24px;
+  width: 340px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
 }
 
+.guide-badge {
+  align-self: flex-start;
+  background: var(--gold-light);
+  color: var(--gold-deep);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 14px;
+}
+
 .guide-panel h3 {
   color: var(--ink);
-  margin-bottom: 8px;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  margin-bottom: 10px;
 }
 
 .guide-desc {
   color: var(--text-secondary);
   font-size: 0.9rem;
-  margin-bottom: 20px;
+  line-height: 1.55;
+  margin-bottom: 24px;
 }
 
 .questions-list {
-  padding-left: 16px;
-  margin: 0;
-  color: var(--ink-secondary);
-  font-size: 0.9rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .questions-list li {
-  margin-bottom: 16px;
-  line-height: 1.4;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.q-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
 }
 
 .questions-list li strong {
-  color: var(--gold-deep);
+  color: var(--ink);
   display: block;
-  margin-bottom: 4px;
+  font-size: 0.92rem;
+  margin-bottom: 3px;
+}
+
+.questions-list li p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .recording-tip {
   margin-top: auto;
   background: var(--gold-light);
   border: 1px solid var(--gold-light);
-  padding: 12px;
+  padding: 14px;
   border-radius: var(--radius-sm);
   display: flex;
   gap: 12px;
   color: var(--gold-deep);
+}
+
+.recording-tip small {
+  line-height: 1.4;
 }
 
 .process-panel {
@@ -447,6 +528,65 @@ const saveWorkflow = async () => {
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
+}
+
+.step-tracker {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  margin: 0 0 36px 0;
+  width: 100%;
+  max-width: 700px;
+}
+
+.step-tracker li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.step-tracker li:not(:last-child)::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 0 4px;
+}
+
+.step-dot {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+}
+
+.step-tracker li.active {
+  color: var(--ink);
+}
+
+.step-tracker li.active .step-dot {
+  background: var(--gold-gradient);
+  border-color: transparent;
+  color: #fff;
+}
+
+.step-tracker li.done .step-dot {
+  background: var(--success);
+  border-color: transparent;
+  color: #fff;
 }
 
 .upload-section {
@@ -579,6 +719,12 @@ textarea:focus {
 .processing-section, .success-section {
   text-align: center;
   margin-top: 60px;
+}
+
+.success-icon {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 12px;
 }
 
 .lock-note {

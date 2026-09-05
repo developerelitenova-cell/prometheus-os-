@@ -1,5 +1,7 @@
 <template>
   <div class="home-container">
+    <TechNodesBackground />
+
     <!-- 顶部导航栏 / Navbar -->
     <nav class="navbar">
       <div class="nav-brand">
@@ -41,9 +43,13 @@
           </h1>
           
           <div class="hero-desc">
-            <p>
+            <p v-if="isLoggedIn">
               El cerebro digital de <strong>Elite Nutrition & Futupro</strong>. Administra, consulta y automatiza
               el flujo de trabajo de <span class="highlight-orange">{{ statRoles }} Roles</span> con total precisión.
+            </p>
+            <p v-else>
+              El cerebro digital de <strong>Elite Nutrition & Futupro</strong>. Administra, consulta y automatiza
+              el flujo de trabajo de <span class="highlight-orange">todos los cargos</span> de la empresa con total precisión.
             </p>
             <p class="slogan-text">
               Directorio de Roles y Manuales de Cargo<span class="blinking-cursor">_</span>
@@ -52,9 +58,9 @@
            
           <div class="btn-group" v-if="isLoggedIn">
             <router-link v-if="isControlUser" to="/team" class="btn-primary">🧭 Centro de Control</router-link>
-            <router-link to="/mapa-cargos" class="btn-primary" :class="{ 'btn-secondary': isControlUser }">Mapa de Cargos</router-link>
+            <router-link v-if="isMasterAdmin()" to="/mapa-cargos" class="btn-primary" :class="{ 'btn-secondary': isControlUser }">Mapa de Cargos</router-link>
             <router-link to="/workspace" class="btn-tertiary">Mi Espacio Elite</router-link>
-            <router-link to="/performance" class="btn-quaternary">KPIs y Rendimiento</router-link>
+            <router-link v-if="isControlUser" to="/performance" class="btn-quaternary">KPIs y Rendimiento</router-link>
             <router-link v-if="isMasterAdmin()" to="/oracle" class="oracle-btn">Preguntar al Oráculo</router-link>
           </div>
           <div class="btn-group" v-else>
@@ -90,8 +96,10 @@
         </div>
         
         <div class="hero-right">
-          <!-- Right side decorative stats or visual -->
-          <div class="stats-card glass-panel">
+          <!-- Con sesión: métricas reales de la empresa. Sin sesión: la
+               página es pública, así que no se exponen números internos a
+               cualquier visitante -- se muestra una tarjeta de marca genérica. -->
+          <div v-if="isLoggedIn" class="stats-card glass-panel">
             <div class="stat-item">
               <h3 class="glow-text">{{ statRoles }}</h3>
               <p>Cargos Activos</p>
@@ -105,6 +113,12 @@
               <p>Cobertura de Mapeo</p>
             </div>
           </div>
+          <div v-else class="stats-card glass-panel highlights-card">
+            <div class="highlight-item typewriter-item">
+              <span class="highlight-icon">{{ highlightMessages[typedIndex].icon }}</span>
+              <span class="typewriter-text">{{ typedText }}<span class="blinking-cursor">_</span></span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -113,11 +127,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { setPendingUpload } from '../store/pendingUpload'
 import { supabase } from '../api/supabase'
 import { currentProfile, loadCurrentProfile, isMasterAdmin, isLeader, signOut } from '../api/auth'
+import TechNodesBackground from '../components/TechNodesBackground.vue'
 
 const router = useRouter()
 const isLoggedIn = ref(false)
@@ -126,8 +141,11 @@ const isControlUser = computed(() => isMasterAdmin() || isLeader())
 onMounted(async () => {
   const { data } = await supabase.auth.getSession()
   isLoggedIn.value = !!data.session
-  if (isLoggedIn.value && !currentProfile.value) {
-    await loadCurrentProfile()
+  if (isLoggedIn.value) {
+    if (!currentProfile.value) {
+      await loadCurrentProfile()
+    }
+    loadRealStats()
   }
 })
 
@@ -136,6 +154,58 @@ const handleSignOut = async () => {
   isLoggedIn.value = false
   router.push('/login')
 }
+
+// Tarjeta de marca (visitantes sin sesión) -- efecto de máquina de escribir
+// que va rotando entre los mensajes, uno a la vez.
+const highlightMessages = [
+  { icon: '🗂️', text: 'Cargos y procesos organizados en un solo lugar' },
+  { icon: '🤖', text: 'Flujos de trabajo documentados con ayuda de IA' },
+  { icon: '🔒', text: 'Accesos y responsabilidades por rol y por área' },
+]
+const typedText = ref('')
+const typedIndex = ref(0)
+let typewriterTimeoutId = null
+
+const TYPE_SPEED_MS = 32
+const DELETE_SPEED_MS = 18
+const HOLD_MS = 1700
+const GAP_MS = 350
+
+const runTypewriter = () => {
+  const fullText = highlightMessages[typedIndex.value].text
+  let charCount = 0
+
+  const typeStep = () => {
+    charCount++
+    typedText.value = fullText.slice(0, charCount)
+    if (charCount < fullText.length) {
+      typewriterTimeoutId = setTimeout(typeStep, TYPE_SPEED_MS)
+    } else {
+      typewriterTimeoutId = setTimeout(deleteStep, HOLD_MS)
+    }
+  }
+
+  const deleteStep = () => {
+    charCount--
+    typedText.value = fullText.slice(0, Math.max(charCount, 0))
+    if (charCount > 0) {
+      typewriterTimeoutId = setTimeout(deleteStep, DELETE_SPEED_MS)
+    } else {
+      typedIndex.value = (typedIndex.value + 1) % highlightMessages.length
+      typewriterTimeoutId = setTimeout(runTypewriter, GAP_MS)
+    }
+  }
+
+  typeStep()
+}
+
+onMounted(() => {
+  runTypewriter()
+})
+
+onBeforeUnmount(() => {
+  if (typewriterTimeoutId) clearTimeout(typewriterTimeoutId)
+})
 
 // El módulo de Simulación Corporativa no tiene backend en ningún entorno (ver /process, /simulation, /report).
 // Se mantiene el código para retomarlo cuando exista un servicio real detrás de él.
@@ -167,7 +237,7 @@ const animateValue = (targetRef, endValue, duration) => {
   window.requestAnimationFrame(step);
 };
 
-onMounted(async () => {
+const loadRealStats = async () => {
   try {
     const [{ count: rolesCount }, { count: areasCount }] = await Promise.all([
       supabase.from('roles').select('id', { count: 'exact', head: true }),
@@ -192,7 +262,7 @@ onMounted(async () => {
   } catch (e) {
     console.error('Error cargando estadísticas reales:', e);
   }
-})
+}
 
 const goToDataHub = () => {
   router.push('/mapa-cargos')
@@ -217,14 +287,22 @@ const startSimulation = () => {
 
 <style scoped>
 .home-container {
-  min-height: 100vh;
-  background: var(--bg-tertiary);
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 900px 600px at 88% 8%, rgba(176, 141, 87, 0.10), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 6% 96%, rgba(176, 141, 87, 0.07), transparent 60%),
+    var(--bg-tertiary);
   font-family: var(--font-sans);
   color: var(--text-primary);
 }
 
 .navbar {
-  height: 84px;
+  height: clamp(64px, 10vh, 84px);
+  flex-shrink: 0;
   background: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -232,7 +310,7 @@ const startSimulation = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 clamp(20px, 4vw, 40px);
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
@@ -295,16 +373,25 @@ const startSimulation = () => {
 }
 
 .main-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 100px 40px;
+  padding: 0 clamp(20px, 4vw, 40px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
 }
 
 .hero-section {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 60px;
+  gap: clamp(24px, 4vw, 60px);
 }
 
 .hero-left {
@@ -315,7 +402,7 @@ const startSimulation = () => {
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-bottom: 25px;
+  margin-bottom: clamp(10px, 2vh, 25px);
   font-family: var(--font-mono);
   font-size: 0.8rem;
 }
@@ -338,11 +425,11 @@ const startSimulation = () => {
 }
 
 .main-title {
-  font-size: 4.25rem;
-  line-height: 1.1;
+  font-size: clamp(1.9rem, 5.2vh, 4.25rem);
+  line-height: 1.12;
   font-weight: 600;
-  margin: 0 0 30px 0;
-  letter-spacing: -2px;
+  margin: 0 0 clamp(12px, 2.2vh, 30px) 0;
+  letter-spacing: -1.5px;
   color: var(--ink);
 }
 
@@ -351,14 +438,15 @@ const startSimulation = () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
+  filter: drop-shadow(0 0 22px rgba(176, 141, 87, 0.25));
 }
 
 .hero-desc {
-  font-size: 1.15rem;
-  line-height: 1.7;
+  font-size: clamp(1.05rem, 2.3vh, 1.35rem);
+  line-height: 1.6;
   color: var(--text-secondary);
   max-width: 600px;
-  margin-bottom: 50px;
+  margin-bottom: clamp(16px, 3vh, 50px);
   font-weight: 400;
 }
 
@@ -373,13 +461,13 @@ const startSimulation = () => {
 }
 
 .slogan-text {
-  font-size: 1.15rem;
+  font-size: clamp(1.05rem, 2.3vh, 1.35rem);
   font-weight: 500;
   color: var(--ink);
   letter-spacing: 0.3px;
   border-left: 3px solid var(--gold);
   padding-left: 15px;
-  margin-top: 30px;
+  margin-top: clamp(10px, 2vh, 30px);
 }
 
 .blinking-cursor {
@@ -394,10 +482,10 @@ const startSimulation = () => {
 }
 
 .btn-group {
-  margin-top: 40px;
+  margin-top: clamp(16px, 3vh, 40px);
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: clamp(8px, 1.4vh, 16px);
   align-items: center;
 }
 
@@ -410,12 +498,12 @@ const startSimulation = () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 13px 28px;
+  padding: clamp(9px, 1.6vh, 13px) clamp(18px, 2.4vw, 28px);
   border-radius: var(--radius-pill);
   text-decoration: none;
   font-weight: 600;
   transition: all 0.3s var(--ease-apple);
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 1.7vh, 1rem);
   letter-spacing: 0.2px;
   box-sizing: border-box;
 }
@@ -583,19 +671,31 @@ const startSimulation = () => {
 }
 
 .stats-card {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--border-subtle);
-  padding: 40px;
+  padding: clamp(22px, 4vh, 40px);
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  gap: 40px;
-  box-shadow: var(--shadow-lg);
+  gap: clamp(18px, 4vh, 40px);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(176, 141, 87, 0.06), 0 30px 60px -20px rgba(138, 109, 61, 0.18);
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gold-gradient);
 }
 
 .stat-item h3 {
   font-family: var(--font-mono);
-  font-size: 3rem;
+  font-size: clamp(1.8rem, 4.5vh, 3rem);
   font-weight: 700;
   margin: 0 0 10px 0;
   background: var(--gold-gradient);
@@ -612,7 +712,60 @@ const startSimulation = () => {
   font-weight: 600;
 }
 
+/* Tarjeta de marca genérica (visitantes sin sesión) */
+.highlights-card {
+  justify-content: center;
+  gap: clamp(14px, 2.6vh, 22px);
+  max-width: 320px;
+}
+
+.highlight-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: clamp(0.85rem, 1.7vh, 0.95rem);
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.typewriter-item {
+  align-items: flex-start;
+}
+
+.typewriter-text {
+  display: block;
+  min-height: 3.9em;
+}
+
+.typewriter-text .blinking-cursor {
+  font-weight: 400;
+}
+
+.highlight-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
 @media (max-width: 1024px) {
+  /* En mobile/tablet no forzamos todo a una sola pantalla: apretar el hero
+     completo en la altura de un celular lo haría ilegible. Vuelve a ser una
+     página normal, con scroll. */
+  .home-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  .main-content {
+    padding: 40px 24px;
+    overflow: visible;
+  }
   .hero-section {
     flex-direction: column;
   }
@@ -623,6 +776,10 @@ const startSimulation = () => {
   .stats-card {
     flex-direction: row;
     justify-content: space-around;
+  }
+  .highlights-card {
+    flex-direction: column;
+    max-width: none;
   }
 }
 </style>

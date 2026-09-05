@@ -2,9 +2,8 @@
   <div class="login-container">
     <TechNodesBackground />
     <div class="login-card glass-panel">
-      <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="login-logo" />
-      <span class="brand-caption">Elite Nutrition</span>
-      <h1>PROMETHEUS OS</h1>
+      <img src="../assets/prometheus-os-logo.jpeg" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
+      <h1 class="sr-only">PROMETHEUS OS</h1>
       <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
 
       <div class="tabs" v-if="showRegisterTab">
@@ -148,22 +147,25 @@ const handleSubmit = async () => {
   z-index: 1;
 }
 
-.login-logo {
-  height: 84px;
-  width: 84px;
-  border-radius: 18px;
-  object-fit: cover;
-  transform: scale(1.15);
+.brand-lockup {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
-.brand-caption {
-  display: block;
-  margin: 12px 0 20px 0;
-  color: var(--gold-deep);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .login-card h1 {

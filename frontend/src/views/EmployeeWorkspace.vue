@@ -756,6 +756,10 @@ const exitAuditMode = () => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
+  /* Debe quedar por encima de las tarjetas del cuerpo (todas .glass-panel con
+     z-index:1) para que el panel de notificaciones, que cuelga de aquí, no
+     quede pintado detrás de ellas. */
+  z-index: 30;
 }
 
 .header-left .back-link {
@@ -898,11 +902,17 @@ const exitAuditMode = () => {
   top: calc(100% + 12px);
   right: 0;
   width: 360px;
+  max-width: calc(100vw - 48px);
   max-height: 420px;
   display: flex;
   flex-direction: column;
   z-index: 50;
   overflow: hidden;
+  /* Fondo propio y más sólido que el glass-panel base: este panel flota sobre
+     contenido con el que puede superponerse, y necesita leerse como una
+     tarjeta opaca, no como un cristal translúcido. */
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 
 .notif-panel-header {

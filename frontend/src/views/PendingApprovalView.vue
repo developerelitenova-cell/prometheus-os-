@@ -2,8 +2,7 @@
   <div class="pending-container">
     <TechNodesBackground />
     <div class="pending-card glass-panel">
-      <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="pending-logo" />
-      <span class="brand-caption">Elite Nutrition</span>
+      <img src="../assets/prometheus-os-logo.jpeg" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
       <img src="../assets/hourglass.jpg" alt="Pendiente" class="status-icon-img" />
       <h1>Registro exitoso</h1>
       <p class="subtitle">Tu solicitud de acceso quedó registrada.</p>
@@ -40,22 +39,13 @@ import TechNodesBackground from '../components/TechNodesBackground.vue';
   z-index: 1;
 }
 
-.pending-logo {
-  height: 84px;
-  width: 84px;
-  border-radius: 18px;
-  object-fit: cover;
-  transform: scale(1.15);
-}
-
-.brand-caption {
+.brand-lockup {
   display: block;
-  margin: 12px 0 8px 0;
-  color: var(--gold-deep);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .status-icon-img {

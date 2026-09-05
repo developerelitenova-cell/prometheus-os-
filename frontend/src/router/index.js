@@ -36,7 +36,8 @@ const routes = [
   {
     path: '/mapa-cargos',
     name: 'DataHub',
-    component: () => import('../views/MapaCargos.vue')
+    component: () => import('../views/MapaCargos.vue'),
+    meta: { masterAdminOnly: true }
   },
   {
     path: '/academia',
@@ -89,12 +90,16 @@ const routes = [
   {
     path: '/knowledge-loader',
     name: 'KnowledgeLoader',
-    component: () => import('../views/KnowledgeLoader.vue')
+    component: () => import('../views/KnowledgeLoader.vue'),
+    // Único punto de entrada en la UI es el botón "Inyectar Conocimiento" dentro
+    // de /mapa-cargos, que ya es masterAdminOnly -- esta ruta debe serlo también.
+    meta: { masterAdminOnly: true }
   },
   {
     path: '/performance',
     name: 'PerformanceDashboard',
-    component: () => import('../views/PerformanceDashboard.vue')
+    component: () => import('../views/PerformanceDashboard.vue'),
+    meta: { leaderOnly: true }
   },
   {
     path: '/workspace',
@@ -106,7 +111,11 @@ const routes = [
     path: '/roles',
     name: 'RolePermissionManager',
     component: () => import('../views/RolePermissionManager.vue'),
-    meta: { leaderOnly: true }
+    // No es leaderOnly a propósito: esta pantalla puede reestructurar áreas/roles
+    // de TODA la empresa y crear cuentas nuevas marcadas como Admin Master, algo
+    // que ni siquiera un líder Nivel 1 debe poder hacer (LeaderDashboard.vue ya
+    // solo muestra el enlace a este panel cuando isMaster, no isControlUser).
+    meta: { masterAdminOnly: true }
   },
   {
     path: '/manuals',
