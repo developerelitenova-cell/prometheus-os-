@@ -15,7 +15,16 @@
         <router-link v-if="isMaster" to="/roles" class="btn-secondary-link btn-manage-levels">⚙️ Gestionar Roles y Niveles</router-link>
         <router-link to="/kpis" class="btn-secondary-link">📊 KPIs Reales</router-link>
         <router-link to="/support-contacts" class="btn-secondary-link">📇 Directorio de Soporte</router-link>
-        <button class="btn-secondary-link signout-btn" @click="handleSignOut" style="color: var(--danger); border-color: rgba(220, 38, 38, 0.3);">🚪 Salir</button>
+        <button class="btn-logout-global" @click="handleSignOut" title="Cerrar sesión">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </span>
+          Salir
+        </button>
         <div class="area-badge" v-if="leaderArea && !isMaster">
           Área: <strong>{{ leaderArea.name }}</strong>
         </div>
@@ -450,7 +459,7 @@ onMounted(() => fetchData());
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
 .header-content h1 { font-size: 28px; color: var(--text-primary); margin-bottom: 4px; }
 .subtitle { color: var(--text-secondary); }
-.header-actions { display: flex; align-items: center; gap: 12px; }
+.header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .btn-secondary-link {
   display: inline-flex;
   align-items: center;
@@ -486,7 +495,7 @@ onMounted(() => fetchData());
 
 .member-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 24px;
 }
 

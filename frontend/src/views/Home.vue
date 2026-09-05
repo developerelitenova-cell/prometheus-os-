@@ -13,7 +13,16 @@
         <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
         <router-link v-else-if="isControlUser" to="/team" class="nav-login-link">Centro de Control</router-link>
         <router-link v-else-if="isLoggedIn" to="/workspace" class="nav-login-link">Ir a mi Portal</router-link>
-        <button v-if="isLoggedIn" class="nav-login-link" @click="handleSignOut" style="cursor: pointer; background: transparent; color: var(--danger); border-color: rgba(220, 38, 38, 0.3);">Salir</button>
+        <button v-if="isLoggedIn" class="btn-logout-global" @click="handleSignOut" title="Cerrar sesión">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </span>
+          Salir
+        </button>
       </div>
     </nav>
 

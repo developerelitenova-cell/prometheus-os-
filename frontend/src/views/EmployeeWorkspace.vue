@@ -8,7 +8,16 @@
         
         <div v-if="isAuditMode" class="audit-badge">
           🕵️‍♂️ <strong>MODO AUDITORÍA:</strong> Estás viendo el espacio de {{ currentProfile?.full_name }}
-          <button class="btn-exit-audit" @click="exitAuditMode">Salir</button>
+          <button class="btn-logout-global" @click="exitAuditMode" style="margin-left: 12px;">
+            <span class="icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </span>
+            Salir
+          </button>
         </div>
       </div>
       <div class="header-right">
@@ -56,7 +65,16 @@
         <!-- Identidad de la sesión -->
         <div class="session-identity" v-if="currentProfile">
           <span class="session-name">{{ currentProfile.full_name }}</span>
-          <button class="signout-btn" @click="handleSignOut" title="Cerrar sesión">Salir</button>
+          <button class="btn-logout-global" @click="handleSignOut" title="Cerrar sesión">
+            <span class="icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </span>
+            Salir
+          </button>
         </div>
       </div>
     </header>

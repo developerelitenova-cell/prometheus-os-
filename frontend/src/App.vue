@@ -195,4 +195,38 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
 }
+
+/* --- Botón Salir Global --- */
+.btn-logout-global {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 59, 48, 0.08); /* Fondo rojo muy sutil */
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  color: var(--danger);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-apple);
+  text-decoration: none;
+}
+
+.btn-logout-global:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.25);
+}
+
+.btn-logout-global:active {
+  transform: translateY(0);
+}
+
+.btn-logout-global .icon {
+  font-size: 1.1em;
+}
 </style>

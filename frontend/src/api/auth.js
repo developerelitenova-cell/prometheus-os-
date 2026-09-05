@@ -37,23 +37,26 @@ export const signUp = async (email, password, fullName, roleId = null) => {
     email,
     password
   })
+  
   if (error) return { success: false, error: error.message }
   
-  if (data.user) {
-    const profileData = {
-      id: data.user.id,
-      full_name: fullName,
-      approval_status: 'pending'
-    }
-    if (roleId) {
-      profileData.role_id = roleId
-    }
-    const { error: profileError } = await supabase.from('profiles').insert([profileData])
-    if (profileError) {
-      // La cuenta de auth ya quedó creada en Supabase, pero sin este perfil
-      // nadie puede aprobarla -- hay que avisar en vez de fingir que salió bien.
-      return { success: false, error: 'Tu cuenta se creó pero no pudimos registrar tu solicitud de acceso. Contactá a un administrador.' }
-    }
+  if (!data.user) {
+    return { success: false, error: 'El correo ya está registrado o hubo un problema al crear la cuenta.' }
+  }
+
+  const profileData = {
+    id: data.user.id,
+    full_name: fullName,
+    approval_status: 'pending'
+  }
+  if (roleId) {
+    profileData.role_id = roleId
+  }
+  
+  const { error: profileError } = await supabase.from('profiles').insert([profileData])
+  if (profileError) {
+    // Si falla el insert a profiles (ej. por RLS), evitamos dejar al usuario en un estado zombi sin error visible
+    return { success: false, error: 'Tu cuenta se creó pero hubo un error de permisos en la base de datos (RLS). Contactá a un administrador.' }
   }
 
   await loadCurrentProfile()
