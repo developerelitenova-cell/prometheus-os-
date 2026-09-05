@@ -1,5 +1,6 @@
 <template>
   <div class="login-container">
+    <TechNodesBackground />
     <div class="login-card glass-panel">
       <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="login-logo" />
       <span class="brand-caption">Elite Nutrition</span>
@@ -39,6 +40,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { signIn, signUp, signOut, loadCurrentProfile } from '../api/auth';
+import TechNodesBackground from '../components/TechNodesBackground.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -139,9 +141,11 @@ const handleSubmit = async () => {
 
 .login-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
   padding: 40px;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .login-logo {
