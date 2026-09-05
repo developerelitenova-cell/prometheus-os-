@@ -1,5 +1,6 @@
 <template>
   <div class="welcome-container">
+    <TechNodesBackground />
     <div class="welcome-card glass-panel">
       <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="welcome-logo" />
       <span class="brand-caption">Elite Nutrition</span>
@@ -24,6 +25,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../api/supabase';
 import { currentProfile, loadCurrentProfile } from '../api/auth';
+import TechNodesBackground from '../components/TechNodesBackground.vue';
 
 const router = useRouter();
 const profile = ref(null);
@@ -70,6 +72,8 @@ const continueOnboarding = async () => {
   max-width: 440px;
   padding: 40px;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .welcome-logo {
