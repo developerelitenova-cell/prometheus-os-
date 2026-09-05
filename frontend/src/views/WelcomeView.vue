@@ -2,6 +2,7 @@
   <div class="welcome-container">
     <div class="welcome-card glass-panel">
       <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="welcome-logo" />
+      <span class="brand-caption">Elite Nutrition</span>
       <div class="status-icon">🎉</div>
       <h1>¡Bienvenido a Elite Nutrition!</h1>
       <p class="subtitle" v-if="profile">
@@ -72,8 +73,21 @@ const continueOnboarding = async () => {
 }
 
 .welcome-logo {
-  height: 110px;
-  margin-bottom: 20px;
+  height: 84px;
+  width: 84px;
+  border-radius: 18px;
+  object-fit: cover;
+  transform: scale(1.15);
+}
+
+.brand-caption {
+  display: block;
+  margin: 12px 0 8px 0;
+  color: var(--gold-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .status-icon {

@@ -4,7 +4,10 @@
     <nav class="navbar">
       <div class="nav-brand">
         <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="brand-logo" />
-        <span class="brand-wordmark">PROMETHEUS OS</span>
+        <div class="brand-text">
+          <span class="brand-wordmark">PROMETHEUS OS</span>
+          <span class="brand-subtitle">Elite Nutrition</span>
+        </div>
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
         <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
@@ -235,9 +238,26 @@ const startSimulation = () => {
 }
 
 .brand-logo {
-  max-height: 46px;
-  width: auto;
-  object-fit: contain;
+  height: 42px;
+  width: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+  transform: scale(1.15);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-subtitle {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold-deep);
 }
 
 .brand-wordmark {

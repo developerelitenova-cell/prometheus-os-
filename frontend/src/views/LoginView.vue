@@ -2,6 +2,7 @@
   <div class="login-container">
     <div class="login-card glass-panel">
       <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="login-logo" />
+      <span class="brand-caption">Elite Nutrition</span>
       <h1>PROMETHEUS OS</h1>
       <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
 
@@ -144,8 +145,21 @@ const handleSubmit = async () => {
 }
 
 .login-logo {
-  height: 110px;
-  margin-bottom: 20px;
+  height: 84px;
+  width: 84px;
+  border-radius: 18px;
+  object-fit: cover;
+  transform: scale(1.15);
+}
+
+.brand-caption {
+  display: block;
+  margin: 12px 0 20px 0;
+  color: var(--gold-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .login-card h1 {

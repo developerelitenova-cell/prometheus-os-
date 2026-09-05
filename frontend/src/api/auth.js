@@ -48,9 +48,14 @@ export const signUp = async (email, password, fullName, roleId = null) => {
     if (roleId) {
       profileData.role_id = roleId
     }
-    await supabase.from('profiles').insert([profileData])
+    const { error: profileError } = await supabase.from('profiles').insert([profileData])
+    if (profileError) {
+      // La cuenta de auth ya quedó creada en Supabase, pero sin este perfil
+      // nadie puede aprobarla -- hay que avisar en vez de fingir que salió bien.
+      return { success: false, error: 'Tu cuenta se creó pero no pudimos registrar tu solicitud de acceso. Contactá a un administrador.' }
+    }
   }
-  
+
   await loadCurrentProfile()
   return { success: true, data }
 }

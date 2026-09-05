@@ -1,8 +1,10 @@
 <template>
   <div class="pending-container">
+    <TechNodesBackground />
     <div class="pending-card glass-panel">
       <img src="../assets/elite-mark.png" alt="Elite Nutrition" class="pending-logo" />
-      <div class="status-icon">⏳</div>
+      <span class="brand-caption">Elite Nutrition</span>
+      <img src="../assets/hourglass.jpg" alt="Pendiente" class="status-icon-img" />
       <h1>Registro exitoso</h1>
       <p class="subtitle">Tu solicitud de acceso quedó registrada.</p>
       <p class="detail">
@@ -15,6 +17,7 @@
 </template>
 
 <script setup>
+import TechNodesBackground from '../components/TechNodesBackground.vue';
 </script>
 
 <style scoped>
@@ -33,16 +36,35 @@
   max-width: 420px;
   padding: 40px;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .pending-logo {
-  height: 110px;
-  margin-bottom: 20px;
+  height: 84px;
+  width: 84px;
+  border-radius: 18px;
+  object-fit: cover;
+  transform: scale(1.15);
 }
 
-.status-icon {
-  font-size: 2.5rem;
-  margin-bottom: 8px;
+.brand-caption {
+  display: block;
+  margin: 12px 0 8px 0;
+  color: var(--gold-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.status-icon-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 12px;
+  mix-blend-mode: multiply;
+  border-radius: 50%;
 }
 
 .pending-card h1 {
