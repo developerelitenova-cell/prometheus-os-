@@ -2,7 +2,7 @@
   <div class="login-container">
     <TechNodesBackground />
     <div class="login-card glass-panel">
-      <img src="../assets/prometheus-os-logo.jpeg" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
+      <img src="../assets/prometheus-os-logo.png" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
       <h1 class="sr-only">PROMETHEUS OS</h1>
       <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
 
@@ -150,10 +150,8 @@ const handleSubmit = async () => {
 .brand-lockup {
   display: block;
   width: 100%;
-  max-width: 320px;
-  margin: 0 auto 20px;
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  max-width: 280px;
+  margin: 0 auto 24px;
 }
 
 .sr-only {

@@ -114,9 +114,21 @@
             </div>
           </div>
           <div v-else class="stats-card glass-panel highlights-card">
+            <span class="highlights-eyebrow">Por qué Prometheus OS</span>
             <div class="highlight-item typewriter-item">
               <span class="highlight-icon">{{ highlightMessages[typedIndex].icon }}</span>
-              <span class="typewriter-text">{{ typedText }}<span class="blinking-cursor">_</span></span>
+              <div class="highlight-copy">
+                <span class="highlight-label">{{ highlightMessages[typedIndex].label }}</span>
+                <span class="typewriter-text">{{ typedText }}<span class="blinking-cursor">_</span></span>
+              </div>
+            </div>
+            <div class="highlight-dots">
+              <span
+                v-for="(_, i) in highlightMessages"
+                :key="i"
+                class="highlight-dot"
+                :class="{ active: i === typedIndex }"
+              ></span>
             </div>
           </div>
         </div>
@@ -158,9 +170,9 @@ const handleSignOut = async () => {
 // Tarjeta de marca (visitantes sin sesión) -- efecto de máquina de escribir
 // que va rotando entre los mensajes, uno a la vez.
 const highlightMessages = [
-  { icon: '🗂️', text: 'Cargos y procesos organizados en un solo lugar' },
-  { icon: '🤖', text: 'Flujos de trabajo documentados con ayuda de IA' },
-  { icon: '🔒', text: 'Accesos y responsabilidades por rol y por área' },
+  { icon: '🗂️', label: 'Gestión de Cargos', text: 'Cargos y procesos organizados en un solo lugar' },
+  { icon: '🤖', label: 'Automatización IA', text: 'Flujos de trabajo documentados con ayuda de IA' },
+  { icon: '🔒', label: 'Seguridad y Accesos', text: 'Accesos y responsabilidades por rol y por área' },
 ]
 const typedText = ref('')
 const typedIndex = ref(0)
@@ -715,42 +727,90 @@ const startSimulation = () => {
 /* Tarjeta de marca genérica (visitantes sin sesión) */
 .highlights-card {
   justify-content: center;
-  gap: clamp(14px, 2.6vh, 22px);
+  gap: clamp(16px, 2.8vh, 24px);
   max-width: 320px;
+}
+
+.highlights-eyebrow {
+  display: block;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  opacity: 0.85;
 }
 
 .highlight-item {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  align-items: flex-start;
+  gap: 16px;
   font-size: clamp(0.85rem, 1.7vh, 0.95rem);
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--text-secondary);
 }
 
-.typewriter-item {
-  align-items: flex-start;
+.highlight-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.highlight-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--gold-deep);
 }
 
 .typewriter-text {
   display: block;
-  min-height: 3.9em;
+  min-height: 3.4em;
+  color: var(--ink);
+  font-weight: 500;
 }
 
 .typewriter-text .blinking-cursor {
   font-weight: 400;
+  color: var(--gold);
 }
 
 .highlight-icon {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
+  font-size: 1.35rem;
+  border-radius: 14px;
+  background: linear-gradient(150deg, rgba(212, 175, 110, 0.22), rgba(212, 175, 110, 0.05));
+  border: 1px solid rgba(212, 175, 110, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 8px 16px -10px rgba(138, 109, 61, 0.55);
+}
+
+.highlight-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.highlight-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-subtle);
+  transition: all 0.35s var(--ease-apple);
+}
+
+.highlight-dot.active {
+  width: 20px;
+  border-radius: 3px;
+  background: var(--gold-gradient);
 }
 
 @media (max-width: 1024px) {
