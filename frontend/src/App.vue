@@ -238,7 +238,7 @@ ul.nova-bullets {
 
 ul.nova-bullets li {
   position: relative;
-  padding-left: 28px;
+  padding-left: 48px;
   margin-bottom: 12px;
 }
 
@@ -247,11 +247,11 @@ ul.nova-bullets li::before {
   position: absolute;
   left: 0;
   top: 4px;
-  width: 18px;
-  height: 18px;
-  background-image: url('@/assets/elite-mark.png');
+  width: 40px;
+  height: 16px;
+  background-image: url('@/assets/elite-nova-logo.png');
   background-size: contain;
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center left;
 }
 </style>

@@ -34,7 +34,7 @@
 
       <div class="developed-by">
         <span>Desarrollado por</span>
-        <img src="../assets/elite-logo.jpeg" alt="Elite Nova" />
+        <img src="../assets/elite-nova-logo.png" alt="Elite Nova" />
       </div>
     </div>
   </div>
