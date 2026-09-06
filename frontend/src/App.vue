@@ -10,8 +10,8 @@
     <!-- Marca de agua global -- las pantallas de identidad (Home, Login, Bienvenida,
          Pendiente de aprobación) ya muestran el logo en grande, así que se omite ahí
          para no duplicarlo. -->
-    <router-link v-if="showBrandMark" to="/" class="global-brand-mark" title="PROMETHEUS OS · Elite Nutrition">
-      <img src="@/assets/prometheus-os-logo.png" alt="Elite Nutrition" />
+    <router-link v-if="showBrandMark" to="/" class="global-brand-mark" title="PROMETHEUS OS">
+      <img src="@/assets/prometheus-os-logo.png" alt="PROMETHEUS OS" />
     </router-link>
 
     <!-- Modal Global de Eventos Obligatorios -->
@@ -228,5 +228,30 @@ body {
 
 .btn-logout-global .icon {
   font-size: 1.1em;
+}
+
+/* --- Elite Nova Custom Bullets --- */
+ul.nova-bullets {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.nova-bullets li {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 12px;
+}
+
+ul.nova-bullets li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  background-image: url('@/assets/elite-mark.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 </style>

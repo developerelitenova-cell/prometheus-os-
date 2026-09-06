@@ -2,19 +2,24 @@
   <div class="welcome-container">
     <TechNodesBackground />
     <div class="welcome-card glass-panel">
-      <img src="../assets/prometheus-os-logo.png" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
+      <img src="../assets/prometheus-os-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
       <div class="status-icon">🎉</div>
       <h1>¡Bienvenido a Elite Nutrition!</h1>
       <p class="subtitle" v-if="profile">
         Tu acceso como <strong>{{ profile.roles?.name || 'colaborador' }}</strong> fue aprobado.
       </p>
       <p class="detail">
-        Ya sos parte del sistema corporativo Prometheus OS. El siguiente paso es contarnos
+        Ya sos parte del sistema corporativo PROMETHEUS OS. El siguiente paso es contarnos
         cómo es tu día a día en el cargo, para dejar tu proceso documentado.
       </p>
       <button class="btn-primary" :disabled="loading" @click="continueOnboarding">
         {{ loading ? 'Ingresando...' : 'Continuar' }}
       </button>
+
+      <div class="developed-by">
+        <span>Desarrollado por</span>
+        <img src="../assets/elite-logo.jpeg" alt="Elite Nova" />
+      </div>
     </div>
   </div>
 </template>
@@ -128,5 +133,32 @@ const continueOnboarding = async () => {
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.developed-by {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.developed-by span {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.developed-by img {
+  height: 24px;
+  width: auto;
+  opacity: 0.8;
+  transition: opacity 0.2s var(--ease-apple);
+}
+
+.developed-by img:hover {
+  opacity: 1;
 }
 </style>

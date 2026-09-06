@@ -2,7 +2,7 @@
   <div class="pending-container">
     <TechNodesBackground />
     <div class="pending-card glass-panel">
-      <img src="../assets/prometheus-os-logo.png" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
+      <img src="../assets/prometheus-os-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
       <img src="../assets/hourglass.jpg" alt="Pendiente" class="status-icon-img" />
       <h1>Registro exitoso</h1>
       <p class="subtitle">Tu solicitud de acceso quedó registrada.</p>
@@ -11,6 +11,11 @@
         Te avisaremos apenas esté lista — por ahora podés cerrar esta ventana.
       </p>
       <router-link to="/login" class="btn-primary">Volver al inicio de sesión</router-link>
+
+      <div class="developed-by">
+        <span>Desarrollado por</span>
+        <img src="../assets/elite-logo.jpeg" alt="Elite Nova" />
+      </div>
     </div>
   </div>
 </template>
@@ -93,5 +98,32 @@ import TechNodesBackground from '../components/TechNodesBackground.vue';
 .btn-primary:hover {
   background: #000;
   transform: translateY(-1px);
+}
+
+.developed-by {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.developed-by span {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.developed-by img {
+  height: 24px;
+  width: auto;
+  opacity: 0.8;
+  transition: opacity 0.2s var(--ease-apple);
+}
+
+.developed-by img:hover {
+  opacity: 1;
 }
 </style>

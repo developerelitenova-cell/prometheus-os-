@@ -73,7 +73,7 @@
             <!-- Insight Card -->
             <div class="glass-panel ai-insight-card">
               <div class="ai-insight">
-                <h4>🤖 Prometheus Insight</h4>
+                <h4>🤖 PROMETHEUS OS Insight</h4>
                 <p>{{ currentKpi.ai_evaluation_notes || 'La Inteligencia Artificial aún no ha generado observaciones para este periodo. Faltan datos de flujos operacionales.' }}</p>
               </div>
             </div>

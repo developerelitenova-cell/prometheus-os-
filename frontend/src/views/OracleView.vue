@@ -3,7 +3,7 @@
     <header class="glass-panel hub-header">
       <div class="header-content">
         <router-link to="/" class="back-link">← Volver al Inicio</router-link>
-        <h1>Oráculo PROMETHEUS (Cerebro Corporativo)</h1>
+        <h1>Oráculo PROMETHEUS OS (Cerebro Corporativo)</h1>
         <p>Conectado a la Memoria Inteligente de Elite Nutrition</p>
       </div>
       <div class="tabs">
@@ -58,7 +58,7 @@
           <div class="stat-label">Conexión Neuronal Vectorial</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">PROMETHEUS</div>
+          <div class="stat-value">PROMETHEUS OS</div>
           <div class="stat-label">Motor de Razonamiento</div>
         </div>
         <div class="info-text">

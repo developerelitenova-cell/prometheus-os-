@@ -5,7 +5,7 @@
     <!-- 顶部导航栏 / Navbar -->
     <nav class="navbar">
       <div class="nav-brand">
-        <img src="../assets/prometheus-os-logo.png" alt="Prometheus OS - Elite Nutrition" class="brand-logo-full" />
+        <img src="../assets/prometheus-os-logo.png" alt="PROMETHEUS OS" class="brand-logo-full" />
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
         <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>
@@ -110,7 +110,7 @@
             </div>
           </div>
           <div v-else class="stats-card glass-panel highlights-card">
-            <span class="highlights-eyebrow">Por qué Prometheus OS</span>
+            <span class="highlights-eyebrow">Por qué PROMETHEUS OS</span>
             <div class="highlight-item typewriter-item">
               <span class="highlight-icon">{{ highlightMessages[typedIndex].icon }}</span>
               <div class="highlight-copy">

@@ -225,7 +225,7 @@
       <!-- Columna Derecha: Chatbot Especializado -->
       <div class="glass-panel chat-column">
         <div class="chat-header">
-          <h3>Asistente IA Prometheus</h3>
+          <h3>Asistente IA PROMETHEUS OS</h3>
           <span class="status-dot"></span> <small>Especializado para {{ currentRole?.name }}</small>
         </div>
         
@@ -340,7 +340,7 @@ const handleSignOut = async () => {
 
 // --- Notificaciones ---
 
-const DISMISSED_MESSAGES_KEY = 'prometheus_dismissed_messages';
+const DISMISSED_MESSAGES_KEY = 'prometheus_os_dismissed_messages';
 
 const loadDismissed = () => {
   try {
@@ -693,7 +693,7 @@ const sendMessage = async () => {
       messages.value.push({ sender: 'ai', text: `Error: ${data.error}` });
     }
   } catch (error) {
-    messages.value.push({ sender: 'ai', text: 'Error de conexión con Prometheus AI.' });
+    messages.value.push({ sender: 'ai', text: 'Error de conexión con PROMETHEUS OS AI.' });
   } finally {
     isTyping.value = false;
     scrollToBottom();

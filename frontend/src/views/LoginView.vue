@@ -2,7 +2,7 @@
   <div class="login-container">
     <TechNodesBackground />
     <div class="login-card glass-panel">
-      <img src="../assets/prometheus-os-logo.png" alt="Prometheus OS - Elite Nutrition" class="brand-lockup" />
+      <img src="../assets/prometheus-os-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
       <h1 class="sr-only">PROMETHEUS OS</h1>
       <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
 
@@ -31,6 +31,11 @@
           {{ loading ? 'Procesando...' : (isLogin ? 'Ingresar' : 'Registrarse') }}
         </button>
       </form>
+
+      <div class="developed-by">
+        <span>Desarrollado por</span>
+        <img src="../assets/elite-logo.jpeg" alt="Elite Nova" />
+      </div>
     </div>
   </div>
 </template>
@@ -274,5 +279,32 @@ const handleSubmit = async () => {
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.developed-by {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.developed-by span {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.developed-by img {
+  height: 24px;
+  width: auto;
+  opacity: 0.8;
+  transition: opacity 0.2s var(--ease-apple);
+}
+
+.developed-by img:hover {
+  opacity: 1;
 }
 </style>
