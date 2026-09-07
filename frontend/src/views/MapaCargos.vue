@@ -470,6 +470,11 @@ const copyMapperLink = async (role) => {
   padding: 20px;
   display: flex;
   flex-direction: column;
+  /* Sin esto, un flex item no se deja encoger por debajo de la altura de su
+     contenido, así que la lista de áreas de abajo (flex:1; overflow-y:auto)
+     nunca llega a activar su propio scroll -- en su lugar empuja y hace
+     scrollear la página completa cuando hay muchas áreas. */
+  min-height: 0;
 }
 
 .sidebar h3 {
