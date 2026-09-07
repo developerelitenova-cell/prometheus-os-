@@ -3,12 +3,7 @@
     <header class="page-header">
       <div class="header-content">
         <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
-        <h1>Gestión de KPIs y Objetivos</h1>
-        <p class="subtitle">
-          Administrá las plantillas de indicadores clave (KPIs) asignadas a cada cargo. 
-          Estas métricas son evaluadas por los líderes en 4 cortes mensuales (Semana 2, 3, 4 y Cierre). 
-          Exclusivo para administradores master y líderes de área.
-        </p>
+        <h1>Gestión de Indicadores Clave (KPIs)</h1>
       </div>
       <div class="tabs">
         <button :class="{ active: tab === 'templates' }" @click="tab = 'templates'">Plantillas</button>
@@ -57,40 +52,35 @@
           </div>
         </div>
 
-        <table class="metrics-table">
-          <thead>
-            <tr>
-              <th>KPI</th>
-              <th>Meta</th>
-              <th>Tipo</th>
-              <th v-if="isMaster"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="metric in template.kpi_template_metrics" :key="metric.id">
-              <td>
-                <input v-if="isMaster" v-model="metric.name" @blur="saveMetric(metric)" />
-                <span v-else>{{ metric.name }}</span>
-              </td>
-              <td>
-                <input v-if="isMaster" v-model="metric.meta_label" @blur="saveMetric(metric)" class="meta-input" />
-                <span v-else>{{ metric.meta_label }}</span>
-              </td>
-              <td>
-                <select v-if="isMaster" v-model="metric.meta_type" @change="saveMetric(metric)">
-                  <option value="percentage">%</option>
-                  <option value="currency">$</option>
-                  <option value="count">Conteo</option>
-                  <option value="text">Texto</option>
-                </select>
-                <span v-else class="type-badge">{{ metaTypeLabel(metric.meta_type) }}</span>
-              </td>
-              <td v-if="isMaster">
-                <button class="icon-btn danger" title="Quitar KPI" @click="deleteMetric(template, metric)">🗑</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="kpi-list">
+          <div v-for="metric in template.kpi_template_metrics" :key="metric.id" class="kpi-item">
+            <div class="kpi-main">
+              <span class="kpi-icon">🎯</span>
+              <div class="kpi-details">
+                <input v-if="isMaster" v-model="metric.name" @blur="saveMetric(metric)" class="kpi-name-input" placeholder="Nombre del KPI" />
+                <span v-else class="kpi-name">{{ metric.name }}</span>
+                <span class="kpi-type-pill">{{ metaTypeLabel(metric.meta_type) }}</span>
+              </div>
+            </div>
+            
+            <div class="kpi-meta-section">
+              <span class="meta-label">Meta:</span>
+              <input v-if="isMaster" v-model="metric.meta_label" @blur="saveMetric(metric)" class="meta-input" placeholder="Ej: 100%" />
+              <span v-else class="meta-value">{{ metric.meta_label }}</span>
+              
+              <select v-if="isMaster" v-model="metric.meta_type" @change="saveMetric(metric)" class="type-select">
+                <option value="percentage">% Porcentaje</option>
+                <option value="currency">$ Moneda</option>
+                <option value="count"># Conteo</option>
+                <option value="text">A Texto</option>
+              </select>
+              
+              <button v-if="isMaster" class="icon-btn danger" title="Quitar KPI" @click="deleteMetric(template, metric)">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <button v-if="isMaster" class="btn-text" @click="addMetric(template)">+ Agregar KPI</button>
 
@@ -579,8 +569,28 @@ const saveMeasurements = async () => {
 .btn-text { background: none; border: none; cursor: pointer; color: var(--gold-deep); font-size: 0.85rem; font-weight: 600; margin-top: 12px; margin-right: 20px; }
 .danger-text { color: var(--danger); }
 
-.icon-btn { background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--ink); width: 30px; height: 30px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; }
-.icon-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+.icon-btn { background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--text-secondary); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.icon-btn:hover { background: var(--surface); color: var(--ink); }
+.icon-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(255, 59, 48, 0.05); }
+
+/* --- KPI List Styles --- */
+.kpi-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; margin-bottom: 24px; }
+.kpi-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: rgba(0, 0, 0, 0.015); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); transition: all 0.2s ease; gap: 16px; flex-wrap: wrap; }
+.kpi-item:hover { border-color: var(--border); background: var(--surface); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+.kpi-main { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 250px; }
+.kpi-icon { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 12px; font-size: 1.2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+.kpi-details { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.kpi-name-input { background: transparent; border: 1px dashed var(--border-subtle); color: var(--ink); font-size: 1.05rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; width: 100%; transition: border-color 0.2s; }
+.kpi-name-input:focus { outline: none; border-color: var(--gold); border-style: solid; background: var(--surface); }
+.kpi-name { font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+.kpi-type-pill { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); font-weight: 600; }
+.kpi-meta-section { display: flex; align-items: center; gap: 16px; }
+.meta-label { font-size: 0.75rem; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.meta-value { font-size: 1.1rem; font-weight: 700; color: var(--gold-deep); background: var(--gold-light); padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.2); }
+.meta-input { background: var(--surface); border: 1px solid var(--border); color: var(--ink); font-size: 1rem; font-weight: 600; padding: 8px 12px; border-radius: 8px; width: 110px; text-align: center; transition: all 0.2s; }
+.meta-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light); outline: none; }
+.type-select { background: var(--surface); border: 1px solid var(--border); color: var(--ink); font-size: 0.85rem; font-weight: 500; padding: 8px 12px; border-radius: 8px; outline: none; cursor: pointer; transition: all 0.2s; }
+.type-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light); }
 
 .measurement-controls { display: flex; gap: 16px; padding: 20px 24px; margin-bottom: 20px; flex-wrap: wrap; }
 .control-group { display: flex; flex-direction: column; gap: 6px; }
