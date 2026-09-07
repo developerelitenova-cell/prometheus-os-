@@ -124,7 +124,15 @@
               <div class="member-footer">
                 <button v-if="isMaster" class="btn-text-small primary" @click="auditWorkspace(member.id)" style="color: var(--danger);">🕵️‍♂️ Auditar Espacio</button>
                 <button v-else class="btn-text-small">Ver Historial Completo</button>
-                <button class="btn-text-small primary" @click="openTaskModal(member)">Configurar Checklists / Tarea</button>
+                <router-link
+                  v-if="member.roles?.id"
+                  class="btn-text-small"
+                  :to="`/mapa-cargos?role=${member.roles.id}`"
+                  title="Editar las tareas recurrentes de la memoria del cargo (Gestión Diaria)"
+                >
+                  Gestión Diaria del Cargo
+                </router-link>
+                <button class="btn-text-small primary" @click="openTaskModal(member)">Asignar Tarea</button>
               </div>
             </div>
           </div>
@@ -157,26 +165,27 @@
       </template>
     </div>
 
-    <!-- Modal Nueva Tarea / Checklist -->
+    <!-- Modal Asignar Tarea (responsabilidad puntual del líder a una persona --
+         distinta de la Gestión Diaria, que sale de la memoria del cargo) -->
     <div v-if="showTaskModal" class="modal-overlay">
       <div class="modal-content glass-panel">
-        <h2>Asignar Checklist / Tarea</h2>
+        <h2>Asignar Tarea</h2>
         <p class="subtitle" v-if="selectedMember">Para: {{ selectedMember.full_name }}</p>
-        
+
         <form @submit.prevent="submitTask" class="upload-form">
           <div class="form-group">
             <label>Título / Actividad</label>
             <input type="text" v-model="newTask.title" required placeholder="Ej: Revisión de inventario" />
           </div>
-          
+
           <div class="form-group">
             <label>Descripción (Opcional)</label>
             <textarea v-model="newTask.description" rows="2"></textarea>
           </div>
-          
+
           <div class="form-row">
             <div class="form-group half">
-              <label>Tipo de Checklist</label>
+              <label>Tipo</label>
               <select v-model="newTask.task_type">
                 <option value="daily">Diario</option>
                 <option value="weekly">Semanal</option>
@@ -194,12 +203,12 @@
               </select>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Fecha de Vencimiento (Opcional)</label>
             <input type="date" v-model="newTask.due_date" />
           </div>
-          
+
           <div class="modal-actions">
             <button type="button" class="btn-text-small" @click="closeTaskModal">Cancelar</button>
             <button type="submit" class="btn-text-small primary" :disabled="isSaving" style="padding: 8px 16px; background: var(--gold-gradient); color: white; border-radius: var(--radius-sm);">Guardar</button>
@@ -249,7 +258,10 @@ const groupedTeam = computed(() => {
   return Array.from(groups.values()).sort((a, b) => a.areaName.localeCompare(b.areaName));
 });
 
-// Task Modal State
+// Modal "Asignar Tarea": responsabilidad puntual que el líder le da a UNA
+// persona (tabla `tasks`) -- distinta de la Gestión Diaria, que es la lista
+// recurrente y estándar del cargo (memoria del cargo, editable en Mapa de
+// Cargos y compartida por todos los que tienen ese cargo).
 const showTaskModal = ref(false);
 const selectedMember = ref(null);
 const isSaving = ref(false);
@@ -314,7 +326,8 @@ const fetchData = async () => {
           
         const latestScore = kpis && kpis.length > 0 ? kpis[0].overall_score : 0;
 
-        // Traer Tareas
+        // Traer las tareas puntuales que el líder le asignó a esta persona
+        // (tabla `tasks`) -- no confundir con la Gestión Diaria del cargo.
         const { data: tasks } = await supabase.from('tasks')
           .select('id, title, status')
           .eq('assigned_to', m.id)
@@ -403,11 +416,10 @@ const closeTaskModal = () => {
 const submitTask = async () => {
   if (!selectedMember.value || !newTask.value.title) return;
   isSaving.value = true;
-  
+
   try {
     const { data: session } = await supabase.auth.getSession();
-    
-    // Insert task
+
     const taskPayload = {
       title: newTask.value.title,
       description: newTask.value.description,
@@ -420,16 +432,15 @@ const submitTask = async () => {
     if (newTask.value.due_date) {
       taskPayload.due_date = newTask.value.due_date;
     }
-    
+
     await supabase.from('tasks').insert(taskPayload);
-    
-    // Notifications
+
     await supabase.from('notifications').insert({
       profile_id: selectedMember.value.id,
       type: 'new_task',
-      message: `Te han asignado un nuevo checklist/tarea: ${newTask.value.title}`
+      message: `Te han asignado una nueva tarea: ${newTask.value.title}`
     });
-    
+
     closeTaskModal();
     await fetchData(); // Refresh data
   } catch (e) {
@@ -652,7 +663,7 @@ li.completed .task-title { text-decoration: line-through; color: var(--text-tert
   display: flex;
   justify-content: space-between;
 }
-.btn-text-small { background: none; border: none; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-secondary); }
+.btn-text-small { background: none; border: none; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-secondary); text-decoration: none; }
 .btn-text-small.primary { color: var(--gold); }
 
 /* Modal form styles */

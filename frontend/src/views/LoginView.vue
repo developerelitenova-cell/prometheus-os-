@@ -2,7 +2,7 @@
   <div class="login-container">
     <TechNodesBackground />
     <div class="login-card glass-panel">
-      <img src="../assets/prometheus-os-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
+      <img src="../assets/elite-nova-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
       <h1 class="sr-only">PROMETHEUS OS</h1>
       <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
 

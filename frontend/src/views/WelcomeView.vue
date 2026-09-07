@@ -2,7 +2,7 @@
   <div class="welcome-container">
     <TechNodesBackground />
     <div class="welcome-card glass-panel">
-      <img src="../assets/prometheus-os-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
+      <img src="../assets/elite-nova-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
       <div class="status-icon">🎉</div>
       <h1>¡Bienvenido a Elite Nutrition!</h1>
       <p class="subtitle" v-if="profile">

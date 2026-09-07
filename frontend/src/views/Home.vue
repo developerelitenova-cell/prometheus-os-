@@ -5,7 +5,7 @@
     <!-- 顶部导航栏 / Navbar -->
     <nav class="navbar">
       <div class="nav-brand">
-        <img src="../assets/prometheus-os-logo.png" alt="PROMETHEUS OS" class="brand-logo-full" />
+        <img src="../assets/elite-nova-logo.png" alt="PROMETHEUS OS" class="brand-logo-full" />
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
         <router-link v-if="!isLoggedIn" to="/login" class="nav-login-link">Iniciar Sesión</router-link>

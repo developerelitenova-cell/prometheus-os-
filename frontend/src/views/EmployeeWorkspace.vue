@@ -124,10 +124,6 @@
     <div v-if="currentProfile" class="workspace-body">
       <!-- Resumen rápido -->
       <div class="workspace-stats-grid">
-        <div class="stat-card glass-panel" :class="getScoreColor(currentKpi.overall_score)">
-          <span class="stat-card-value">{{ currentKpi.overall_score.toFixed(1) }}</span>
-          <span class="stat-card-label">Rendimiento General</span>
-        </div>
         <div class="stat-card glass-panel">
           <span class="stat-card-value">{{ totalPendingTasks }}</span>
           <span class="stat-card-label">Tareas Pendientes</span>
@@ -143,7 +139,7 @@
       </div>
 
     <div class="workspace-content">
-      <!-- Columna Izquierda: Perfil y Tareas -->
+      <!-- Columna Izquierda: Perfil, Notificaciones y Biblioteca -->
       <div class="sidebar-column">
         <!-- Tarjeta de Identidad -->
         <div class="glass-panel profile-card">
@@ -158,67 +154,104 @@
             </p>
             <div v-if="isLeaderRole" style="margin-top: 12px;">
               <router-link to="/team" class="btn-primary" style="font-size: 0.85rem; padding: 8px 12px; display: inline-block;">
-                👑 Panel de Liderazgo (Aprobaciones y Tareas)
+                👑 Panel de Liderazgo
               </router-link>
             </div>
           </div>
         </div>
 
-        <!-- Análisis de IA sobre el desempeño -->
-        <div class="glass-panel mini-kpi" v-if="currentKpi.ai_evaluation_notes">
-          <h3>Análisis de la IA</h3>
-          <div class="kpi-insight">
-            <div class="markdown-content kpi-notes-scroll" v-html="DOMPurify.sanitize(marked.parse(currentKpi.ai_evaluation_notes))"></div>
+        <!-- Gestión Diaria: actividades recurrentes y estándar del cargo -->
+        <div class="glass-panel checklist-card">
+          <h3>Gestión Diaria</h3>
+
+          <div class="checklist-tabs">
+            <button :class="{ active: dmTab === 'daily' }" @click="dmTab = 'daily'">📅 Diario</button>
+            <button :class="{ active: dmTab === 'weekly' }" @click="dmTab = 'weekly'">🗓 Semanal</button>
+            <button :class="{ active: dmTab === 'monthly' }" @click="dmTab = 'monthly'">📆 Mensual</button>
+          </div>
+
+          <ul class="dm-task-list">
+            <li v-for="task in activeDmTaskList" :key="task.id" :class="{ completed: task.completed }">
+              <input type="checkbox" :checked="task.completed" @change="toggleDmTask(task)" />
+              <span class="task-title">{{ task.title }}</span>
+            </li>
+            <li v-if="activeDmTaskList.length === 0" class="no-tasks">Tu cargo aún no tiene tareas de Gestión Diaria asignadas.</li>
+          </ul>
+        </div>
+
+        <!-- Canal de Notificaciones Permanente -->
+        <div class="glass-panel notif-permanent-card">
+          <h3>Canal de Notificaciones</h3>
+          <div class="notif-list-mini">
+            <div v-if="loadingNotifications" class="loading-text">Cargando...</div>
+            <div v-else-if="unifiedFeed.length === 0" class="empty-state-mini">No tienes notificaciones.</div>
+            <div
+              v-else
+              v-for="item in unifiedFeed.slice(0, 4)"
+              :key="'perm-' + item.id"
+              class="notif-item"
+              :class="{ unread: item.unread }"
+              @click="handleNotifClick(item)"
+            >
+              <span class="notif-icon">{{ notifIcon(item) }}</span>
+              <div class="notif-body">
+                <div class="notif-source">{{ notifSourceLabel(item) }}</div>
+                <p class="notif-text">{{ item.text }}</p>
+                <span class="notif-time">{{ formatRelativeTime(item.created_at) }}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Flujos / Tareas Asignadas -->
-        <div class="glass-panel tasks-card checklist-card">
-          <h3>Mis Checklists</h3>
-
-          <div class="checklist-tabs">
-            <button :class="{ active: taskTab === 'daily' }" @click="taskTab = 'daily'">📅 Diario</button>
-            <button :class="{ active: taskTab === 'weekly' }" @click="taskTab = 'weekly'">🗓 Semanal</button>
-            <button :class="{ active: taskTab === 'monthly' }" @click="taskTab = 'monthly'">📆 Mensual</button>
+        <!-- Biblioteca Documental Mini -->
+        <div class="glass-panel documents-column-mini">
+          <div class="documents-header">
+            <h3>📚 Biblioteca Oficial</h3>
           </div>
-
-          <ul class="task-list interactive">
-            <li v-for="task in activeTaskList" :key="task.id" :class="task.status">
-              <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
-              <span class="task-title">{{ task.title }}</span>
-            </li>
-            <li v-if="activeTaskList.length === 0" class="no-tasks">No hay tareas en este período.</li>
-          </ul>
+          <div class="documents-list-mini">
+            <div v-if="loadingKpis" class="loading-text">Cargando biblioteca...</div>
+            <div v-else-if="templates.length === 0" class="empty-state-mini">
+              <p>Sin documentos.</p>
+            </div>
+            <div v-else class="template-list-mini">
+              <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank" class="template-card-mini">
+                <div class="template-icon">📄</div>
+                <div class="template-info">
+                  <h4>{{ tpl.title }}</h4>
+                </div>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Columna Central: Biblioteca Documental -->
-      <div class="glass-panel documents-column">
-        <div class="documents-header">
-          <h3>📚 Biblioteca y Formatos</h3>
-          <p>Documentos oficiales para tu cargo</p>
+      <!-- Columna Central: Cronograma Programacional -->
+      <div class="glass-panel schedule-column">
+        <div class="schedule-header">
+          <h3>Cronograma Programacional</h3>
+          <p>Compromisos, reportes y tareas asignadas por tu líder</p>
         </div>
-        <div class="documents-list">
-          <div v-if="loadingKpis" class="loading-text">Cargando biblioteca...</div>
-          <div v-else-if="templates.length === 0" class="empty-state-mini">
-            <p>No hay documentos asignados a este cargo aún.</p>
-          </div>
-          <div v-else class="template-grid">
-            <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank" class="template-card">
-              <div class="template-icon">
-                <span v-if="tpl.type === 'excel'">📊</span>
-                <span v-else-if="tpl.type === 'word'">📝</span>
-                <span v-else-if="tpl.type === 'pdf'">📕</span>
-                <span v-else-if="tpl.type === 'notion'">📓</span>
-                <span v-else>📄</span>
+        
+        <div class="schedule-calendar-tabs">
+          <button :class="{ active: taskTab === 'daily' }" @click="taskTab = 'daily'">Rutina Diaria</button>
+          <button :class="{ active: taskTab === 'weekly' }" @click="taskTab = 'weekly'">Plan Semanal</button>
+          <button :class="{ active: taskTab === 'monthly' }" @click="taskTab = 'monthly'">Plan Mensual</button>
+        </div>
+
+        <div class="schedule-calendar-view">
+           <ul class="task-list interactive schedule-list">
+            <li v-for="task in activeTaskList" :key="task.id" :class="{ completed: task.status === 'completed' }">
+              <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
+              <div class="task-details">
+                <span class="task-title">{{ task.title }}</span>
+                <span v-if="task.description" class="task-desc">{{ task.description }}</span>
+                <span v-if="task.due_date" class="task-date">Vence: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}</span>
               </div>
-              <div class="template-info">
-                <h4>{{ tpl.title }}</h4>
-                <small>{{ tpl.role_id ? 'Específico del Cargo' : 'Global' }}</small>
-              </div>
-              <div class="template-action">→</div>
-            </a>
-          </div>
+            </li>
+            <li v-if="activeTaskList.length === 0" class="no-tasks">
+              No tienes compromisos asignados en esta vista.
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -253,7 +286,7 @@
           <input 
             v-model="newMessage" 
             type="text" 
-            placeholder="Pregunta sobre tus procesos, políticas o tareas..." 
+            placeholder="Pregunta sobre tus procesos..." 
             @keyup.enter="sendMessage"
             :disabled="isTyping"
           />
@@ -274,6 +307,7 @@ import { supabase } from '../api/supabase';
 import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../api/auth';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { getPeriodKey } from '../utils/taskPeriods';
 
 const router = useRouter();
 const route = useRoute();
@@ -287,8 +321,10 @@ const isAuditMode = ref(false);
 // Auditoría) -- determina si se muestra el acceso directo al Panel de Liderazgo.
 const isLeaderRole = computed(() => currentRole.value && [1, 2].includes(currentRole.value.access_level));
 
-// Tareas: se muestran en un único bloque con pestañas (Diario/Semanal/Mensual)
-// en vez de tres secciones apiladas, para reducir el ruido visual.
+// Cronograma Programacional: tareas puntuales que el líder asigna a ESTA
+// persona (tabla `tasks`), con fecha de vencimiento. Se muestran en un único
+// bloque con pestañas (Diario/Semanal/Mensual) en vez de tres secciones
+// apiladas, para reducir el ruido visual.
 const taskTab = ref('daily');
 const activeTaskList = computed(() => {
   if (taskTab.value === 'weekly') return weeklyTasks.value;
@@ -302,6 +338,18 @@ const totalCompletedTasks = computed(() =>
   [...dailyTasks.value, ...weeklyTasks.value, ...monthlyTasks.value].filter(t => t.status === 'completed').length
 );
 
+// Gestión Diaria: actividades recurrentes y estándar del cargo (revisar
+// correos, enviar facturas, etc.), definidas una sola vez en la memoria del
+// cargo (role_task_templates) y compartidas por todos los que tienen ese
+// cargo -- distinta del Cronograma Programacional de arriba, que son
+// encargos puntuales de un líder a una persona.
+const dmTab = ref('daily');
+const activeDmTaskList = computed(() => {
+  if (dmTab.value === 'weekly') return dmWeeklyTasks.value;
+  if (dmTab.value === 'monthly') return dmMonthlyTasks.value;
+  return dmDailyTasks.value;
+});
+
 // Notificaciones (avisos de la empresa / notifications) y mensajes del líder de área (categorization_messages)
 const notifications = ref([]);
 const categorizationMessages = ref([]);
@@ -314,10 +362,15 @@ const currentKpi = ref({ overall_score: 0, ai_evaluation_notes: null });
 const loadingKpis = ref(false);
 const roleContextStr = ref('');
 
-// Tareas / Checklists
+// Cronograma Programacional (tareas asignadas por el líder, tabla `tasks`)
 const dailyTasks = ref([]);
 const weeklyTasks = ref([]);
 const monthlyTasks = ref([]);
+
+// Gestión Diaria (memoria del cargo, role_task_templates + task_completions)
+const dmDailyTasks = ref([]);
+const dmWeeklyTasks = ref([]);
+const dmMonthlyTasks = ref([]);
 
 // Plantillas
 const templates = ref([]);
@@ -544,6 +597,7 @@ const initWorkspace = async () => {
 
     if (currentRole.value) {
       await fetchRoleData(currentRole.value.id);
+      await fetchDailyManagement(currentRole.value.id, currentProfile.value.id);
     }
     await fetchChecklists(currentProfile.value.id);
     await fetchNotifications(currentProfile.value.id, currentRole.value);
@@ -552,13 +606,17 @@ const initWorkspace = async () => {
   }
 };
 
+// Cronograma Programacional: tareas puntuales que el líder asignó a esta
+// persona (tabla `tasks`).
 const fetchChecklists = async (profileId) => {
   try {
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('*')
       .eq('assigned_to', profileId);
-      
+
+    if (error) throw error;
+
     if (tasks) {
       dailyTasks.value = tasks.filter(t => t.task_type === 'daily');
       weeklyTasks.value = tasks.filter(t => t.task_type === 'weekly');
@@ -573,11 +631,78 @@ const toggleTaskStatus = async (task) => {
   const newStatus = task.status === 'completed' ? 'pending' : 'completed';
   const oldStatus = task.status;
   task.status = newStatus; // Optimistic update
-  
+
   try {
     await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id);
   } catch (e) {
     task.status = oldStatus; // Revert on fail
+    console.error(e);
+  }
+};
+
+// Gestión Diaria: actividades recurrentes y estándar del cargo. Viven en la
+// memoria del cargo (role_task_templates) y el marcado de cada persona se
+// guarda en task_completions con la llave del período actual (día/semana/mes),
+// así la casilla vuelve a verse vacía en el siguiente período sin perder el
+// historial de cumplimiento.
+const fetchDailyManagement = async (roleId, profileId) => {
+  try {
+    const { data: templates, error: templatesError } = await supabase
+      .from('role_task_templates')
+      .select('*')
+      .eq('role_id', roleId)
+      .eq('active', true)
+      .order('created_at', { ascending: true });
+    if (templatesError) throw templatesError;
+
+    const { data: completions, error: completionsError } = await supabase
+      .from('task_completions')
+      .select('task_template_id, period_key')
+      .eq('profile_id', profileId);
+    if (completionsError) throw completionsError;
+
+    const completedKeys = new Set((completions || []).map(c => `${c.task_template_id}::${c.period_key}`));
+
+    const withStatus = (frequency) =>
+      (templates || [])
+        .filter(t => t.frequency === frequency)
+        .map(t => ({
+          ...t,
+          periodKey: getPeriodKey(frequency),
+          completed: completedKeys.has(`${t.id}::${getPeriodKey(frequency)}`)
+        }));
+
+    dmDailyTasks.value = withStatus('daily');
+    dmWeeklyTasks.value = withStatus('weekly');
+    dmMonthlyTasks.value = withStatus('monthly');
+  } catch (e) {
+    console.error('Error fetching Gestión Diaria:', e);
+  }
+};
+
+const toggleDmTask = async (task) => {
+  const wasCompleted = task.completed;
+  task.completed = !wasCompleted; // Optimistic update
+
+  try {
+    if (wasCompleted) {
+      const { error } = await supabase
+        .from('task_completions')
+        .delete()
+        .eq('task_template_id', task.id)
+        .eq('profile_id', currentProfile.value.id)
+        .eq('period_key', task.periodKey);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from('task_completions').insert({
+        task_template_id: task.id,
+        profile_id: currentProfile.value.id,
+        period_key: task.periodKey
+      });
+      if (error) throw error;
+    }
+  } catch (e) {
+    task.completed = wasCompleted; // Revert on fail
     console.error(e);
   }
 };
@@ -1236,17 +1361,17 @@ const exitAuditMode = () => {
   text-align: left;
 }
 
-.tasks-card {
-  padding: 24px;
-  flex: 1;
-}
-
-/* Tasks Checklist Styles */
+/* Gestión Diaria (memoria del cargo) */
 .checklist-card {
-  padding: 24px;
-  flex: 1;
+  padding: 20px;
   display: flex;
   flex-direction: column;
+}
+
+.checklist-card h3 {
+  margin: 0 0 16px 0;
+  color: var(--ink);
+  font-size: 1.1rem;
 }
 
 .checklist-tabs {
@@ -1274,34 +1399,35 @@ const exitAuditMode = () => {
   border-color: var(--ink);
 }
 
-.task-list {
+.dm-task-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.task-list.interactive li {
+.dm-task-list li {
   padding: 10px 0;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--ink-secondary);
 }
 
-.task-list.interactive li:last-child {
+.dm-task-list li:last-child {
   border-bottom: none;
 }
 
-.task-list.interactive input[type="checkbox"] {
+.dm-task-list input[type="checkbox"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
   accent-color: var(--gold);
+  flex-shrink: 0;
 }
 
-.task-list.interactive li.completed .task-title {
+.dm-task-list li.completed .task-title {
   text-decoration: line-through;
   color: var(--text-tertiary);
 }
@@ -1313,67 +1439,200 @@ const exitAuditMode = () => {
   padding: 8px 0;
 }
 
-/* Documents Column */
-.documents-column {
+.notif-permanent-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notif-permanent-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.notif-list-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notif-list-mini .notif-item {
+  padding: 8px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 0;
+}
+
+.notif-list-mini .notif-item.unread {
+  border-left: 3px solid var(--gold);
+}
+
+.documents-column-mini {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-.documents-header {
-  padding: 16px 24px;
+.documents-header h3 {
+  margin: 0;
+  padding: 16px;
+  font-size: 1rem;
+  color: var(--ink);
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.documents-header h3 {
-  margin: 0 0 4px 0;
-  color: var(--ink);
-  font-size: 1.2rem;
+.documents-list-mini {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.documents-header p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+.template-list-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.documents-list {
-  flex: 1;
-  padding: 24px;
-}
-
-.template-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-
-.template-card {
+.template-card-mini {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
+  gap: 10px;
+  padding: 10px;
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   text-decoration: none;
   color: var(--ink);
   transition: all 0.2s ease;
+}
+
+.template-card-mini:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
 }
 
-.template-card:hover {
+/* Schedule Column (Central) */
+.schedule-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.schedule-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.4rem;
+  color: var(--ink);
+}
+
+.schedule-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.schedule-calendar-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px 0;
+}
+
+.schedule-calendar-tabs button {
+  flex: 1;
   background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.schedule-calendar-tabs button.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.schedule-calendar-view {
+  padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.schedule-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.schedule-list li:hover {
   border-color: var(--gold-light);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+}
+
+.schedule-list input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--gold);
+}
+
+.task-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.task-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.task-date {
+  font-size: 0.8rem;
+  color: var(--gold-deep);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.schedule-list li.completed {
+  opacity: 0.7;
+}
+
+.schedule-list li.completed .task-title {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
 }
 
 .template-icon {
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   background: var(--bg-secondary);
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1385,20 +1644,9 @@ const exitAuditMode = () => {
 }
 
 .template-info h4 {
-  margin: 0 0 4px 0;
+  margin: 0;
   font-size: 0.95rem;
   color: var(--ink);
-}
-
-.template-info small {
-  color: var(--gold-deep);
-  font-size: 0.75rem;
-}
-
-.template-action {
-  color: var(--gold);
-  font-weight: bold;
-  font-size: 1.2rem;
 }
 
 .empty-state-mini {

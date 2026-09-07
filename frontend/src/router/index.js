@@ -37,7 +37,11 @@ const routes = [
     path: '/mapa-cargos',
     name: 'DataHub',
     component: () => import('../views/MapaCargos.vue'),
-    meta: { masterAdminOnly: true }
+    // Antes era masterAdminOnly; ahora un líder también entra aquí para
+    // gestionar la Gestión Diaria (memoria del cargo) de su equipo. El
+    // propio MapaCargos.vue filtra a los cargos de su área si no es admin,
+    // y esconde las acciones exclusivas del admin (Inyectar Conocimiento).
+    meta: { leaderOnly: true }
   },
   {
     path: '/academia',

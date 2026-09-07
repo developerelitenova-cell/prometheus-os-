@@ -11,7 +11,7 @@
          Pendiente de aprobación) ya muestran el logo en grande, así que se omite ahí
          para no duplicarlo. -->
     <router-link v-if="showBrandMark" to="/" class="global-brand-mark" title="PROMETHEUS OS">
-      <img src="@/assets/prometheus-os-logo.png" alt="PROMETHEUS OS" />
+      <img src="@/assets/elite-nova-logo.png" alt="PROMETHEUS OS" />
     </router-link>
 
     <!-- Modal Global de Eventos Obligatorios -->

@@ -10,7 +10,7 @@
         <p>Red de Arquitectura Organizacional ({{ roles.length }} Nodos)</p>
       </div>
       <div class="header-actions">
-        <router-link to="/knowledge-loader" class="btn-primary knowledge-btn">🧠 Inyectar Conocimiento</router-link>
+        <router-link v-if="isMaster" to="/knowledge-loader" class="btn-primary knowledge-btn">🧠 Inyectar Conocimiento</router-link>
         <button class="btn-primary" @click="fetchRoles">Actualizar Datos</button>
       </div>
     </header>
@@ -104,6 +104,58 @@
               <RoleGraph :role="selectedRole" :workflow="selectedWorkflow" />
             </div>
           </div>
+
+          <div class="detail-group">
+            <label>Gestión Diaria (memoria del cargo)</label>
+            <p class="hint" style="margin-top: -4px; margin-bottom: 12px;">
+              Las tareas que agregues aquí son las que cada persona con este cargo debe chulear en su Espacio Elite, todos los días/semanas/meses según la frecuencia.
+            </p>
+
+            <div v-if="loadingRoleTasks" class="hint">Cargando tareas...</div>
+
+            <div v-else class="daily-mgmt">
+              <div v-for="freq in FREQUENCIES" :key="freq" class="daily-mgmt-group">
+                <h4 class="daily-mgmt-group-title">{{ FREQUENCY_LABELS[freq] }}</h4>
+
+                <ul class="role-task-list">
+                  <li v-for="task in tasksByFrequency[freq]" :key="task.id" :class="{ inactive: !task.active }">
+                    <div class="role-task-main">
+                      <span class="priority-dot" :class="task.priority"></span>
+                      <div>
+                        <span class="role-task-title">{{ task.title }}</span>
+                        <p v-if="task.description" class="role-task-desc">{{ task.description }}</p>
+                      </div>
+                    </div>
+                    <div v-if="canManageTasks" class="role-task-actions">
+                      <button class="btn-text-small" @click="toggleTaskActive(task)">
+                        {{ task.active ? 'Desactivar' : 'Reactivar' }}
+                      </button>
+                      <button class="btn-text-small" style="color: var(--danger);" @click="deleteRoleTask(task)">Eliminar</button>
+                    </div>
+                  </li>
+                  <li v-if="tasksByFrequency[freq].length === 0" class="no-tasks">
+                    Sin tareas {{ FREQUENCY_LABELS[freq].toLowerCase() }}s todavía.
+                  </li>
+                </ul>
+              </div>
+
+              <form v-if="canManageTasks" class="new-role-task-form" @submit.prevent="addRoleTask">
+                <input type="text" v-model="newRoleTask.title" placeholder="Nueva tarea (ej: Cierre de caja)" required />
+                <input type="text" v-model="newRoleTask.description" placeholder="Descripción (opcional)" />
+                <select v-model="newRoleTask.frequency">
+                  <option value="daily">Diario</option>
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensual</option>
+                </select>
+                <select v-model="newRoleTask.priority">
+                  <option value="low">Baja</option>
+                  <option value="medium">Media</option>
+                  <option value="high">Alta</option>
+                </select>
+                <button type="submit" class="btn-primary btn-small" :disabled="savingRoleTask">Agregar</button>
+              </form>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn-primary" @click="closeRoleDetails">Cerrar</button>
@@ -115,9 +167,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { supabase } from '../api/supabase';
 import RoleGraph from '../components/RoleGraph.vue';
 import TechLoader from '../components/TechLoader.vue';
+import { FREQUENCIES, FREQUENCY_LABELS } from '../utils/taskPeriods';
+
+const route = useRoute();
 
 const roles = ref([]);
 const loading = ref(true);
@@ -128,14 +184,37 @@ const selectedWorkflow = ref(null);
 const loadingWorkflow = ref(false);
 const copiedRoleId = ref(null);
 
+// Perfil de quien mira el hub: determina si ve TODOS los cargos (admin
+// master) o solo los de su propia área (líder Nivel 1/2), y si puede
+// editar la Gestión Diaria del cargo abierto.
+const currentProfile = ref(null);
+const isMaster = computed(() => !!currentProfile.value?.is_master_admin);
+const leaderAreaId = computed(() => currentProfile.value?.roles?.area_id || null);
+
+const fetchCurrentProfile = async () => {
+  const { data: session } = await supabase.auth.getSession();
+  const userId = session?.session?.user?.id;
+  if (!userId) return;
+  const { data } = await supabase
+    .from('profiles')
+    .select('is_master_admin, roles(area_id, access_level)')
+    .eq('id', userId)
+    .single();
+  currentProfile.value = data || null;
+};
+
 // Fetch data from Supabase
 const fetchRoles = async () => {
   loading.value = true;
   try {
     // Usamos el left join con la tabla areas para obtener el nombre del área
-    const { data, error } = await supabase
-      .from('roles')
-      .select('*, areas(name)');
+    let query = supabase.from('roles').select('*, areas(name)');
+    // Un líder de área (no admin master) solo gestiona los cargos de su
+    // propia área -- el admin master sigue viendo el organigrama completo.
+    if (!isMaster.value && leaderAreaId.value) {
+      query = query.eq('area_id', leaderAreaId.value);
+    }
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching nodes:', error);
@@ -171,9 +250,18 @@ const fetchMappedRoleIds = async () => {
   }
 };
 
-onMounted(() => {
-  fetchRoles();
+onMounted(async () => {
+  await fetchCurrentProfile();
+  await fetchRoles();
   fetchMappedRoleIds();
+
+  // Llegó desde "Editar Gestión Diaria del Cargo" en el Panel de Liderazgo:
+  // abre directo el modal de ese cargo en vez de obligar a buscarlo en la tabla.
+  const targetRoleId = route.query.role;
+  if (targetRoleId) {
+    const targetRole = roles.value.find((r) => r.id === targetRoleId);
+    if (targetRole) openRoleDetails(targetRole);
+  }
 });
 
 const areas = computed(() => {
@@ -200,11 +288,105 @@ const openRoleDetails = async (role) => {
   } finally {
     loadingWorkflow.value = false;
   }
+  await fetchRoleTasks(role.id);
 };
 
 const closeRoleDetails = () => {
   selectedRole.value = null;
   selectedWorkflow.value = null;
+  roleTasks.value = [];
+};
+
+// --- Gestión Diaria (memoria del cargo) ---
+
+const roleTasks = ref([]);
+const loadingRoleTasks = ref(false);
+const savingRoleTask = ref(false);
+const newRoleTask = ref({ title: '', description: '', frequency: 'daily', priority: 'medium' });
+
+// El admin master puede editar cualquier cargo; un líder solo el de su
+// propia área (coincide con la política RLS role_task_templates_write).
+const canManageTasks = computed(() => {
+  if (isMaster.value) return true;
+  if (!selectedRole.value || !leaderAreaId.value) return false;
+  return selectedRole.value.area_id === leaderAreaId.value;
+});
+
+const tasksByFrequency = computed(() => {
+  const grouped = { daily: [], weekly: [], monthly: [] };
+  for (const t of roleTasks.value) {
+    if (grouped[t.frequency]) grouped[t.frequency].push(t);
+  }
+  return grouped;
+});
+
+const fetchRoleTasks = async (roleId) => {
+  loadingRoleTasks.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('role_task_templates')
+      .select('*')
+      .eq('role_id', roleId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    roleTasks.value = data || [];
+  } catch (err) {
+    console.error('Error cargando tareas del cargo:', err);
+    roleTasks.value = [];
+  } finally {
+    loadingRoleTasks.value = false;
+  }
+};
+
+const addRoleTask = async () => {
+  if (!selectedRole.value || !newRoleTask.value.title.trim()) return;
+  savingRoleTask.value = true;
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    const { error } = await supabase.from('role_task_templates').insert({
+      role_id: selectedRole.value.id,
+      title: newRoleTask.value.title.trim(),
+      description: newRoleTask.value.description.trim() || null,
+      frequency: newRoleTask.value.frequency,
+      priority: newRoleTask.value.priority,
+      created_by: session?.session?.user?.id || null
+    });
+    if (error) throw error;
+    newRoleTask.value = { title: '', description: '', frequency: 'daily', priority: 'medium' };
+    await fetchRoleTasks(selectedRole.value.id);
+  } catch (err) {
+    console.error('Error agregando tarea del cargo:', err);
+    alert('No se pudo agregar la tarea: ' + err.message);
+  } finally {
+    savingRoleTask.value = false;
+  }
+};
+
+const toggleTaskActive = async (task) => {
+  const previous = task.active;
+  task.active = !previous; // Optimista
+  try {
+    const { error } = await supabase
+      .from('role_task_templates')
+      .update({ active: task.active, updated_at: new Date().toISOString() })
+      .eq('id', task.id);
+    if (error) throw error;
+  } catch (err) {
+    task.active = previous;
+    console.error('Error actualizando tarea del cargo:', err);
+  }
+};
+
+const deleteRoleTask = async (task) => {
+  if (!confirm(`¿Eliminar la tarea "${task.title}" de la Gestión Diaria de este cargo?`)) return;
+  try {
+    const { error } = await supabase.from('role_task_templates').delete().eq('id', task.id);
+    if (error) throw error;
+    roleTasks.value = roleTasks.value.filter((t) => t.id !== task.id);
+  } catch (err) {
+    console.error('Error eliminando tarea del cargo:', err);
+    alert('No se pudo eliminar la tarea: ' + err.message);
+  }
 };
 
 const copyMapperLink = async (role) => {
@@ -615,5 +797,120 @@ tr:hover td {
   border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: flex-end;
+}
+
+/* Gestión Diaria (memoria del cargo) */
+.daily-mgmt {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.daily-mgmt-group-title {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  color: var(--gold-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-task-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.role-task-list li.inactive {
+  opacity: 0.5;
+}
+
+.role-task-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+  background: var(--text-tertiary);
+}
+
+.priority-dot.high { background: var(--danger); }
+.priority-dot.medium { background: var(--warning); }
+.priority-dot.low { background: var(--success); }
+
+.role-task-title {
+  font-size: 0.92rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.role-task-desc {
+  margin: 2px 0 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.role-task-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.new-role-task-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.new-role-task-form input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.new-role-task-form select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.btn-text-small {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 </style>
