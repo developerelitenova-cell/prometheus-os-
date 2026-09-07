@@ -57,6 +57,7 @@
                   <p class="notif-text">{{ item.text }}</p>
                   <span class="notif-time">{{ formatRelativeTime(item.created_at) }}</span>
                 </div>
+                <button class="notif-delete-btn" @click.stop="deleteNotification(item)" title="Eliminar notificación">✕</button>
               </div>
             </div>
           </div>
@@ -122,21 +123,6 @@
     </div>
 
     <div v-if="currentProfile" class="workspace-body">
-      <!-- Resumen rápido -->
-      <div class="workspace-stats-grid">
-        <div class="stat-card glass-panel">
-          <span class="stat-card-value">{{ totalPendingTasks }}</span>
-          <span class="stat-card-label">Tareas Pendientes</span>
-        </div>
-        <div class="stat-card glass-panel">
-          <span class="stat-card-value">{{ totalCompletedTasks }}</span>
-          <span class="stat-card-label">Tareas Completadas</span>
-        </div>
-        <div class="stat-card glass-panel">
-          <span class="stat-card-value">{{ templates.length }}</span>
-          <span class="stat-card-label">Documentos Disponibles</span>
-        </div>
-      </div>
 
     <div class="workspace-content">
       <!-- Columna Izquierda: Perfil, Notificaciones y Biblioteca -->
@@ -160,24 +146,6 @@
           </div>
         </div>
 
-        <!-- Gestión Diaria: actividades recurrentes y estándar del cargo -->
-        <div class="glass-panel checklist-card">
-          <h3>Gestión Diaria</h3>
-
-          <div class="checklist-tabs">
-            <button :class="{ active: dmTab === 'daily' }" @click="dmTab = 'daily'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Diario</button>
-            <button :class="{ active: dmTab === 'weekly' }" @click="dmTab = 'weekly'">🗓 Semanal</button>
-            <button :class="{ active: dmTab === 'monthly' }" @click="dmTab = 'monthly'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Mensual</button>
-          </div>
-
-          <ul class="dm-task-list">
-            <li v-for="task in activeDmTaskList" :key="task.id" :class="{ completed: task.completed }">
-              <input type="checkbox" :checked="task.completed" @change="toggleDmTask(task)" />
-              <span class="task-title">{{ task.title }}</span>
-            </li>
-            <li v-if="activeDmTaskList.length === 0" class="no-tasks">Tu cargo aún no tiene tareas de Gestión Diaria asignadas.</li>
-          </ul>
-        </div>
 
         <!-- Canal de Notificaciones Permanente -->
         <div class="glass-panel notif-permanent-card">
@@ -199,6 +167,7 @@
                 <p class="notif-text">{{ item.text }}</p>
                 <span class="notif-time">{{ formatRelativeTime(item.created_at) }}</span>
               </div>
+              <button class="notif-delete-btn" @click.stop="deleteNotification(item)" title="Eliminar notificación">✕</button>
             </div>
           </div>
         </div>
@@ -225,33 +194,55 @@
         </div>
       </div>
 
-      <!-- Columna Central: Cronograma Programacional -->
-      <div class="glass-panel schedule-column">
-        <div class="schedule-header">
-          <h3>Cronograma Programacional</h3>
-          <p>Compromisos, reportes y tareas asignadas por tu líder</p>
-        </div>
-        
-        <div class="schedule-calendar-tabs">
-          <button :class="{ active: taskTab === 'daily' }" @click="taskTab = 'daily'">Rutina Diaria</button>
-          <button :class="{ active: taskTab === 'weekly' }" @click="taskTab = 'weekly'">Plan Semanal</button>
-          <button :class="{ active: taskTab === 'monthly' }" @click="taskTab = 'monthly'">Plan Mensual</button>
+      <!-- Columna Central: Tableros Operativos -->
+      <div class="main-column">
+        <!-- Gestión Diaria: actividades recurrentes y estándar del cargo -->
+        <div class="glass-panel checklist-card">
+          <h3>Gestión Diaria</h3>
+
+          <div class="checklist-tabs">
+            <button :class="{ active: dmTab === 'daily' }" @click="dmTab = 'daily'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Diario</button>
+            <button :class="{ active: dmTab === 'weekly' }" @click="dmTab = 'weekly'">🗓 Semanal</button>
+            <button :class="{ active: dmTab === 'monthly' }" @click="dmTab = 'monthly'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Mensual</button>
+          </div>
+
+          <ul class="dm-task-list">
+            <li v-for="task in activeDmTaskList" :key="task.id" :class="{ completed: task.completed }">
+              <input type="checkbox" :checked="task.completed" @change="toggleDmTask(task)" />
+              <span class="task-title">{{ task.title }}</span>
+            </li>
+            <li v-if="activeDmTaskList.length === 0" class="no-tasks">Tu cargo aún no tiene tareas de Gestión Diaria asignadas.</li>
+          </ul>
         </div>
 
-        <div class="schedule-calendar-view">
-           <ul class="task-list interactive schedule-list">
-            <li v-for="task in activeTaskList" :key="task.id" :class="{ completed: task.status === 'completed' }">
-              <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
-              <div class="task-details">
-                <span class="task-title">{{ task.title }}</span>
-                <span v-if="task.description" class="task-desc">{{ task.description }}</span>
-                <span v-if="task.due_date" class="task-date">Vence: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}</span>
-              </div>
-            </li>
-            <li v-if="activeTaskList.length === 0" class="no-tasks">
-              No tienes compromisos asignados en esta vista.
-            </li>
-          </ul>
+        <!-- Cronograma Programacional -->
+        <div class="glass-panel schedule-column">
+          <div class="schedule-header">
+            <h3>Cronograma Programacional</h3>
+            <p>Compromisos, reportes y tareas asignadas por tu líder</p>
+          </div>
+          
+          <div class="schedule-calendar-tabs">
+            <button :class="{ active: taskTab === 'daily' }" @click="taskTab = 'daily'">Rutina Diaria</button>
+            <button :class="{ active: taskTab === 'weekly' }" @click="taskTab = 'weekly'">Plan Semanal</button>
+            <button :class="{ active: taskTab === 'monthly' }" @click="taskTab = 'monthly'">Plan Mensual</button>
+          </div>
+
+          <div class="schedule-calendar-view">
+             <ul class="task-list interactive schedule-list">
+              <li v-for="task in activeTaskList" :key="task.id" :class="{ completed: task.status === 'completed' }">
+                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
+                <div class="task-details">
+                  <span class="task-title">{{ task.title }}</span>
+                  <span v-if="task.description" class="task-desc">{{ task.description }}</span>
+                  <span v-if="task.due_date" class="task-date">Vence: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}</span>
+                </div>
+              </li>
+              <li v-if="activeTaskList.length === 0" class="no-tasks">
+                No tienes compromisos asignados en esta vista.
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -356,6 +347,12 @@ const categorizationMessages = ref([]);
 const showNotifPanel = ref(false);
 const loadingNotifications = ref(false);
 const dismissedMessageIds = ref(new Set());
+// Mensajes de categorization_messages son filas compartidas (van dirigidas a
+// un rol/área entero, no a una persona) -- no se pueden borrar de la base de
+// datos sin quitárselas a todo el mundo. "Eliminar" un mensaje entonces solo
+// lo oculta de la vista de ESTE usuario, guardado aparte de dismissedMessageIds
+// (que solo trackea leído/no leído).
+const hiddenMessageIds = ref(new Set());
 
 // Datos del rol
 const currentKpi = ref({ overall_score: 0, ai_evaluation_notes: null });
@@ -394,6 +391,7 @@ const handleSignOut = async () => {
 // --- Notificaciones ---
 
 const DISMISSED_MESSAGES_KEY = 'prometheus_os_dismissed_messages';
+const HIDDEN_MESSAGES_KEY = 'prometheus_os_hidden_messages';
 
 const loadDismissed = () => {
   try {
@@ -402,6 +400,12 @@ const loadDismissed = () => {
   } catch (e) {
     dismissedMessageIds.value = new Set();
   }
+  try {
+    const raw = localStorage.getItem(HIDDEN_MESSAGES_KEY);
+    hiddenMessageIds.value = new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) {
+    hiddenMessageIds.value = new Set();
+  }
 };
 
 const persistDismissed = () => {
@@ -409,6 +413,14 @@ const persistDismissed = () => {
     localStorage.setItem(DISMISSED_MESSAGES_KEY, JSON.stringify(Array.from(dismissedMessageIds.value)));
   } catch (e) {
     // localStorage no disponible (modo privado, etc.) - no es crítico, se pierde solo la marca de "leído" local
+  }
+};
+
+const persistHidden = () => {
+  try {
+    localStorage.setItem(HIDDEN_MESSAGES_KEY, JSON.stringify(Array.from(hiddenMessageIds.value)));
+  } catch (e) {
+    // localStorage no disponible -- no es crítico, el mensaje solo volvería a aparecer en este navegador
   }
 };
 
@@ -456,15 +468,17 @@ const unifiedFeed = computed(() => {
     created_at: n.created_at,
     unread: !n.is_read
   }));
-  const fromMessages = categorizationMessages.value.map(m => ({
-    id: `m-${m.id}`,
-    rawId: m.id,
-    source: 'message',
-    category: m.category,
-    text: m.content,
-    created_at: m.created_at,
-    unread: !dismissedMessageIds.value.has(m.id)
-  }));
+  const fromMessages = categorizationMessages.value
+    .filter(m => !hiddenMessageIds.value.has(m.id))
+    .map(m => ({
+      id: `m-${m.id}`,
+      rawId: m.id,
+      source: 'message',
+      category: m.category,
+      text: m.content,
+      created_at: m.created_at,
+      unread: !dismissedMessageIds.value.has(m.id)
+    }));
   return [...fromNotifications, ...fromMessages].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
@@ -553,6 +567,28 @@ const handleNotifClick = (item) => {
   } else {
     dismissedMessageIds.value.add(item.rawId);
     persistDismissed();
+  }
+};
+
+// Borra una notificación del Canal de Notificaciones. Las notificaciones del
+// sistema (tabla `notifications`) son propias de este perfil, así que se
+// borran de verdad; los mensajes del líder/empresa (categorization_messages)
+// son filas compartidas con todo un rol/área, así que solo se ocultan para
+// este usuario (ver hiddenMessageIds arriba).
+const deleteNotification = async (item) => {
+  if (item.source === 'notification') {
+    const previous = notifications.value;
+    notifications.value = notifications.value.filter(n => n.id !== item.rawId); // Optimista
+    try {
+      const { error } = await supabase.from('notifications').delete().eq('id', item.rawId);
+      if (error) throw error;
+    } catch (e) {
+      notifications.value = previous; // Revertir si falla
+      console.error('Error eliminando notificación:', e);
+    }
+  } else {
+    hiddenMessageIds.value.add(item.rawId);
+    persistHidden();
   }
 };
 
@@ -1080,6 +1116,7 @@ const exitAuditMode = () => {
 
 .notif-item {
   display: flex;
+  align-items: flex-start;
   gap: 12px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--border-subtle);
@@ -1089,6 +1126,24 @@ const exitAuditMode = () => {
 
 .notif-item:last-child {
   border-bottom: none;
+}
+
+.notif-delete-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.notif-delete-btn:hover {
+  color: var(--danger);
+  background: rgba(255, 59, 48, 0.1);
 }
 
 .notif-item:hover {
@@ -1244,6 +1299,46 @@ const exitAuditMode = () => {
   transform: translateY(-1px);
 }
 
+.workspace-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 24px;
+  height: calc(100vh - var(--header-height) - 48px);
+  min-height: 0;
+}
+
+.sidebar-column, .assistant-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  height: 100%;
+  padding-right: 6px;
+}
+
+.main-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  height: 100%;
+  padding-right: 6px;
+}
+
+/* Custom scrollbar para columnas interiores */
+.sidebar-column::-webkit-scrollbar, 
+.main-column::-webkit-scrollbar, 
+.assistant-column::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-column::-webkit-scrollbar-thumb, 
+.main-column::-webkit-scrollbar-thumb, 
+.assistant-column::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
 .workspace-body {
   display: flex;
   flex-direction: column;
@@ -1252,38 +1347,6 @@ const exitAuditMode = () => {
   min-height: 0;
 }
 
-.workspace-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat-card-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--ink);
-  font-family: var(--font-mono);
-}
-
-.stat-card-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  font-weight: 600;
-}
-
-.stat-card.green .stat-card-value { color: var(--success); }
-.stat-card.yellow .stat-card-value { color: var(--warning); }
-.stat-card.red .stat-card-value { color: var(--danger); }
-.stat-card.gray .stat-card-value { color: var(--text-tertiary); }
 
 .role-level-badge {
   display: inline-block;
@@ -1368,7 +1431,7 @@ const exitAuditMode = () => {
 
 /* Gestión Diaria (memoria del cargo) */
 .checklist-card {
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
 }
@@ -1381,27 +1444,34 @@ const exitAuditMode = () => {
 
 .checklist-tabs {
   display: flex;
-  gap: 8px;
+  background: var(--bg-secondary);
+  padding: 4px;
+  border-radius: 8px;
   margin-bottom: 16px;
+  gap: 4px;
 }
 
 .checklist-tabs button {
   flex: 1;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  background: transparent;
+  border: none;
   color: var(--text-secondary);
   padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.2s ease;
 }
 
+.checklist-tabs button:hover {
+  color: var(--ink);
+}
+
 .checklist-tabs button.active {
-  background: var(--ink);
-  color: #fff;
-  border-color: var(--ink);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .dm-task-list {
