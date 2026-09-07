@@ -31,11 +31,11 @@
           {{ loading ? 'Procesando...' : (isLogin ? 'Ingresar' : 'Registrarse') }}
         </button>
       </form>
+    </div>
 
-      <div class="developed-by">
-        <span>Desarrollado por</span>
-        <img src="../assets/elite-nova-logo.png" alt="Elite Nova" />
-      </div>
+    <div class="developed-by">
+      <span>Desarrollado por</span>
+      <img src="../assets/elite-nova-logo.png" alt="Elite Nova" />
     </div>
   </div>
 </template>
@@ -282,11 +282,14 @@ const handleSubmit = async () => {
 }
 
 .developed-by {
-  margin-top: 32px;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
+  z-index: 10;
 }
 
 .developed-by span {

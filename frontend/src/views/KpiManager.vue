@@ -3,10 +3,11 @@
     <header class="page-header">
       <div class="header-content">
         <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
-        <h1>KPIs Reales por Cargo</h1>
+        <h1>Gestión de KPIs y Objetivos</h1>
         <p class="subtitle">
-          Plantillas tomadas de las mediciones reales de la empresa. Cada KPI se mide en 4 cortes por mes
-          (Semana 2, Semana 3, Semana 4 y Cierre). Solo lo ve el admin master y el líder del área responsable.
+          Administrá las plantillas de indicadores clave (KPIs) asignadas a cada cargo. 
+          Estas métricas son evaluadas por los líderes en 4 cortes mensuales (Semana 2, 3, 4 y Cierre). 
+          Exclusivo para administradores master y líderes de área.
         </p>
       </div>
       <div class="tabs">
@@ -169,16 +170,39 @@
 
     <!-- Modal: nueva plantilla -->
     <div v-if="showNewTemplateModal" class="modal-overlay" @click.self="showNewTemplateModal = false">
-      <div class="modal-content glass-panel small">
-        <h2>Nueva Plantilla de Área</h2>
+      <div class="modal-content glass-panel">
+        <h2>Nueva Plantilla de KPIs</h2>
         <div class="form-group">
-          <label>Nombre del área</label>
-          <input v-model="newTemplateArea" placeholder="Ej: Logística" />
+          <label>Nombre del área o cargo</label>
+          <div class="input-with-ai">
+            <input v-model="newTemplateArea" placeholder="Ej: Logística" />
+            <button class="btn-magic" @click="generateAIKpis" :disabled="isGeneratingKpis || !newTemplateArea.trim()">
+              {{ isGeneratingKpis ? 'Generando...' : '✨ Autocompletar KPIs' }}
+            </button>
+          </div>
         </div>
+        
+        <div class="kpi-draft-list" v-if="newTemplateKpis.length > 0">
+          <label>KPIs Iniciales</label>
+          <div v-for="(kpi, idx) in newTemplateKpis" :key="idx" class="kpi-draft-row">
+            <input v-model="kpi.name" placeholder="Nombre KPI" class="flex-2" />
+            <input v-model="kpi.meta_label" placeholder="Meta" class="flex-1" />
+            <select v-model="kpi.meta_type" class="flex-1">
+              <option value="percentage">%</option>
+              <option value="currency">$</option>
+              <option value="count">Conteo</option>
+              <option value="text">Texto</option>
+            </select>
+            <button class="icon-btn danger" @click="newTemplateKpis.splice(idx, 1)">🗑</button>
+          </div>
+        </div>
+        
+        <button class="btn-text" @click="addDraftKpi">+ Agregar KPI vacío</button>
+
         <p v-if="newTemplateError" class="error-text">{{ newTemplateError }}</p>
         <div class="modal-actions">
           <button class="btn-text" @click="showNewTemplateModal = false">Cancelar</button>
-          <button class="btn-primary" @click="createTemplate">Crear</button>
+          <button class="btn-primary" @click="createTemplate">Guardar Plantilla</button>
         </div>
       </div>
     </div>
@@ -278,11 +302,49 @@ const deleteMetric = async (template, metric) => {
 const showNewTemplateModal = ref(false);
 const newTemplateArea = ref('');
 const newTemplateError = ref('');
+const newTemplateKpis = ref([]);
+const isGeneratingKpis = ref(false);
 
 const openNewTemplate = () => {
   newTemplateArea.value = '';
   newTemplateError.value = '';
+  newTemplateKpis.value = [];
   showNewTemplateModal.value = true;
+};
+
+const addDraftKpi = () => {
+  newTemplateKpis.value.push({ name: '', meta_label: '100%', meta_type: 'percentage' });
+};
+
+const generateAIKpis = async () => {
+  if (!newTemplateArea.value.trim()) return;
+  isGeneratingKpis.value = true;
+  newTemplateError.value = '';
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    const token = session?.session?.access_token;
+    
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const res = await fetch(`${apiUrl}/api/v1/generate-kpis`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ area_name: newTemplateArea.value.trim() })
+    });
+    
+    if (!res.ok) throw new Error('Error al generar KPIs');
+    const result = await res.json();
+    if (result.kpis && result.kpis.length > 0) {
+      newTemplateKpis.value = result.kpis;
+    }
+  } catch (e) {
+    newTemplateError.value = 'No se pudo contactar con la IA para generar los KPIs.';
+    console.error(e);
+  } finally {
+    isGeneratingKpis.value = false;
+  }
 };
 
 const createTemplate = async () => {
@@ -290,8 +352,32 @@ const createTemplate = async () => {
     newTemplateError.value = 'El nombre del área es obligatorio.';
     return;
   }
-  const { error } = await supabase.from('kpi_role_templates').insert([{ area_label: newTemplateArea.value.trim() }]);
-  if (error) { newTemplateError.value = error.message; return; }
+  // 1. Crear plantilla
+  const { data: templateData, error: templateError } = await supabase
+    .from('kpi_role_templates')
+    .insert([{ area_label: newTemplateArea.value.trim() }])
+    .select()
+    .single();
+    
+  if (templateError) { newTemplateError.value = templateError.message; return; }
+  
+  // 2. Insertar KPIs si hay
+  const validKpis = newTemplateKpis.value.filter(k => k.name.trim() !== '');
+  if (validKpis.length > 0) {
+    const metricsPayload = validKpis.map((k, idx) => ({
+      template_id: templateData.id,
+      name: k.name.trim(),
+      meta_label: k.meta_label,
+      meta_type: k.meta_type,
+      display_order: idx + 1
+    }));
+    const { error: kpisError } = await supabase.from('kpi_template_metrics').insert(metricsPayload);
+    if (kpisError) {
+      console.error('Error insertando KPIs iniciales:', kpisError);
+      alert('La plantilla se creó pero hubo un error guardando sus KPIs.');
+    }
+  }
+  
   showNewTemplateModal.value = false;
   await fetchTemplates();
 };
@@ -463,6 +549,17 @@ const saveMeasurements = async () => {
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 0.85rem; margin-bottom: 6px; font-weight: 600; color: var(--text-secondary); }
 .form-group input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-family: inherit; font-size: 0.9rem; }
+
+.input-with-ai { display: flex; gap: 8px; }
+.btn-magic { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #000; border: none; padding: 0 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+.btn-magic:disabled { opacity: 0.5; cursor: not-allowed; }
+.kpi-draft-list { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+.kpi-draft-list label { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+.kpi-draft-row { display: flex; gap: 8px; align-items: center; }
+.kpi-draft-row input, .kpi-draft-row select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-family: inherit; font-size: 0.85rem; }
+.flex-1 { flex: 1; }
+.flex-2 { flex: 2; }
+
 .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
 .btn-danger { background: var(--danger); color: #fff; border: none; padding: 10px 20px; border-radius: var(--radius-pill); font-weight: 600; cursor: pointer; }
 </style>

@@ -199,6 +199,59 @@ def chat_with_agent(request: Request, chat_query: ChatQuery, user=Depends(verify
     response = agent.chat(chat_query.query)
     return {"reply": response}
 
+# --- Generación Automática de KPIs ---
+class GenerateKpiRequest(BaseModel):
+    area_name: str
+    description: Optional[str] = ""
+
+KPI_SYSTEM_INSTRUCTIONS = """Eres un experto en Recursos Humanos y OKRs.
+El usuario te dará el nombre de un área o cargo (y opcionalmente una descripción).
+Tu tarea es sugerir 3 a 5 KPIs (Indicadores Clave de Rendimiento) profesionales y realistas para ese cargo.
+Responde EXCLUSIVAMENTE en JSON válido con este esquema:
+{
+  "kpis": [
+    {
+      "name": "Nombre del KPI (ej. Cumplimiento de Ventas)",
+      "meta_label": "Valor meta (ej. 100%, $5000, 10)",
+      "meta_type": "percentage" | "currency" | "count" | "text"
+    }
+  ]
+}"""
+
+@app.post("/api/v1/generate-kpis")
+@limiter.limit("5/minute")
+def generate_kpis(request: Request, req: GenerateKpiRequest, user=Depends(verify_jwt)):
+    if not anthropic:
+        raise HTTPException(status_code=500, detail="Anthropic no configurado")
+    
+    user_prompt = f"Cargo o Área: {req.area_name}\nDescripción adicional: {req.description}"
+    
+    try:
+        ai_response = anthropic.messages.create(
+            model=claude_model,
+            max_tokens=1000,
+            system=KPI_SYSTEM_INSTRUCTIONS,
+            messages=[{"role": "user", "content": user_prompt}]
+        )
+        
+        text_block = next((b for b in ai_response.content if b.type == 'text'), None)
+        if not text_block:
+            raise HTTPException(status_code=502, detail="No se obtuvo texto del modelo")
+
+        raw_json = text_block.text.strip()
+        if raw_json.startswith("```"):
+            lines = raw_json.split("\n")
+            if lines[0].startswith("```"): lines = lines[1:]
+            if lines[-1].startswith("```"): lines = lines[:-1]
+            raw_json = "\n".join(lines).strip()
+
+        data = json.loads(raw_json)
+        return data
+
+    except Exception as e:
+        print(f"Error generando KPIs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # --- Módulo de Ingesta y Procesamiento de Flujos ---
 class ExtractWorkflowRequest(BaseModel):
     roleId: str
