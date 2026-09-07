@@ -2,7 +2,9 @@
   <div class="mapper-view">
     <header class="glass-panel hub-header">
       <div class="header-content">
-        <router-link to="/mapa-cargos" class="back-link">← Volver al Directorio</router-link>
+        <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="back-link">
+          ← {{ lockedForSelf ? 'Volver a mi Portal' : 'Volver al Directorio' }}
+        </router-link>
         <h1>Mapeo de Flujo: {{ role?.name || 'Cargando...' }}</h1>
         <p>Área: {{ role?.areas?.name || 'Cargando...' }}</p>
       </div>
