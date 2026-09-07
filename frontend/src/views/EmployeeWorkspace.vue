@@ -29,7 +29,7 @@
             :disabled="!currentProfile"
             title="Notificaciones"
           >
-            🔔
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
           </button>
 
@@ -80,12 +80,12 @@
     </header>
 
     <div v-if="loadingProfile" class="empty-state glass-panel">
-      <span class="icon">⏳</span>
+      <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></span>
       <h2>Cargando tu espacio de trabajo...</h2>
     </div>
 
     <div v-else-if="!currentProfile" class="empty-state glass-panel">
-      <span class="icon">👋</span>
+      <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg></span>
       <h2>Bienvenido a Mi Espacio Elite</h2>
       <p>No pudimos cargar tu perfil. Iniciá sesión nuevamente.</p>
       <router-link to="/login" class="btn-primary" style="margin-top: 16px;">Ir a iniciar sesión</router-link>
@@ -154,7 +154,7 @@
             </p>
             <div v-if="isLeaderRole" style="margin-top: 12px;">
               <router-link to="/team" class="btn-primary" style="font-size: 0.85rem; padding: 8px 12px; display: inline-block;">
-                👑 Panel de Liderazgo
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 4h20"></path><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4"></path><polyline points="2 12 12 22 22 12"></polyline></svg> Panel de Liderazgo
               </router-link>
             </div>
           </div>
@@ -165,9 +165,9 @@
           <h3>Gestión Diaria</h3>
 
           <div class="checklist-tabs">
-            <button :class="{ active: dmTab === 'daily' }" @click="dmTab = 'daily'">📅 Diario</button>
+            <button :class="{ active: dmTab === 'daily' }" @click="dmTab = 'daily'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Diario</button>
             <button :class="{ active: dmTab === 'weekly' }" @click="dmTab = 'weekly'">🗓 Semanal</button>
-            <button :class="{ active: dmTab === 'monthly' }" @click="dmTab = 'monthly'">📆 Mensual</button>
+            <button :class="{ active: dmTab === 'monthly' }" @click="dmTab = 'monthly'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Mensual</button>
           </div>
 
           <ul class="dm-task-list">
@@ -206,7 +206,7 @@
         <!-- Biblioteca Documental Mini -->
         <div class="glass-panel documents-column-mini">
           <div class="documents-header">
-            <h3>📚 Biblioteca Oficial</h3>
+            <h3><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> Biblioteca Oficial</h3>
           </div>
           <div class="documents-list-mini">
             <div v-if="loadingKpis" class="loading-text">Cargando biblioteca...</div>
@@ -215,7 +215,7 @@
             </div>
             <div v-else class="template-list-mini">
               <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank" class="template-card-mini">
-                <div class="template-icon">📄</div>
+                <div class="template-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
                 <div class="template-info">
                   <h4>{{ tpl.title }}</h4>
                 </div>
@@ -510,7 +510,7 @@ const notifIcon = (item) => {
     return '📢';
   }
   const map = { manual_update: '📘', new_task: '✅', system_alert: '⚠️', message: '💬' };
-  return map[item.type] || '🔔';
+  return map[item.type] || '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
 };
 
 const notifSourceLabel = (item) => {
@@ -1831,5 +1831,46 @@ const exitAuditMode = () => {
 .kpi-notes-scroll::-webkit-scrollbar-thumb {
   background: var(--primary);
   border-radius: 4px;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 1024px) {
+  .workspace-layout {
+    grid-template-columns: 1fr !important;
+    gap: 24px;
+  }
+  .workspace-sidebar {
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
+}
+@media (max-width: 768px) {
+  .workspace-container {
+    padding: 16px;
+  }
+  .header-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .btn-action, .btn-primary, .btn-danger-outline {
+    width: 100%;
+    justify-content: center;
+  }
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-content {
+    width: 95% !important;
+    padding: 24px 16px;
+    margin: 20px auto;
+  }
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters-row select, .filters-row input {
+    width: 100%;
+  }
 }
 </style>

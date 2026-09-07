@@ -254,4 +254,11 @@ ul.nova-bullets li::before {
   background-repeat: no-repeat;
   background-position: center left;
 }
+
+/* --- Responsive Global --- */
+@media (max-width: 768px) {
+  .global-brand-mark {
+    display: none; /* Hide watermark on mobile to save screen space */
+  }
+}
 </style>

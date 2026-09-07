@@ -11,7 +11,7 @@
     <div class="mapper-layout">
       <!-- Sección 1: Preguntas Guía -->
       <aside class="glass-panel guide-panel">
-        <div class="guide-badge">✨ Guía rápida</div>
+        <div class="guide-badge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Guía rápida</div>
         <h3>Cuéntanos cómo es tu día a día</h3>
         <p class="guide-desc">No hace falta preparar nada especial: contesta con tus propias palabras, como si se lo explicaras a un compañero nuevo. Nosotros nos encargamos de organizar toda la información por ti.</p>
 
@@ -24,21 +24,21 @@
             </div>
           </li>
           <li>
-            <span class="q-icon">🔍</span>
+            <span class="q-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
             <div>
               <strong>Nosotros ordenamos los detalles</strong>
               <p>Identificamos tus tareas, lo que entregas y los puntos donde el proceso se traba.</p>
             </div>
           </li>
           <li>
-            <span class="q-icon">📁</span>
+            <span class="q-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span>
             <div>
               <strong>Queda listo para tu equipo</strong>
               <p>Al terminar, tu información aparecerá organizada en el Mapa de Cargos.</p>
             </div>
           </li>
           <li>
-            <span class="q-icon">🤝</span>
+            <span class="q-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
             <div>
               <strong>¿Tienes dudas?</strong>
               <p>Consulta a tu líder directo en cualquier momento.</p>
@@ -47,7 +47,7 @@
         </ul>
 
         <div class="recording-tip">
-          <span class="icon">💡</span>
+          <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
           <small>Si prefieres, alguien puede grabar la conversación, pasarla a texto y pegarla en la pestaña "Subir Transcripción / Archivo".</small>
         </div>
       </aside>
@@ -93,7 +93,7 @@
             <p>Sube el archivo de texto de la entrevista o pega la transcripción completa aquí.</p>
 
             <div class="drop-zone" @click="triggerFileInput">
-              <span class="icon">📄</span>
+              <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span>
               <p>Haz clic para subir archivo (.txt, .md)</p>
               <input type="file" ref="fileInput" @change="handleFileUpload" accept=".txt,.md,.doc,.docx" style="display:none">
             </div>
@@ -189,7 +189,7 @@
         </div>
 
         <div class="success-section" v-if="step === 4">
-          <span class="success-icon">🎉</span>
+          <span class="success-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
           <h2>¡Listo! Tu proceso quedó registrado</h2>
           <p>Guardamos la información del cargo <strong>{{ role?.name }}</strong>. Ya está disponible para tu equipo en el Mapa de Cargos.</p>
           <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para futuras consultas. No podrás volver a editarla — ya tienes acceso a tu Portal del Empleado.</p>

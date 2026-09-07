@@ -53,7 +53,7 @@
           </div>
            
           <div class="btn-group" v-if="isLoggedIn">
-            <router-link v-if="isControlUser" to="/team" class="btn-primary">🧭 Centro de Control</router-link>
+            <router-link v-if="isControlUser" to="/team" class="btn-primary"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 4h20"></path><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4"></path><polyline points="2 12 12 22 22 12"></polyline></svg> Centro de Control</router-link>
             <router-link v-if="isMasterAdmin()" to="/mapa-cargos" class="btn-primary" :class="{ 'btn-secondary': isControlUser }">Mapa de Cargos</router-link>
             <router-link to="/workspace" class="btn-tertiary">Mi Espacio Elite</router-link>
             <router-link v-if="isControlUser" to="/performance" class="btn-quaternary">KPIs y Rendimiento</router-link>
@@ -81,7 +81,7 @@
                 class="hidden-file-input" 
               />
               <button class="btn-attach" @click="$refs.fileInput.click()" :title="selectedFiles.length + ' archivos'">
-                📎 {{ selectedFiles.length > 0 ? selectedFiles.length : '' }}
+                {{ selectedFiles.length > 0 ? selectedFiles.length : '' }}
               </button>
               <button class="btn-simulate" @click="startSimulation" :disabled="!simRequirement && selectedFiles.length === 0">
                 Iniciar Predicción
@@ -167,8 +167,8 @@ const handleSignOut = async () => {
 // que va rotando entre los mensajes, uno a la vez.
 const highlightMessages = [
   { icon: '🗂️', label: 'Gestión de Cargos', text: 'Cargos y procesos organizados en un solo lugar' },
-  { icon: '🤖', label: 'Automatización IA', text: 'Flujos de trabajo documentados con ayuda de IA' },
-  { icon: '🔒', label: 'Seguridad y Accesos', text: 'Accesos y responsabilidades por rol y por área' },
+  { icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>', label: 'Automatización IA', text: 'Flujos de trabajo documentados con ayuda de IA' },
+  { icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>', label: 'Seguridad y Accesos', text: 'Accesos y responsabilidades por rol y por área' },
 ]
 const typedText = ref('')
 const typedIndex = ref(0)
@@ -811,6 +811,23 @@ const startSimulation = () => {
   .highlights-card {
     flex-direction: column;
     max-width: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 24px 16px;
+  }
+  .hero-left h1 {
+    font-size: 2.2rem;
+  }
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+  .stats-card {
+    flex-direction: column;
+    gap: 20px;
   }
 }
 </style>

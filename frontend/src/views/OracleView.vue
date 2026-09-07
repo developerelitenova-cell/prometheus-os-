@@ -17,13 +17,13 @@
       <main class="glass-panel chat-container">
         <div class="chat-history" ref="chatHistory">
           <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.role]">
-            <div class="avatar">{{ msg.role === 'ai' ? '🤖' : '👤' }}</div>
+            <div class="avatar">{{ msg.role === 'ai' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>' : '👤' }}</div>
             <div class="bubble">
               <div v-html="DOMPurify.sanitize(formatMessage(msg.text))"></div>
             </div>
           </div>
           <div v-if="loading" class="message ai loading-msg">
-            <div class="avatar">🤖</div>
+            <div class="avatar"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg></div>
             <div class="bubble">
               <span class="typing-indicator">
                 <span></span><span></span><span></span>

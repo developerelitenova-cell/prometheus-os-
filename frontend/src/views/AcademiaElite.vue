@@ -5,11 +5,11 @@
         <div class="logo-box">AE</div>
       </div>
       <div class="nav-links">
-        <a href="#" class="active"><i>📋</i> Mi Cargo</a>
-        <a href="#"><i>📊</i> Mis KPIs</a>
-        <a href="#"><i>📚</i> Biblioteca Documental</a>
-        <a href="#"><i>🔗</i> Plataformas</a>
-        <a href="#"><i>🎓</i> Tutorías</a>
+        <a href="#" class="active"><i><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></i> Mi Cargo</a>
+        <a href="#"><i><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></i> Mis KPIs</a>
+        <a href="#"><i><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></i> Biblioteca Documental</a>
+        <a href="#"><i><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></i> Plataformas</a>
+        <a href="#"><i><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 4h20"></path><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4"></path><polyline points="2 12 12 22 22 12"></polyline></svg></i> Tutorías</a>
       </div>
       <div class="user-profile">
         <div class="avatar">LC</div>

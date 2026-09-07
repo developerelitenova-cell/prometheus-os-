@@ -1,35 +1,43 @@
 <template>
   <div class="dashboard-container">
     <header class="page-header">
-      <div class="header-left-nav" style="margin-bottom: 12px;">
-        <router-link to="/" class="back-link" style="color: var(--gold-deep); text-decoration: none; font-size: 0.9rem;">← Volver al Inicio</router-link>
+      <div class="header-nav">
+        <router-link to="/" class="back-link">← Volver al Inicio</router-link>
       </div>
-      <div class="header-content">
-        <h1>{{ isMaster ? 'Ecosistema Global (Panel Master)' : '¿Cómo va tu equipo?' }}</h1>
-        <p class="subtitle">{{ isMaster ? 'Visión omnisciente de toda la corporación.' : 'Visión general del desempeño, tareas y KPIs de tu área.' }}</p>
-      </div>
-      <div class="header-actions">
-        <button v-if="unreadNotifCount > 0" class="btn-secondary-link notif-bell" @click="openApprovalsFromNotif">
-          🔔 {{ unreadNotifCount }} nueva{{ unreadNotifCount > 1 ? 's' : '' }} solicitud{{ unreadNotifCount > 1 ? 'es' : '' }} de acceso
-        </button>
-        <router-link v-if="isMaster" to="/roles" class="btn-secondary-link btn-manage-levels">⚙️ Gestionar Roles y Niveles</router-link>
-        <router-link to="/kpis" class="btn-secondary-link">📊 KPIs Reales</router-link>
-        <router-link to="/support-contacts" class="btn-secondary-link">📇 Directorio de Soporte</router-link>
-        <button class="btn-logout-global" @click="handleSignOut" title="Cerrar sesión">
-          <span class="icon">
+      <div class="header-main">
+        <div class="header-content">
+          <div class="title-row">
+            <h1>{{ isMaster ? 'Ecosistema Global' : '¿Cómo va tu equipo?' }}</h1>
+            <span class="role-badge master-badge" v-if="isMaster">ADMINISTRADOR GLOBAL</span>
+            <span class="role-badge area-badge" v-else-if="leaderArea">Área: {{ leaderArea.name }}</span>
+          </div>
+
+        </div>
+        <div class="header-actions" style="position: relative; z-index: 10;">
+          <button v-if="unreadNotifCount > 0" class="btn-action btn-alert" @click="openApprovalsFromNotif">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            {{ unreadNotifCount }} Solicitud{{ unreadNotifCount > 1 ? 'es' : '' }}
+          </button>
+          <router-link v-if="isMaster" to="/roles" class="btn-action btn-primary-outline">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Roles y Niveles
+          </router-link>
+          <router-link to="/kpis" class="btn-action btn-outline">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            KPIs
+          </router-link>
+          <router-link to="/support-contacts" class="btn-action btn-outline">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Directorio
+          </router-link>
+          <button class="btn-action btn-danger-outline" @click="handleSignOut" title="Cerrar sesión">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <polyline points="16 17 21 12 16 7"></polyline>
               <line x1="21" y1="12" x2="9" y2="12"></line>
             </svg>
-          </span>
-          Salir
-        </button>
-        <div class="area-badge" v-if="leaderArea && !isMaster">
-          Área: <strong>{{ leaderArea.name }}</strong>
-        </div>
-        <div class="area-badge" v-if="isMaster" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
-          <strong>ADMINISTRADOR GLOBAL</strong>
+            Salir
+          </button>
         </div>
       </div>
     </header>
@@ -122,17 +130,27 @@
               </div>
 
               <div class="member-footer">
-                <button v-if="isMaster" class="btn-text-small primary" @click="auditWorkspace(member.id)" style="color: var(--danger);">🕵️‍♂️ Auditar Espacio</button>
-                <button v-else class="btn-text-small">Ver Historial Completo</button>
+                <button v-if="isMaster" class="btn-card-action danger-action" @click="auditWorkspace(member.id)" title="Auditar Espacio">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  Auditar Espacio
+                </button>
+                <button v-else class="btn-card-action">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  Ver Historial
+                </button>
                 <router-link
                   v-if="member.roles?.id"
-                  class="btn-text-small"
+                  class="btn-card-action primary-action"
                   :to="`/mapa-cargos?role=${member.roles.id}`"
                   title="Editar las tareas recurrentes de la memoria del cargo (Gestión Diaria)"
                 >
-                  Gestión Diaria del Cargo
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  Gestión Diaria
                 </router-link>
-                <button class="btn-text-small primary" @click="openTaskModal(member)">Asignar Tarea</button>
+                <button class="btn-card-action gold-action" @click="openTaskModal(member)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                  Asignar Tarea
+                </button>
               </div>
             </div>
           </div>
@@ -145,20 +163,23 @@
         </div>
 
         <div v-else class="member-grid">
-          <div v-for="user in pendingUsers" :key="user.id" class="member-card glass-panel">
+          <div v-for="user in pendingUsers" :key="user.id" class="member-card pending-card glass-panel">
             <div class="member-header">
-              <div class="avatar-large">{{ user.full_name.charAt(0) }}</div>
+              <div class="avatar-large pending-avatar">{{ user.full_name.charAt(0) }}</div>
               <div class="info">
-                <h3>{{ user.full_name }}</h3>
-                <span class="role">{{ user.roles?.name || 'Sin rol asignado' }}</span>
+                <h3 class="pending-name">{{ user.full_name }}</h3>
+                <span class="role pending-role">{{ user.roles?.name || 'Sin rol asignado' }}</span>
               </div>
             </div>
-            <div class="member-body" style="padding-top: 12px; font-size: 0.9rem;">
-              <p><strong>Fecha de registro:</strong> {{ new Date(user.created_at).toLocaleDateString() }}</p>
+            <div class="member-body pending-body">
+              <div class="info-row">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span><strong>Fecha de registro:</strong> {{ new Date(user.created_at).toLocaleDateString() }}</span>
+              </div>
             </div>
-            <div class="member-footer">
-              <button class="btn-text-small" @click="handleApproval(user.id, 'rejected')" style="color: var(--danger)">Rechazar</button>
-              <button class="btn-text-small primary" @click="handleApproval(user.id, 'approved')" style="background: #10b981; color: white;">Aprobar Acceso</button>
+            <div class="member-footer pending-footer">
+              <button class="btn-reject" @click="handleApproval(user.id, 'rejected')">Rechazar</button>
+              <button class="btn-approve" @click="handleApproval(user.id, 'approved')">Aprobar Acceso</button>
             </div>
           </div>
         </div>
@@ -186,32 +207,41 @@
           <div class="form-row">
             <div class="form-group half">
               <label>Tipo</label>
-              <select v-model="newTask.task_type">
-                <option value="daily">Diario</option>
-                <option value="weekly">Semanal</option>
-                <option value="monthly">Mensual</option>
-                <option value="project">Proyecto</option>
-                <option value="event">Evento</option>
-              </select>
+              <div class="select-wrapper">
+                <select v-model="newTask.task_type">
+                  <option value="daily">Diario</option>
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensual</option>
+                  <option value="project">Proyecto</option>
+                  <option value="event">Evento</option>
+                </select>
+              </div>
             </div>
+            
             <div class="form-group half">
               <label>Prioridad</label>
-              <select v-model="newTask.priority">
-                <option value="low">Baja</option>
-                <option value="medium">Media</option>
-                <option value="high">Alta</option>
-              </select>
+              <div class="select-wrapper">
+                <select v-model="newTask.priority">
+                  <option value="low">Baja</option>
+                  <option value="medium">Media</option>
+                  <option value="high">Alta</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Fecha de Vencimiento (Opcional)</label>
-            <input type="date" v-model="newTask.due_date" />
+            <div class="form-group half">
+              <label>Fecha de Vencimiento</label>
+              <input type="date" v-model="newTask.due_date" />
+            </div>
           </div>
 
           <div class="modal-actions">
-            <button type="button" class="btn-text-small" @click="closeTaskModal">Cancelar</button>
-            <button type="submit" class="btn-text-small primary" :disabled="isSaving" style="padding: 8px 16px; background: var(--gold-gradient); color: white; border-radius: var(--radius-sm);">Guardar</button>
+            <button type="button" class="btn-action btn-outline" @click="closeTaskModal">Cancelar</button>
+            <button type="submit" class="btn-action btn-gradient" :disabled="isSaving">
+              <svg v-if="isSaving" class="spinner" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg>
+              <svg v-else viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {{ isSaving ? 'Guardando...' : 'Confirmar Asignación' }}
+            </button>
           </div>
         </form>
       </div>
@@ -467,33 +497,53 @@ onMounted(() => fetchData());
 
 <style scoped>
 .dashboard-container { padding: 32px; max-width: 1400px; margin: 0 auto; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-.header-content h1 { font-size: 28px; color: var(--text-primary); margin-bottom: 4px; }
-.subtitle { color: var(--text-secondary); }
+.page-header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px; }
+.header-nav .back-link { color: var(--gold-deep); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+.header-nav .back-link:hover { text-decoration: underline; }
+.header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+.title-row { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+.title-row h1 { font-size: 32px; color: var(--text-primary); margin: 0; font-weight: 800; }
+
+.role-badge { 
+  padding: 6px 12px; 
+  border-radius: var(--radius-pill); 
+  font-size: 11px; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px;
+}
+.master-badge { background: rgba(220, 38, 38, 0.1); color: var(--danger); border: 1px solid rgba(220, 38, 38, 0.2); }
+.area-badge { background: var(--gold-light); color: var(--gold-deep); border: 1px solid var(--gold); }
+
+.subtitle { color: var(--text-secondary); margin: 0; font-size: 1.05rem; }
+
 .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.btn-secondary-link {
+
+.btn-action {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border: 1px solid var(--border);
+  gap: 8px;
+  padding: 10px 18px;
   border-radius: var(--radius-pill);
-  color: var(--ink);
-  text-decoration: none;
   font-size: 0.85rem;
   font-weight: 600;
-  transition: all 0.2s ease;
-}
-.btn-secondary-link:hover { background: var(--bg-secondary); border-color: var(--gold); color: var(--gold-deep); }
-.notif-bell {
-  background: rgba(220, 38, 38, 0.08);
-  border-color: rgba(220, 38, 38, 0.3);
-  color: var(--danger);
   cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
   font-family: inherit;
 }
-.notif-bell:hover { background: rgba(220, 38, 38, 0.14); border-color: var(--danger); color: var(--danger); }
-.area-badge { padding: 8px 16px; background: rgba(176, 141, 87, 0.1); color: var(--gold-deep); border-radius: var(--radius-pill); font-size: 14px; }
+
+.btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--ink); }
+.btn-outline:hover { background: var(--bg-secondary); border-color: var(--gold); color: var(--gold-deep); transform: translateY(-1px); }
+
+.btn-primary-outline { background: rgba(176, 141, 87, 0.1); border: 1px solid var(--gold); color: var(--gold-deep); }
+.btn-primary-outline:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+.btn-danger-outline { background: var(--surface); border: 1px solid var(--border); color: var(--danger); }
+.btn-danger-outline:hover { background: rgba(220, 38, 38, 0.1); border-color: var(--danger); transform: translateY(-1px); }
+
+.btn-alert { background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); color: var(--danger); }
+.btn-alert:hover { background: rgba(220, 38, 38, 0.15); transform: translateY(-1px); }
 
 .error-panel { padding: 48px; text-align: center; max-width: 500px; margin: 60px auto; color: var(--text-secondary); }
 .error-panel h2 { color: var(--text-primary); margin: 16px 0 8px; }
@@ -661,21 +711,73 @@ li.completed .task-title { text-decoration: line-through; color: var(--text-tert
   padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.btn-text-small { background: none; border: none; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-secondary); text-decoration: none; }
-.btn-text-small.primary { color: var(--gold); }
+.btn-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.btn-card-action:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+.btn-card-action.danger-action:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(220, 38, 38, 0.05);
+}
+.btn-card-action.primary-action:hover {
+  border-color: var(--gold);
+  color: var(--gold-deep);
+  background: var(--gold-light);
+}
+.btn-card-action.gold-action {
+  background: var(--gold-gradient);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 10px rgba(176, 141, 87, 0.2);
+}
+.btn-card-action.gold-action:hover {
+  box-shadow: 0 6px 15px rgba(176, 141, 87, 0.4);
+  transform: translateY(-1px);
+}
 
-/* Modal form styles */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { width: 100%; max-width: 500px; padding: 32px; }
-.modal-content h2 { margin-top: 0; margin-bottom: 4px; }
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 14px; margin-bottom: 8px; font-weight: 500; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); }
-.form-row { display: flex; gap: 16px; }
-.half { flex: 1; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 24px; }
+
+/* Premium Modal styles */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.3s ease; }
+.premium-modal { width: 100%; max-width: 550px; padding: 40px; border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+.premium-modal h2 { margin-top: 0; margin-bottom: 8px; font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+.modal-subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; }
+.premium-form .form-group { margin-bottom: 20px; }
+.premium-form .form-group label { display: block; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.premium-form .form-group label .required { color: var(--danger); }
+.premium-form .form-group input, .premium-form .form-group textarea, .premium-form .form-group select { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.95rem; font-family: inherit; transition: all 0.2s; }
+.premium-form .form-group input:focus, .premium-form .form-group textarea:focus, .premium-form .form-group select:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(176, 141, 87, 0.1); background: var(--surface); }
+.premium-form .form-row { display: flex; gap: 20px; }
+.premium-form .half { flex: 1; }
+.select-wrapper { position: relative; }
+.select-wrapper select { appearance: none; -webkit-appearance: none; }
+.select-wrapper::after { content: "▼"; font-size: 10px; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text-tertiary); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 32px; border-top: 1px solid var(--border-subtle); padding-top: 24px; }
+.btn-gradient { background: var(--gold-gradient); color: white; border: none; box-shadow: 0 4px 15px rgba(176, 141, 87, 0.3); }
+.btn-gradient:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(176, 141, 87, 0.5); transform: translateY(-2px); }
+.btn-gradient:disabled { opacity: 0.7; cursor: not-allowed; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .dashboard-tabs {
   display: flex;
   gap: 12px;
@@ -709,5 +811,127 @@ li.completed .task-title { text-decoration: line-through; color: var(--text-tert
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: bold;
+}
+/* ---------------- APROBACIONES ESTILOS ---------------- */
+.pending-card {
+  background: linear-gradient(145deg, rgba(255,255,255,1) 0%, rgba(250,250,250,1) 100%);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.pending-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 4px;
+  background: linear-gradient(90deg, var(--gold-light), var(--gold));
+}
+.pending-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+.pending-avatar {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: white;
+  box-shadow: 0 4px 15px rgba(176, 141, 87, 0.3);
+}
+.pending-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.pending-role {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: inline-block;
+  margin-top: 4px;
+}
+.pending-body {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+}
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.info-row svg {
+  color: var(--gold);
+}
+.pending-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 4px;
+}
+.btn-reject {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid transparent;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-reject:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+.btn-approve {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-approve:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+  .system-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .member-grid {
+    grid-template-columns: 1fr;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .btn-action {
+    flex: 1;
+    justify-content: center;
+  }
+  .title-row h1 {
+    font-size: 24px;
+  }
+  .dashboard-tabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dashboard-tabs button {
+    width: 100%;
+  }
 }
 </style>

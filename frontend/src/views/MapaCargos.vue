@@ -10,7 +10,7 @@
         <p>Red de Arquitectura Organizacional ({{ roles.length }} Nodos)</p>
       </div>
       <div class="header-actions">
-        <router-link v-if="isMaster" to="/knowledge-loader" class="btn-primary knowledge-btn">🧠 Inyectar Conocimiento</router-link>
+        <router-link v-if="isMaster" to="/knowledge-loader" class="btn-primary knowledge-btn"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"></path><path d="M6.002 6.5A3 3 0 0 1 5.603 5.125"></path><path d="M11.8 12a1 1 0 0 0-1.6 0"></path></svg> Inyectar Conocimiento</router-link>
         <button class="btn-primary" @click="fetchRoles">Actualizar Datos</button>
       </div>
     </header>

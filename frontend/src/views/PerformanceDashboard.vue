@@ -47,7 +47,7 @@
         </div>
         
         <div v-else-if="!selectedRole" class="glass-panel welcome-state">
-          <span class="icon">📈</span>
+          <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span>
           <h2>Selecciona un rol en la barra superior</h2>
           <p>Para ver su historial de rendimiento, OKRs y el análisis predictivo de la IA.</p>
         </div>
@@ -73,7 +73,7 @@
             <!-- Insight Card -->
             <div class="glass-panel ai-insight-card">
               <div class="ai-insight">
-                <h4>🤖 PROMETHEUS OS Insight</h4>
+                <h4><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg> PROMETHEUS OS Insight</h4>
                 <p>{{ currentKpi.ai_evaluation_notes || 'La Inteligencia Artificial aún no ha generado observaciones para este periodo. Faltan datos de flujos operacionales.' }}</p>
               </div>
             </div>

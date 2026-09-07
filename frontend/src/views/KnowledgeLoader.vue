@@ -2,7 +2,7 @@
   <div class="knowledge-loader">
     <header class="glass-panel header">
       <router-link to="/mapa-cargos" class="back-link">← Volver al DataHub</router-link>
-      <h1>Cargador de Conocimiento 🧠</h1>
+      <h1>Cargador de Conocimiento <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"></path><path d="M6.002 6.5A3 3 0 0 1 5.603 5.125"></path><path d="M11.8 12a1 1 0 0 0-1.6 0"></path></svg></h1>
       <p>Sube manuales, políticas y procesos para entrenar el Cerebro Corporativo.</p>
     </header>
 
@@ -60,7 +60,7 @@
               @change="handleFileUpload" 
             />
             <div class="drop-content">
-              <span class="icon">📄</span>
+              <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span>
               <p>Haz clic para subir un archivo (TXT, MD)</p>
               <small>Próximamente: Soporte nativo para PDFs.</small>
             </div>
@@ -175,7 +175,7 @@ const processText = async () => {
     await sendToApi(chunks[i].trim(), sourceName.value || 'Ingreso Manual');
   }
 
-  addLog(`✅ Proceso finalizado. El Cerebro Corporativo ha sido actualizado.`, 'success');
+  addLog(`Proceso finalizado. El Cerebro Corporativo ha sido actualizado.`, 'success');
   loading.value = false;
 };
 

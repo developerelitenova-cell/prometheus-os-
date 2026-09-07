@@ -27,9 +27,48 @@
           </div>
         </div>
         <div class="event-meta" v-if="canManage && event.is_mandatory">
-          <div class="ack-stats">
-            <strong>{{ getAckCount(event.id) }}</strong> confirmaciones
+          <button class="ack-stats ack-stats-btn" @click="openRoster(event)">
+            <strong>{{ getAckCount(event.id) }}/{{ getAudience(event).length }}</strong> confirmaron
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Roster: quién confirmó y quién falta -->
+    <div v-if="rosterEvent" class="modal-overlay" @click="closeRoster">
+      <div class="modal-content glass-panel roster-modal" @click.stop>
+        <div class="modal-header">
+          <h2>{{ rosterEvent.title }}</h2>
+          <button class="close-btn" @click="closeRoster">×</button>
+        </div>
+        <p class="subtitle" style="padding: 0 32px;">
+          {{ rosterConfirmed.length }} de {{ rosterAudience.length }} personas han confirmado.
+        </p>
+
+        <div class="roster-columns">
+          <div class="roster-col">
+            <h4>✅ Confirmaron ({{ rosterConfirmed.length }})</h4>
+            <ul class="roster-list">
+              <li v-for="p in rosterConfirmed" :key="p.id">
+                <span class="roster-name">{{ p.full_name }}</span>
+                <span class="roster-time">{{ formatAckTime(p.id) }}</span>
+              </li>
+              <li v-if="rosterConfirmed.length === 0" class="roster-empty">Nadie ha confirmado todavía.</li>
+            </ul>
           </div>
+          <div class="roster-col">
+            <h4>⏳ Faltan ({{ rosterMissing.length }})</h4>
+            <ul class="roster-list">
+              <li v-for="p in rosterMissing" :key="p.id">
+                <span class="roster-name">{{ p.full_name }}</span>
+              </li>
+              <li v-if="rosterMissing.length === 0" class="roster-empty">Todos confirmaron. 🎉</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="padding: 20px 32px;">
+          <button class="btn-text" @click="closeRoster">Cerrar</button>
         </div>
       </div>
     </div>
@@ -52,8 +91,13 @@
             <input type="datetime-local" v-model="newEvent.event_date" required>
           </div>
           <div class="form-group">
-            <label>URL de Pieza Gráfica (Opcional)</label>
-            <input type="url" v-model="newEvent.image_url" placeholder="https://...">
+            <label>Pieza Gráfica (Opcional)</label>
+            <input type="file" accept="image/*" @change="handleImageChange" />
+            <div v-if="imagePreviewUrl" class="image-preview-wrap">
+              <img :src="imagePreviewUrl" alt="Vista previa" class="image-preview" />
+              <button type="button" class="btn-text" @click="clearImage">Quitar imagen</button>
+            </div>
+            <p v-if="imageUploading" class="hint">Subiendo imagen...</p>
           </div>
           
           <div class="form-row">
@@ -115,6 +159,25 @@ const newEvent = ref({
   title: '', description: '', event_date: '', image_url: '', target_level: 'company', target_area_id: null, target_profile_id: null, is_mandatory: false
 });
 
+// Imagen del comunicado: se sube al bucket 'announcement-images' de Supabase
+// Storage (no una URL pegada a mano) y el resultado va en newEvent.image_url.
+const imageFile = ref(null);
+const imagePreviewUrl = ref('');
+const imageUploading = ref(false);
+
+const handleImageChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  imageFile.value = file;
+  imagePreviewUrl.value = URL.createObjectURL(file);
+};
+
+const clearImage = () => {
+  imageFile.value = null;
+  imagePreviewUrl.value = '';
+  newEvent.value.image_url = '';
+};
+
 const fetchData = async () => {
   const { data: session } = await supabase.auth.getSession();
   if (!session?.session?.user) return;
@@ -125,7 +188,7 @@ const fetchData = async () => {
     canManage.value = true;
     const { data: a } = await supabase.from('areas').select('*');
     areas.value = a || [];
-    const { data: p } = await supabase.from('profiles').select('*');
+    const { data: p } = await supabase.from('profiles').select('id, full_name, roles(area_id)');
     profiles.value = p || [];
   }
 
@@ -144,19 +207,79 @@ const getAckCount = (eventId) => {
   return acks.value.filter(a => a.event_id === eventId).length;
 };
 
+// Todas las personas a las que le corresponde confirmar este evento, según
+// su público objetivo (toda la empresa / un área / una sola persona).
+const getAudience = (event) => {
+  if (event.target_level === 'company') return profiles.value;
+  if (event.target_level === 'area') {
+    return profiles.value.filter((p) => p.roles?.area_id === event.target_area_id);
+  }
+  if (event.target_level === 'worker') {
+    return profiles.value.filter((p) => p.id === event.target_profile_id);
+  }
+  return [];
+};
+
+// --- Roster: quién confirmó y quién falta, para un evento obligatorio ---
+const rosterEvent = ref(null);
+const rosterAudience = ref([]);
+const rosterConfirmed = ref([]);
+const rosterMissing = ref([]);
+
+const openRoster = (event) => {
+  rosterEvent.value = event;
+  const audience = getAudience(event);
+  const ackedIds = new Set(acks.value.filter((a) => a.event_id === event.id).map((a) => a.profile_id));
+  rosterAudience.value = audience;
+  rosterConfirmed.value = audience.filter((p) => ackedIds.has(p.id));
+  rosterMissing.value = audience.filter((p) => !ackedIds.has(p.id));
+};
+
+const closeRoster = () => {
+  rosterEvent.value = null;
+};
+
+const formatAckTime = (profileId) => {
+  const ack = acks.value.find((a) => a.event_id === rosterEvent.value?.id && a.profile_id === profileId);
+  if (!ack?.acknowledged_at) return '';
+  return new Date(ack.acknowledged_at).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
+
+const uploadImageIfNeeded = async () => {
+  if (!imageFile.value) return newEvent.value.image_url || null;
+  imageUploading.value = true;
+  try {
+    const ext = imageFile.value.name.split('.').pop();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('announcement-images')
+      .upload(path, imageFile.value, { cacheControl: '3600', upsert: false });
+    if (uploadError) throw uploadError;
+    const { data } = supabase.storage.from('announcement-images').getPublicUrl(path);
+    return data.publicUrl;
+  } finally {
+    imageUploading.value = false;
+  }
+};
+
 const createEvent = async () => {
   isSaving.value = true;
   const { data: session } = await supabase.auth.getSession();
   try {
+    const imageUrl = await uploadImageIfNeeded();
     await supabase.from('events').insert([{
       ...newEvent.value,
+      image_url: imageUrl,
       created_by: session.session.user.id
     }]);
+    imageFile.value = null;
+    imagePreviewUrl.value = '';
     showEventModal.value = false;
     newEvent.value = { title: '', description: '', event_date: '', image_url: '', target_level: 'company', target_area_id: null, target_profile_id: null, is_mandatory: false };
     fetchData();
   } catch (e) {
     console.error(e);
+    alert('No se pudo guardar el comunicado: ' + (e.message || e));
   } finally {
     isSaving.value = false;
   }
@@ -204,6 +327,18 @@ onMounted(() => fetchData());
   background: var(--bg-secondary); padding: 8px 16px; border-radius: var(--radius-pill);
 }
 
+.ack-stats-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.ack-stats-btn:hover {
+  background: var(--gold-light);
+  color: var(--gold-deep);
+}
+
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
 .modal-content { width: 100%; max-width: 600px; padding: 32px; }
 .form-group { margin-bottom: 16px; }
@@ -216,4 +351,90 @@ onMounted(() => fetchData());
 .modal-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 24px; }
 .btn-text { background: none; border: none; cursor: pointer; color: var(--text-secondary); }
 .btn-primary { background: var(--gold-gradient); color: white; border: none; padding: 10px 24px; border-radius: var(--radius-pill); font-weight: 600; cursor: pointer; }
+
+.image-preview-wrap { margin-top: 10px; display: flex; align-items: center; gap: 12px; }
+.image-preview { width: 100px; height: 70px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.hint { font-size: 0.8rem; color: var(--text-tertiary); margin-top: 6px; }
+
+/* Roster modal (confirmados / faltantes) */
+.roster-modal {
+  padding: 0;
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 24px 32px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.roster-columns {
+  display: flex;
+  gap: 24px;
+  padding: 20px 32px;
+  overflow-y: auto;
+}
+
+.roster-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.roster-col h4 {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.roster-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roster-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.roster-name { color: var(--text-primary); }
+.roster-time { color: var(--text-tertiary); font-size: 0.72rem; white-space: nowrap; }
+
+.roster-list li.roster-empty {
+  background: none;
+  color: var(--text-tertiary);
+  font-style: italic;
+  font-size: 0.85rem;
+  padding: 8px 0;
+}
 </style>
