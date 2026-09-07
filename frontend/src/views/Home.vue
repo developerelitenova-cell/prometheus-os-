@@ -40,11 +40,11 @@
           
           <div class="hero-desc">
             <p v-if="isLoggedIn">
-              El cerebro digital de <strong>Elite Nutrition & Futupro</strong>. Administra, consulta y automatiza
+              El cerebro digital del <strong>Holding Corporativo</strong>. Administra, consulta y automatiza
               el flujo de trabajo de <span class="highlight-orange">{{ statRoles }} Roles</span> con total precisión.
             </p>
             <p v-else>
-              El cerebro digital de <strong>Elite Nutrition & Futupro</strong>. Administra, consulta y automatiza
+              El cerebro digital del <strong>Holding Corporativo</strong>. Administra, consulta y automatiza
               el flujo de trabajo de <span class="highlight-orange">todos los cargos</span> de la empresa con total precisión.
             </p>
             <p class="slogan-text">

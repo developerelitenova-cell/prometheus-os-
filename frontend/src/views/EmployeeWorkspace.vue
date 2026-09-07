@@ -533,7 +533,7 @@ const notifIcon = (item) => {
 };
 
 const notifSourceLabel = (item) => {
-  return item.source === 'message' ? 'Tu líder / Elite Nutrition' : 'Notificación del sistema';
+  return item.source === 'message' ? 'Tu líder / Holding Corporativo' : 'Notificación del sistema';
 };
 
 const formatRelativeTime = (dateStr) => {
