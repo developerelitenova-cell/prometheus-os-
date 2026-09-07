@@ -31,16 +31,28 @@
             <p class="template-note" v-if="template.source_note">{{ template.source_note }}</p>
           </div>
           <div class="template-link" v-if="isMaster">
-            <label>Vincular a cargo real</label>
-            <select v-model="template.role_id" @change="saveTemplateLink(template)">
-              <option :value="null">— Sin vincular —</option>
-              <option v-for="r in allRoles" :key="r.id" :value="r.id">
-                {{ r.areas?.name ? r.areas.name + ' · ' : '' }}{{ r.name }}
-              </option>
-            </select>
+            <label>Cargos vinculados</label>
+            <div class="linked-roles-list">
+              <span v-for="link in template.kpi_role_template_links" :key="link.id" class="role-chip">
+                {{ link.roles?.areas?.name ? link.roles.areas.name + ' · ' : '' }}{{ link.roles?.name }}
+                <button type="button" class="chip-remove" title="Quitar cargo" @click="unlinkRole(template, link)">×</button>
+              </span>
+              <span v-if="template.kpi_role_template_links.length === 0" class="linked-role muted">Sin vincular a ningún cargo todavía</span>
+            </div>
+            <div class="add-role-row">
+              <select v-model="template._roleToAdd">
+                <option :value="null">+ Agregar cargo…</option>
+                <option v-for="r in availableRolesFor(template)" :key="r.id" :value="r.id">
+                  {{ r.areas?.name ? r.areas.name + ' · ' : '' }}{{ r.name }}
+                </option>
+              </select>
+              <button type="button" class="btn-text" :disabled="!template._roleToAdd" @click="linkRole(template)">Agregar</button>
+            </div>
           </div>
           <div class="template-link" v-else>
-            <span class="linked-role" v-if="template.roles">{{ template.roles.name }}</span>
+            <span class="linked-role" v-if="template.kpi_role_template_links.length">
+              {{ template.kpi_role_template_links.map(l => l.roles?.name).join(', ') }}
+            </span>
             <span class="linked-role muted" v-else>Sin vincular a un cargo todavía</span>
           </div>
         </div>
@@ -93,10 +105,10 @@
       <div class="measurement-controls glass-panel">
         <div class="control-group">
           <label>Cargo</label>
-          <select v-model="selectedTemplateId">
+          <select v-model="selectedPairKey">
             <option :value="null">— Seleccioná un cargo —</option>
-            <option v-for="t in linkedTemplatesForUser" :key="t.id" :value="t.id">
-              {{ t.roles.areas?.name ? t.roles.areas.name + ' · ' : '' }}{{ t.roles.name }}
+            <option v-for="p in linkedRolePairsForUser" :key="p.key" :value="p.key">
+              {{ p.roleLabel }} ({{ p.template.area_label }})
             </option>
           </select>
         </div>
@@ -119,8 +131,8 @@
         </div>
       </div>
 
-      <div v-if="!selectedTemplate" class="empty-state">
-        {{ linkedTemplatesForUser.length === 0
+      <div v-if="!selectedPair" class="empty-state">
+        {{ linkedRolePairsForUser.length === 0
           ? 'No hay ningún cargo con plantilla de KPI vinculada todavía en tu área. Pedile a un admin master que vincule una plantilla desde la pestaña "Plantillas".'
           : 'Elegí un cargo para cargar sus mediciones.' }}
       </div>
@@ -237,7 +249,7 @@ const myAreaId = computed(() => currentProfile.value?.roles?.area_id || null);
 const fetchTemplates = async () => {
   const { data, error } = await supabase
     .from('kpi_role_templates')
-    .select('*, roles(name, area_id, areas(name)), kpi_template_metrics(*)')
+    .select('*, kpi_template_metrics(*), kpi_role_template_links(id, role_id, roles(id, name, area_id, areas(name)))')
     .order('area_label');
   if (error) {
     console.error('Error cargando plantillas de KPI:', error);
@@ -246,6 +258,7 @@ const fetchTemplates = async () => {
   }
   (data || []).forEach(t => {
     t.kpi_template_metrics.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    t._roleToAdd = null;
   });
   templates.value = data || [];
 };
@@ -265,10 +278,27 @@ onMounted(async () => {
 const metaTypeLabel = (t) => ({ percentage: '%', currency: '$', count: 'Conteo', text: 'Texto' }[t] || t);
 
 // --- Edición de plantillas (solo admin master; RLS igual lo exige) ---
-const saveTemplateLink = async (template) => {
-  const { error } = await supabase.from('kpi_role_templates').update({ role_id: template.role_id }).eq('id', template.id);
-  if (error) alert('No se pudo vincular el cargo: ' + error.message);
-  else await fetchTemplates();
+const availableRolesFor = (template) => {
+  const linkedIds = new Set(template.kpi_role_template_links.map(l => l.role_id));
+  return allRoles.value.filter(r => !linkedIds.has(r.id));
+};
+
+const linkRole = async (template) => {
+  if (!template._roleToAdd) return;
+  const { data, error } = await supabase
+    .from('kpi_role_template_links')
+    .insert({ template_id: template.id, role_id: template._roleToAdd })
+    .select('id, role_id, roles(id, name, area_id, areas(name))')
+    .single();
+  if (error) { alert('No se pudo vincular el cargo: ' + error.message); return; }
+  template.kpi_role_template_links.push(data);
+  template._roleToAdd = null;
+};
+
+const unlinkRole = async (template, link) => {
+  const { error } = await supabase.from('kpi_role_template_links').delete().eq('id', link.id);
+  if (error) { alert('No se pudo quitar el cargo: ' + error.message); return; }
+  template.kpi_role_template_links = template.kpi_role_template_links.filter(l => l.id !== link.id);
 };
 
 const saveMetric = async (metric) => {
@@ -393,16 +423,30 @@ const deleteTemplate = async () => {
 };
 
 // --- Mediciones ---
-const linkedTemplatesForUser = computed(() => {
-  return templates.value.filter(t => {
-    if (!t.role_id || !t.roles) return false;
-    if (isMaster.value) return true;
-    return isLeader() && t.roles.area_id === myAreaId.value;
-  });
+// Una plantilla puede estar vinculada a varios cargos: cada combinación
+// (plantilla, cargo) es una opción propia, porque las mediciones se
+// anclan al cargo (role_id), no a la plantilla.
+const linkedRolePairsForUser = computed(() => {
+  const pairs = [];
+  for (const t of templates.value) {
+    for (const link of t.kpi_role_template_links || []) {
+      if (!link.roles) continue;
+      const allowed = isMaster.value || (isLeader() && link.roles.area_id === myAreaId.value);
+      if (!allowed) continue;
+      pairs.push({
+        key: `${t.id}:${link.role_id}`,
+        template: t,
+        roleId: link.role_id,
+        roleLabel: (link.roles.areas?.name ? link.roles.areas.name + ' · ' : '') + link.roles.name
+      });
+    }
+  }
+  return pairs;
 });
 
-const selectedTemplateId = ref(null);
-const selectedTemplate = computed(() => templates.value.find(t => t.id === selectedTemplateId.value) || null);
+const selectedPairKey = ref(null);
+const selectedPair = computed(() => linkedRolePairsForUser.value.find(p => p.key === selectedPairKey.value) || null);
+const selectedTemplate = computed(() => selectedPair.value?.template || null);
 
 const today = new Date();
 const periodYear = ref(today.getFullYear());
@@ -415,10 +459,10 @@ const saveError = ref('');
 
 const loadMeasurements = async () => {
   measurementRows.value = [];
-  if (!selectedTemplate.value) return;
+  if (!selectedPair.value) return;
 
-  const metrics = selectedTemplate.value.kpi_template_metrics;
-  const roleId = selectedTemplate.value.role_id;
+  const metrics = selectedPair.value.template.kpi_template_metrics;
+  const roleId = selectedPair.value.roleId;
 
   const { data, error } = await supabase
     .from('kpi_metric_measurements')
@@ -448,7 +492,7 @@ const loadMeasurements = async () => {
   });
 };
 
-watch([selectedTemplateId, periodYear, periodMonth, periodCheckpoint], loadMeasurements);
+watch([selectedPairKey, periodYear, periodMonth, periodCheckpoint], loadMeasurements);
 
 const computedTotal = computed(() => {
   const withData = measurementRows.value.filter(r => r.percentage !== null && r.percentage !== '' && !Number.isNaN(r.percentage));
@@ -458,11 +502,11 @@ const computedTotal = computed(() => {
 });
 
 const saveMeasurements = async () => {
-  if (!selectedTemplate.value) return;
+  if (!selectedPair.value) return;
   saveError.value = '';
   saving.value = true;
   try {
-    const roleId = selectedTemplate.value.role_id;
+    const roleId = selectedPair.value.roleId;
     const payload = measurementRows.value.map(r => ({
       metric_id: r.metric_id,
       role_id: roleId,
@@ -513,6 +557,14 @@ const saveMeasurements = async () => {
 .template-link select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-family: inherit; font-size: 0.85rem; min-width: 260px; }
 .linked-role { font-weight: 600; color: var(--gold-deep); }
 .linked-role.muted { color: var(--text-tertiary); font-weight: 400; font-style: italic; }
+
+.linked-roles-list { display: flex; flex-wrap: wrap; gap: 6px; max-width: 320px; }
+.role-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; background: var(--gold-light); color: var(--gold-deep); border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 600; }
+.chip-remove { background: none; border: none; cursor: pointer; color: var(--gold-deep); font-size: 0.95rem; line-height: 1; padding: 2px 4px; border-radius: 50%; }
+.chip-remove:hover { background: rgba(0,0,0,0.08); }
+.add-role-row { display: flex; gap: 8px; margin-top: 8px; }
+.add-role-row select { padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-family: inherit; font-size: 0.82rem; min-width: 220px; }
+.add-role-row .btn-text { margin: 0; }
 
 .metrics-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .metrics-table th { text-align: left; padding: 8px 10px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle); }

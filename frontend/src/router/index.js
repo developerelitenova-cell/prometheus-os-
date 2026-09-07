@@ -131,7 +131,7 @@ const routes = [
     path: '/team',
     name: 'LeaderDashboard',
     component: () => import('../views/LeaderDashboard.vue'),
-    meta: { leaderOnly: true }
+    meta: { managerOnly: true }
   },
   {
     path: '/planner',
@@ -209,6 +209,10 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.leaderOnly && !profile.is_master_admin && !(profile.roles && [1, 2].includes(profile.roles.access_level))) {
+    return { path: '/workspace' }
+  }
+
+  if (to.meta.managerOnly && !profile.is_master_admin && !(profile.roles && profile.roles.access_level === 1)) {
     return { path: '/workspace' }
   }
 

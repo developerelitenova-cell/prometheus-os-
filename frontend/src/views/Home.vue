@@ -139,12 +139,12 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { setPendingUpload } from '../store/pendingUpload'
 import { supabase } from '../api/supabase'
-import { currentProfile, loadCurrentProfile, isMasterAdmin, isLeader, signOut } from '../api/auth'
+import { currentProfile, loadCurrentProfile, isMasterAdmin, isManager, signOut } from '../api/auth'
 import TechNodesBackground from '../components/TechNodesBackground.vue'
 
 const router = useRouter()
 const isLoggedIn = ref(false)
-const isControlUser = computed(() => isMasterAdmin() || isLeader())
+const isControlUser = computed(() => isMasterAdmin() || isManager())
 
 onMounted(async () => {
   const { data } = await supabase.auth.getSession()

@@ -138,7 +138,7 @@
                 Nivel {{ currentRole.access_level }}
               </span>
             </p>
-            <div v-if="isLeaderRole" style="margin-top: 12px;">
+            <div v-if="isManagerRole" style="margin-top: 12px;">
               <router-link to="/team" class="btn-primary" style="font-size: 0.85rem; padding: 8px 12px; display: inline-block;">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 4h20"></path><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4"></path><polyline points="2 12 12 22 22 12"></polyline></svg> Panel de Liderazgo
               </router-link>
@@ -310,7 +310,7 @@ const isAuditMode = ref(false);
 
 // Nivel de acceso del rol que se está viendo (el propio, o el auditado en Modo
 // Auditoría) -- determina si se muestra el acceso directo al Panel de Liderazgo.
-const isLeaderRole = computed(() => currentRole.value && [1, 2].includes(currentRole.value.access_level));
+const isManagerRole = computed(() => currentRole.value && currentRole.value.access_level === 1);
 
 // Cronograma Programacional: tareas puntuales que el líder asigna a ESTA
 // persona (tabla `tasks`), con fecha de vencimiento. Se muestran en un único

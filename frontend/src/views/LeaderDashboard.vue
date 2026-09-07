@@ -45,7 +45,7 @@
     <div v-if="!isLeader" class="glass-panel error-panel">
       <svg viewBox="0 0 24 24" width="48" height="48" stroke="var(--danger)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
       <h2>Acceso Restringido</h2>
-      <p>Este módulo es exclusivo para líderes de área o directivos corporativos (Nivel 1 y 2).</p>
+      <p>Este módulo es exclusivo para gerentes de área o directivos corporativos (Nivel 1).</p>
     </div>
 
     <div class="team-grid" v-else>
@@ -253,6 +253,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/api/supabase';
 import { signOut } from '@/api/auth';
+import { getLatestRoleKpiScore } from '@/api/kpi';
 
 const isLeader = ref(false);
 const isMaster = ref(false);
@@ -314,7 +315,7 @@ const fetchData = async () => {
   if (profile?.is_master_admin) {
     isMaster.value = true;
     isLeader.value = true;
-  } else if (profile?.roles?.access_level === 1 || profile?.roles?.access_level === 2) {
+  } else if (profile?.roles?.access_level === 1) {
     isLeader.value = true;
   }
 
@@ -347,14 +348,8 @@ const fetchData = async () => {
     if (members) {
       // Para cada miembro, traemos sus KPIs recientes y tareas
       const enrichedMembers = await Promise.all(members.map(async (m) => {
-        // Traer KPI
-        const { data: kpis } = await supabase.from('role_kpis')
-          .select('overall_score')
-          .eq('role_id', m.roles.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        const latestScore = kpis && kpis.length > 0 ? kpis[0].overall_score : 0;
+        // Traer KPI (de las mediciones reales cargadas en Gestión de KPIs)
+        const latestScore = await getLatestRoleKpiScore(m.roles.id);
 
         // Traer las tareas puntuales que el líder le asignó a esta persona
         // (tabla `tasks`) -- no confundir con la Gestión Diaria del cargo.

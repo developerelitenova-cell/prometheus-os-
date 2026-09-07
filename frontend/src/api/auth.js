@@ -71,6 +71,7 @@ export const signOut = async () => {
 export const isMasterAdmin = () => !!currentProfile.value?.is_master_admin
 export const accessLevel = () => currentProfile.value?.roles?.access_level ?? null
 export const isLeader = () => [1, 2].includes(accessLevel())
+export const isManager = () => accessLevel() === 1
 
 supabase.auth.onAuthStateChange((_event, session) => {
   if (!session) {
