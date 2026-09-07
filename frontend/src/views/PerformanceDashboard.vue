@@ -238,7 +238,16 @@ const fetchRoles = async () => {
       .order('name');
       
     if (!error) {
-      roles.value = data || [];
+      const uniqueRoles = [];
+      const seen = new Set();
+      for (const role of (data || [])) {
+        const key = `${role.name}-${role.areas?.name || 'General'}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueRoles.push(role);
+        }
+      }
+      roles.value = uniqueRoles;
       filteredRoles.value = [...roles.value];
     }
   } catch (e) {

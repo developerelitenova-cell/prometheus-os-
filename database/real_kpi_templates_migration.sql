@@ -106,6 +106,12 @@ DECLARE
   t_id UUID;
 BEGIN
 
+  -- Idempotencia: si esta seed ya corrió antes, no dupliques las 18 plantillas.
+  IF EXISTS (SELECT 1 FROM kpi_role_templates WHERE source_note LIKE 'Plantilla importada de planilla real%') THEN
+    RAISE NOTICE 'Las plantillas reales ya estaban cargadas -- no se insertó nada de nuevo.';
+    RETURN;
+  END IF;
+
   -- Administrativa
   INSERT INTO kpi_role_templates (area_label, source_note) VALUES ('Administrativa', 'Plantilla importada de planilla real, Agosto 2026') RETURNING id INTO t_id;
   INSERT INTO kpi_template_metrics (template_id, name, meta_label, meta_type, display_order) VALUES

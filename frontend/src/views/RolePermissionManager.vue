@@ -22,7 +22,7 @@
           <div v-for="area in areas" :key="area.id" class="area-group">
             <div class="area-title">
               <span>{{ area.name }}</span>
-              <button class="btn-text-small" @click="promptNewRole(area.id)">+ Rol</button>
+              <button class="btn-text-small" @click="openCreateRoleModal(area.id)">+ Rol</button>
             </div>
             <ul class="role-list">
               <li 
@@ -143,6 +143,63 @@
         </div>
       </div>
     </div>
+    <!-- Modal: Crear Nuevo Rol -->
+    <div v-if="showCreateRoleModal" class="modal-overlay" @click.self="closeCreateRoleModal">
+      <div class="glass-panel modal-content">
+        <h3>Crear Nuevo Rol</h3>
+        <p class="help-text">Define los detalles del nuevo cargo organizacional.</p>
+
+        <label class="field">
+          Nombre del Cargo
+          <input v-model="newRole.name" type="text" placeholder="Ej: Especialista de Datos" />
+        </label>
+        
+        <label class="field">
+          Área Funcional
+          <select v-model="newRole.area_id" class="select-field">
+            <option v-for="area in areas" :key="area.id" :value="area.id">{{ area.name }}</option>
+          </select>
+        </label>
+
+        <label class="field">
+          Objetivo del Cargo (Opcional)
+          <textarea v-model="newRole.objective" placeholder="Describe brevemente el propósito de este rol en la empresa" rows="3" class="textarea-field"></textarea>
+        </label>
+
+        <label class="field" style="margin-top: 8px;">
+          Nivel de Acceso (Permisos)
+        </label>
+        <div class="permissions-grid-small">
+          <label class="radio-card-small" :class="{ selected: newRole.access_level === 1 }">
+            <input type="radio" v-model="newRole.access_level" :value="1">
+            <div class="card-content-small">
+              <strong>Nivel 1</strong>
+            </div>
+          </label>
+          <label class="radio-card-small" :class="{ selected: newRole.access_level === 2 }">
+            <input type="radio" v-model="newRole.access_level" :value="2">
+            <div class="card-content-small">
+              <strong>Nivel 2</strong>
+            </div>
+          </label>
+          <label class="radio-card-small" :class="{ selected: newRole.access_level === 3 }">
+            <input type="radio" v-model="newRole.access_level" :value="3">
+            <div class="card-content-small">
+              <strong>Nivel 3</strong>
+            </div>
+          </label>
+        </div>
+
+        <p v-if="createRoleError" class="error-text">{{ createRoleError }}</p>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" @click="closeCreateRoleModal">Cancelar</button>
+          <button class="btn-primary" @click="submitCreateRole" :disabled="creatingRole">
+            {{ creatingRole ? 'Creando...' : 'Crear Rol' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -157,6 +214,11 @@ const showAssignModal = ref(false);
 const creatingMember = ref(false);
 const assignError = ref('');
 const newMember = ref({ full_name: '', email: '', password: '', is_master_admin: false });
+
+const showCreateRoleModal = ref(false);
+const creatingRole = ref(false);
+const createRoleError = ref('');
+const newRole = ref({ name: '', area_id: null, access_level: 3, objective: '' });
 
 const fetchData = async () => {
   // Fetch areas and roles
@@ -239,15 +301,45 @@ const promptNewArea = async () => {
   }
 };
 
-const promptNewRole = async (areaId) => {
-  const name = prompt("Nombre del nuevo rol:");
-  if (name) {
-    const { error } = await supabase.from('roles').insert([{ name, area_id: areaId, access_level: 3 }]);
-    if (error) {
-      alert('No se pudo crear el rol: ' + error.message);
-      return;
-    }
+const openCreateRoleModal = (areaId) => {
+  newRole.value = { name: '', area_id: areaId, access_level: 3, objective: '' };
+  createRoleError.value = '';
+  showCreateRoleModal.value = true;
+};
+
+const closeCreateRoleModal = () => {
+  showCreateRoleModal.value = false;
+  createRoleError.value = '';
+};
+
+const submitCreateRole = async () => {
+  createRoleError.value = '';
+  if (!newRole.value.name.trim()) {
+    createRoleError.value = 'El nombre del cargo es obligatorio.';
+    return;
+  }
+  if (!newRole.value.area_id) {
+    createRoleError.value = 'Debes seleccionar un área funcional.';
+    return;
+  }
+
+  creatingRole.value = true;
+  try {
+    const { error } = await supabase.from('roles').insert([{ 
+      name: newRole.value.name.trim(), 
+      area_id: newRole.value.area_id, 
+      access_level: newRole.value.access_level,
+      objective: newRole.value.objective.trim() || null
+    }]);
+    
+    if (error) throw error;
+    
+    closeCreateRoleModal();
     fetchData();
+  } catch (err) {
+    createRoleError.value = 'No se pudo crear el rol: ' + err.message;
+  } finally {
+    creatingRole.value = false;
   }
 };
 
@@ -643,5 +735,62 @@ onMounted(() => {
 .modal-content .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.select-field,
+.textarea-field {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.textarea-field {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.select-field:focus,
+.textarea-field:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-light);
+}
+
+.permissions-grid-small {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.radio-card-small {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.radio-card-small input {
+  position: absolute;
+  opacity: 0;
+}
+
+.radio-card-small.selected {
+  border-color: var(--gold);
+  background: rgba(176, 141, 87, 0.05);
+  box-shadow: 0 0 0 1px var(--gold);
+  color: var(--gold-deep);
+}
+
+.card-content-small strong {
+  font-size: 0.85rem;
 }
 </style>
