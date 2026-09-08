@@ -197,9 +197,9 @@
           <h2>¡Listo! Tu proceso quedó registrado</h2>
           <p>Guardamos la información del cargo <strong>{{ role?.name }}</strong>. Ya está disponible para tu equipo en el Mapa de Cargos.</p>
           <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para futuras consultas. No podrás volver a editarla — ya tienes acceso a tu Portal del Empleado.</p>
-          <router-link :to="isOwnRole ? '/workspace' : '/mapa-cargos'" class="btn-success-cta">
+          <a :href="isOwnRole ? '/workspace' : '/mapa-cargos'" class="btn-success-cta">
             {{ isOwnRole ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
-          </router-link>
+          </a>
         </div>
       </main>
     </div>
