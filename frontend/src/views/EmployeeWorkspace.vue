@@ -224,7 +224,10 @@
       <div class="main-column">
         <!-- Gestión Diaria: actividades recurrentes y estándar del cargo -->
         <div class="glass-panel checklist-card">
-          <h3>Gestión Diaria</h3>
+          <div class="board-header">
+            <h3>Gestión Diaria</h3>
+            <p>Actividades recurrentes y estándar de tu cargo</p>
+          </div>
 
           <div class="checklist-tabs">
             <button :class="{ active: dmTab === 'daily' }" @click="dmTab = 'daily'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Diario</button>
@@ -243,7 +246,7 @@
 
         <!-- Cronograma Programacional -->
         <div class="glass-panel schedule-column">
-          <div class="schedule-header">
+          <div class="board-header">
             <h3>Cronograma Programacional</h3>
             <p>Compromisos, reportes y tareas asignadas por tu líder</p>
           </div>
@@ -1329,25 +1332,7 @@ const exitAuditMode = () => {
   transform: translateY(-1px);
 }
 
-.workspace-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr 280px;
-  gap: 24px;
-  height: calc(100vh - var(--header-height) - 48px);
-  min-height: 0;
-}
-
-.sidebar-column, .assistant-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  overflow-y: auto;
-  height: 100%;
-  padding-right: 6px;
-}
-
 .main-column {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -1357,14 +1342,14 @@ const exitAuditMode = () => {
 }
 
 /* Custom scrollbar para columnas interiores */
-.sidebar-column::-webkit-scrollbar, 
-.main-column::-webkit-scrollbar, 
-.assistant-column::-webkit-scrollbar {
+.sidebar-column::-webkit-scrollbar,
+.main-column::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
   width: 4px;
 }
-.sidebar-column::-webkit-scrollbar-thumb, 
-.main-column::-webkit-scrollbar-thumb, 
-.assistant-column::-webkit-scrollbar-thumb {
+.sidebar-column::-webkit-scrollbar-thumb,
+.main-column::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 4px;
 }
@@ -1393,16 +1378,21 @@ const exitAuditMode = () => {
 .role-level-badge.level-2 { background: var(--warning); }
 .role-level-badge.level-3 { background: var(--success); }
 
+/* Grid de 3 columnas con proporciones fijas -- antes era flex con las tres
+   columnas creciendo por igual, lo que estiraba el chat (casi siempre vacío)
+   al mismo ancho que el contenido central, generando mucho espacio muerto
+   y una sensación de desbalance. Con columnas de ancho fijo/proporcional el
+   layout se ve simétrico sin importar cuánto contenido tenga cada una. */
 .workspace-content {
-  display: flex;
-  flex: 1;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1.6fr) minmax(320px, 380px);
   gap: 24px;
+  flex: 1;
   min-height: 0;
 }
 
 /* Sidebar Column */
 .sidebar-column {
-  width: 300px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -1527,15 +1517,30 @@ const exitAuditMode = () => {
 
 /* Gestión Diaria (memoria del cargo) */
 .checklist-card {
-  padding: 24px;
   display: flex;
   flex-direction: column;
 }
 
-.checklist-card h3 {
-  margin: 0 0 16px 0;
+/* Encabezado compartido por Gestión Diaria y Cronograma Programacional --
+   mismo tamaño de título y misma línea de subtítulo, para que ambas
+   tarjetas apiladas en la columna central se lean como un mismo sistema
+   en vez de dos componentes con estilos distintos. */
+.board-header {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.board-header h3 {
+  margin: 0 0 4px 0;
   color: var(--ink);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.board-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
 }
 
 .checklist-tabs {
@@ -1543,7 +1548,7 @@ const exitAuditMode = () => {
   background: var(--bg-secondary);
   padding: 4px;
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin: 16px 24px 0 24px;
   gap: 4px;
 }
 
@@ -1572,7 +1577,7 @@ const exitAuditMode = () => {
 
 .dm-task-list {
   list-style: none;
-  padding: 0;
+  padding: 16px 24px 24px 24px;
   margin: 0;
 }
 
@@ -1697,22 +1702,6 @@ const exitAuditMode = () => {
   flex-direction: column;
 }
 
-.schedule-header {
-  padding: 24px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.schedule-header h3 {
-  margin: 0 0 4px 0;
-  font-size: 1.4rem;
-  color: var(--ink);
-}
-
-.schedule-header p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
 
 .schedule-calendar-tabs {
   display: flex;
@@ -1832,9 +1821,9 @@ const exitAuditMode = () => {
 
 /* Chat Column */
 .chat-column {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .chat-header {
@@ -1991,14 +1980,14 @@ const exitAuditMode = () => {
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 1024px) {
-  .workspace-layout {
-    grid-template-columns: 1fr !important;
-    gap: 24px;
+  .workspace-content {
+    grid-template-columns: 1fr;
   }
-  .workspace-sidebar {
-    position: static;
+  .sidebar-column, .main-column, .chat-column {
     height: auto;
-    overflow: visible;
+  }
+  .chat-column {
+    min-height: 480px;
   }
 }
 @media (max-width: 768px) {
