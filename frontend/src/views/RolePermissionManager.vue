@@ -3,8 +3,8 @@
     <header class="page-header">
       <div class="header-content">
         <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
-        <h1>Asignación de Roles y Permisos</h1>
-        <p class="subtitle">Administración de jerarquías y estructura organizacional (Estilo Discord)</p>
+        <h1>Cargos y Permisos</h1>
+        <p class="subtitle">Creá cargos, definí niveles de acceso y asigná a tu equipo dentro de cada área.</p>
       </div>
     </header>
 
@@ -13,27 +13,35 @@
       <aside class="sidebar glass-panel">
         <div class="sidebar-header">
           <h3>Áreas y Roles</h3>
-          <button class="btn-icon" title="Crear Área" @click="promptNewArea">
+          <button class="btn-icon" title="Crear Área" @click="openNewAreaModal">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
         </div>
-        
+
         <div class="area-list">
           <div v-for="area in areas" :key="area.id" class="area-group">
             <div class="area-title">
               <span>{{ area.name }}</span>
-              <button class="btn-text-small" @click="openCreateRoleModal(area.id)">+ Rol</button>
+              <div class="area-title-actions">
+                <button class="btn-text-small" @click="openCreateRoleModal(area.id)">+ Rol</button>
+                <button class="btn-icon-tiny danger" title="Eliminar área" @click="confirmDeleteArea(area)">
+                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
             </div>
             <ul class="role-list">
-              <li 
-                v-for="role in area.roles" 
-                :key="role.id" 
+              <li
+                v-for="role in area.roles"
+                :key="role.id"
                 class="role-item"
                 :class="{ active: selectedRole?.id === role.id }"
                 @click="selectRole(role)"
               >
                 <div class="role-indicator" :class="'level-' + role.access_level"></div>
                 <span class="role-name">{{ role.name }}</span>
+                <button class="btn-icon-tiny danger role-delete-btn" title="Eliminar cargo" @click.stop="confirmDeleteRole(role)">
+                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
               </li>
             </ul>
           </div>
@@ -53,27 +61,43 @@
           <h3>Nivel de Acceso (Permisos)</h3>
           <p class="help-text">Define qué datos e interfaces puede ver este rol en el sistema.</p>
           <div class="permissions-grid">
-            <label class="radio-card" :class="{ selected: selectedRole.access_level === 1 }">
-              <input type="radio" v-model="selectedRole.access_level" :value="1" @change="updateRoleLevel">
+            <label class="radio-card" :class="{ selected: pendingLevel === 1 }">
+              <input type="radio" v-model="pendingLevel" :value="1">
               <div class="card-content">
                 <strong>Nivel 1: Ejecutivo</strong>
                 <span>Acceso global a Leader Dashboard y todos los KPIs.</span>
               </div>
             </label>
-            <label class="radio-card" :class="{ selected: selectedRole.access_level === 2 }">
-              <input type="radio" v-model="selectedRole.access_level" :value="2" @change="updateRoleLevel">
+            <label class="radio-card" :class="{ selected: pendingLevel === 2 }">
+              <input type="radio" v-model="pendingLevel" :value="2">
               <div class="card-content">
                 <strong>Nivel 2: Área</strong>
                 <span>Dashboard de Área y gestión del equipo directo.</span>
               </div>
             </label>
-            <label class="radio-card" :class="{ selected: selectedRole.access_level === 3 }">
-              <input type="radio" v-model="selectedRole.access_level" :value="3" @change="updateRoleLevel">
+            <label class="radio-card" :class="{ selected: pendingLevel === 3 }">
+              <input type="radio" v-model="pendingLevel" :value="3">
               <div class="card-content">
                 <strong>Nivel 3: Individual</strong>
                 <span>Solo acceso a sus propias tareas, manuales y KPIs.</span>
               </div>
             </label>
+          </div>
+
+          <div class="save-level-row">
+            <button
+              class="btn-save-level"
+              @click="saveRoleLevel"
+              :disabled="savingLevel || pendingLevel === selectedRole.access_level"
+            >
+              {{ savingLevel ? 'Guardando...' : 'Guardar Cambios de Permisos' }}
+            </button>
+            <span v-if="pendingLevel !== selectedRole.access_level && !savingLevel" class="unsaved-hint">Tenés cambios sin guardar</span>
+            <span v-if="saveLevelMessage" class="save-success">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {{ saveLevelMessage }}
+            </span>
+            <span v-if="saveLevelError" class="error-text">{{ saveLevelError }}</span>
           </div>
         </section>
 
@@ -200,6 +224,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal: Crear Nueva Área -->
+    <div v-if="showNewAreaModal" class="modal-overlay" @click.self="closeNewAreaModal">
+      <div class="glass-panel modal-content">
+        <h3>Crear Nueva Área</h3>
+        <p class="help-text">Definí el nombre de la nueva área funcional.</p>
+
+        <label class="field">
+          Nombre del Área
+          <input v-model="newAreaName" type="text" placeholder="Ej: Logística" @keyup.enter="submitCreateArea" />
+        </label>
+
+        <p v-if="newAreaError" class="error-text">{{ newAreaError }}</p>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" @click="closeNewAreaModal">Cancelar</button>
+          <button class="btn-primary" @click="submitCreateArea" :disabled="creatingArea">
+            {{ creatingArea ? 'Creando...' : 'Crear Área' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Confirmar Eliminación (área o cargo) -->
+    <div v-if="deleteTarget" class="modal-overlay" @click.self="closeDeleteModal">
+      <div class="glass-panel modal-content">
+        <h3>¿Eliminar {{ deleteTarget.type === 'area' ? 'el área' : 'el cargo' }} "{{ deleteTarget.label }}"?</h3>
+        <p class="help-text">Esta acción no se puede deshacer.</p>
+
+        <p v-if="deleteError" class="error-text">{{ deleteError }}</p>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" @click="closeDeleteModal">Cancelar</button>
+          <button class="btn-danger" @click="submitDelete" :disabled="deleting">
+            {{ deleting ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -230,16 +293,46 @@ const fetchData = async () => {
 
 const selectRole = async (role) => {
   selectedRole.value = role;
+  pendingLevel.value = role.access_level;
+  saveLevelMessage.value = '';
+  saveLevelError.value = '';
   // Fetch members
   const { data: members } = await supabase.from('profiles').select('*').eq('role_id', role.id);
   roleMembers.value = members || [];
 };
 
-const updateRoleLevel = async () => {
-  if (!selectedRole.value) return;
-  const { error } = await supabase.from('roles').update({ access_level: selectedRole.value.access_level }).eq('id', selectedRole.value.id);
-  if (error) {
-    alert('No se pudo cambiar el nivel: ' + error.message);
+// El nivel elegido en los radio-cards es un borrador (pendingLevel) hasta que
+// se confirma con el botón: así el cambio no se da por guardado si la
+// escritura en Supabase falla en silencio (ver fix_roles_areas_write_rls_migration.sql
+// -- roles/areas tenían RLS activado sin políticas de UPDATE/INSERT, así que
+// el cambio "se veía" en la UI pero nunca llegaba a la base de datos).
+const pendingLevel = ref(null);
+const savingLevel = ref(false);
+const saveLevelMessage = ref('');
+const saveLevelError = ref('');
+
+const saveRoleLevel = async () => {
+  if (!selectedRole.value || pendingLevel.value === null) return;
+  savingLevel.value = true;
+  saveLevelMessage.value = '';
+  saveLevelError.value = '';
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .update({ access_level: pendingLevel.value })
+      .eq('id', selectedRole.value.id)
+      .select('id, access_level');
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      throw new Error('Supabase no reportó ningún error, pero no se actualizó ninguna fila. Probablemente falten permisos (RLS) para editar cargos -- pedile a un desarrollador que corra fix_roles_areas_write_rls_migration.sql.');
+    }
+    selectedRole.value.access_level = pendingLevel.value;
+    saveLevelMessage.value = 'Nivel de acceso actualizado correctamente.';
+    setTimeout(() => { saveLevelMessage.value = ''; }, 4000);
+  } catch (e) {
+    saveLevelError.value = 'No se pudo guardar: ' + e.message;
+  } finally {
+    savingLevel.value = false;
   }
 };
 
@@ -264,7 +357,7 @@ const createMember = async () => {
 
   creatingMember.value = true;
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
     const response = await fetch(`${apiUrl}/api/v1/admin/create-employee`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -289,15 +382,91 @@ const createMember = async () => {
   }
 };
 
-const promptNewArea = async () => {
-  const name = prompt("Nombre de la nueva área:");
-  if (name) {
-    const { error } = await supabase.from('areas').insert([{ name }]);
-    if (error) {
-      alert('No se pudo crear el área: ' + error.message);
-      return;
+const showNewAreaModal = ref(false);
+const newAreaName = ref('');
+const newAreaError = ref('');
+const creatingArea = ref(false);
+
+const openNewAreaModal = () => {
+  newAreaName.value = '';
+  newAreaError.value = '';
+  showNewAreaModal.value = true;
+};
+
+const closeNewAreaModal = () => {
+  showNewAreaModal.value = false;
+};
+
+const submitCreateArea = async () => {
+  newAreaError.value = '';
+  if (!newAreaName.value.trim()) {
+    newAreaError.value = 'El nombre del área es obligatorio.';
+    return;
+  }
+  creatingArea.value = true;
+  try {
+    const { error } = await supabase.from('areas').insert([{ name: newAreaName.value.trim() }]);
+    if (error) throw error;
+    showNewAreaModal.value = false;
+    await fetchData();
+  } catch (e) {
+    newAreaError.value = 'No se pudo crear el área: ' + e.message;
+  } finally {
+    creatingArea.value = false;
+  }
+};
+
+// --- Eliminar área / cargo ---
+// La validación (¿tiene cargos/personas dependientes?) vive en el backend,
+// no acá: es una operación destructiva y exclusiva de Admin Master.
+const deleteTarget = ref(null); // { type: 'area' | 'role', id, label }
+const deleting = ref(false);
+const deleteError = ref('');
+
+const confirmDeleteArea = (area) => {
+  deleteError.value = '';
+  deleteTarget.value = { type: 'area', id: area.id, label: area.name };
+};
+
+const confirmDeleteRole = (role) => {
+  deleteError.value = '';
+  deleteTarget.value = { type: 'role', id: role.id, label: role.name };
+};
+
+const closeDeleteModal = () => {
+  deleteTarget.value = null;
+  deleteError.value = '';
+};
+
+const submitDelete = async () => {
+  if (!deleteTarget.value) return;
+  deleting.value = true;
+  deleteError.value = '';
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    const token = session?.session?.access_token;
+    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+    const path = deleteTarget.value.type === 'area'
+      ? `/api/v1/admin/areas/${deleteTarget.value.id}`
+      : `/api/v1/admin/roles/${deleteTarget.value.id}`;
+
+    const response = await fetch(`${apiUrl}${path}`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || 'No se pudo eliminar.');
+
+    if (deleteTarget.value.type === 'role' && selectedRole.value?.id === deleteTarget.value.id) {
+      selectedRole.value = null;
+      roleMembers.value = [];
     }
-    fetchData();
+    deleteTarget.value = null;
+    await fetchData();
+  } catch (e) {
+    deleteError.value = e.message;
+  } finally {
+    deleting.value = false;
   }
 };
 
@@ -426,6 +595,32 @@ onMounted(() => {
   cursor: pointer;
 }
 
+.area-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-icon-tiny {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-icon-tiny.danger:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--danger);
+}
+
 .role-list {
   list-style: none;
 }
@@ -438,6 +633,16 @@ onMounted(() => {
   cursor: pointer;
   transition: background 0.2s;
   margin-bottom: 2px;
+}
+
+.role-delete-btn {
+  margin-left: auto;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.role-item:hover .role-delete-btn {
+  opacity: 1;
 }
 
 .role-item:hover {
@@ -530,6 +735,57 @@ onMounted(() => {
   border-color: var(--gold);
   background: rgba(176, 141, 87, 0.05);
   box-shadow: 0 0 0 1px var(--gold);
+}
+
+.save-level-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn-save-level {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save-level:hover:not(:disabled) {
+  background: #000;
+  transform: translateY(-1px);
+}
+
+.btn-save-level:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.unsaved-hint {
+  font-size: 0.8rem;
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.save-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--success);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .card-content strong {
@@ -733,6 +989,26 @@ onMounted(() => {
 }
 
 .modal-content .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.btn-danger:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

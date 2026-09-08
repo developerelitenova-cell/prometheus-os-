@@ -158,6 +158,49 @@ def delete_employee(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# --- Módulo de Administración: Áreas y Cargos (borrado) ---
+# Requiere JWT válido + is_master_admin=true en el perfil -- borrar un área o
+# un cargo reestructura la organización entera, así que queda al mismo nivel
+# de exigencia que crear cuentas Admin Master (ver RolePermissionManager.vue).
+def require_master_admin(user):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+    res = supabase.table("profiles").select("is_master_admin").eq("id", user.id).single().execute()
+    if not res.data or not res.data.get("is_master_admin"):
+        raise HTTPException(status_code=403, detail="Esta acción es exclusiva del Admin Master.")
+
+@app.delete("/api/v1/admin/areas/{area_id}")
+def delete_area(area_id: str, user=Depends(verify_jwt)):
+    require_master_admin(user)
+    roles_res = supabase.table("roles").select("id", count="exact").eq("area_id", area_id).execute()
+    role_count = roles_res.count or 0
+    if role_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No se puede eliminar: el área todavía tiene {role_count} cargo(s) asignado(s). Eliminalos o movelos a otra área primero."
+        )
+    try:
+        supabase.table("areas").delete().eq("id", area_id).execute()
+        return {"status": "deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"No se pudo eliminar el área: {str(e)}")
+
+@app.delete("/api/v1/admin/roles/{role_id}")
+def delete_role(role_id: str, user=Depends(verify_jwt)):
+    require_master_admin(user)
+    members_res = supabase.table("profiles").select("id", count="exact").eq("role_id", role_id).execute()
+    member_count = members_res.count or 0
+    if member_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No se puede eliminar: todavía hay {member_count} persona(s) con este cargo. Reasignalas a otro cargo o eliminá sus cuentas primero."
+        )
+    try:
+        supabase.table("roles").delete().eq("id", role_id).execute()
+        return {"status": "deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"No se pudo eliminar el cargo: {str(e)}")
+
 # --- Módulo de Desempeño: Tareas y KPIs ---
 class TaskCreate(BaseModel):
     role_id: str

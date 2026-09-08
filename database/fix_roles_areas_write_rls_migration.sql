@@ -16,27 +16,36 @@
 -- políticas también se restringen a is_master_admin().
 --
 -- Ejecutar en: Supabase Dashboard -> SQL Editor -> pegar y correr.
--- Es idempotente.
+-- Es idempotente: cada política se borra primero si ya existía (por eso el
+-- DROP POLICY IF EXISTS antes de cada CREATE) y se vuelve a crear con la
+-- condición correcta -- así se puede correr las veces que haga falta, sin
+-- importar si alguna ya se había creado antes con otra condición.
 -- ============================================================
 
 -- --- ROLES ---
+DROP POLICY IF EXISTS "roles_insert" ON roles;
 CREATE POLICY "roles_insert" ON roles FOR INSERT TO authenticated
   WITH CHECK (is_master_admin());
 
+DROP POLICY IF EXISTS "roles_update" ON roles;
 CREATE POLICY "roles_update" ON roles FOR UPDATE TO authenticated
   USING (is_master_admin())
   WITH CHECK (is_master_admin());
 
+DROP POLICY IF EXISTS "roles_delete" ON roles;
 CREATE POLICY "roles_delete" ON roles FOR DELETE TO authenticated
   USING (is_master_admin());
 
 -- --- AREAS ---
+DROP POLICY IF EXISTS "areas_insert" ON areas;
 CREATE POLICY "areas_insert" ON areas FOR INSERT TO authenticated
   WITH CHECK (is_master_admin());
 
+DROP POLICY IF EXISTS "areas_update" ON areas;
 CREATE POLICY "areas_update" ON areas FOR UPDATE TO authenticated
   USING (is_master_admin())
   WITH CHECK (is_master_admin());
 
+DROP POLICY IF EXISTS "areas_delete" ON areas;
 CREATE POLICY "areas_delete" ON areas FOR DELETE TO authenticated
   USING (is_master_admin());
