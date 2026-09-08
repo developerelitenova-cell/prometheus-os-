@@ -19,7 +19,12 @@
         </div>
 
         <div class="area-list">
-          <div v-for="area in areas" :key="area.id" class="area-group">
+          <div v-for="area in areas" :key="area.id" class="area-group"
+            @dragover.prevent
+            @dragenter.prevent="handleDragEnter(area.id)"
+            @dragleave.prevent="handleDragLeave(area.id)"
+            @drop="handleDrop($event, area.id)"
+            :class="{ 'drag-over': dragOverArea === area.id }">
             <div class="area-title">
               <span>{{ area.name }}</span>
               <div class="area-title-actions">
@@ -36,6 +41,8 @@
                 class="role-item"
                 :class="{ active: selectedRole?.id === role.id }"
                 @click="selectRole(role)"
+                :draggable="isMaster"
+                @dragstart="handleDragStart($event, role, area.id)"
               >
                 <div class="role-indicator" :class="'level-' + role.access_level"></div>
                 <span class="role-name">{{ role.name }}</span>
@@ -267,7 +274,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { supabase } from '@/api/supabase'; // Assuming supabase instance
 
 const areas = ref([]);
@@ -282,6 +289,71 @@ const showCreateRoleModal = ref(false);
 const creatingRole = ref(false);
 const createRoleError = ref('');
 const newRole = ref({ name: '', area_id: null, access_level: 3, objective: '' });
+
+const currentProfile = ref(null);
+const isMaster = computed(() => !!currentProfile.value?.is_master_admin);
+
+const fetchCurrentProfile = async () => {
+  const { data: session } = await supabase.auth.getSession();
+  const userId = session?.session?.user?.id;
+  if (!userId) return;
+  const { data } = await supabase
+    .from('profiles')
+    .select('is_master_admin')
+    .eq('id', userId)
+    .single();
+  currentProfile.value = data || null;
+};
+
+const dragOverArea = ref(null);
+const draggingRole = ref(null);
+const draggingFromArea = ref(null);
+
+const handleDragStart = (e, role, fromAreaId) => {
+  if (!isMaster.value) {
+    e.preventDefault();
+    return;
+  }
+  draggingRole.value = role;
+  draggingFromArea.value = fromAreaId;
+  e.dataTransfer.effectAllowed = 'move';
+};
+
+const handleDragEnter = (areaId) => {
+  if (!isMaster.value) return;
+  dragOverArea.value = areaId;
+};
+
+const handleDragLeave = (areaId) => {
+  if (dragOverArea.value === areaId) {
+    dragOverArea.value = null;
+  }
+};
+
+const handleDrop = async (e, toAreaId) => {
+  dragOverArea.value = null;
+  if (!isMaster.value || !draggingRole.value) return;
+  
+  if (draggingFromArea.value === toAreaId) {
+    draggingRole.value = null;
+    return;
+  }
+
+  const roleId = draggingRole.value.id;
+  draggingRole.value = null;
+
+  try {
+    const { error } = await supabase
+      .from('roles')
+      .update({ area_id: toAreaId })
+      .eq('id', roleId);
+      
+    if (error) throw error;
+    fetchData(); // Reload roles after moving
+  } catch (err) {
+    alert('Error al mover el rol: ' + err.message);
+  }
+};
 
 const fetchData = async () => {
   // Fetch areas and roles
@@ -513,6 +585,7 @@ const submitCreateRole = async () => {
 };
 
 onMounted(() => {
+  fetchCurrentProfile();
   fetchData();
 });
 </script>
@@ -623,6 +696,16 @@ onMounted(() => {
 
 .role-list {
   list-style: none;
+}
+
+.area-group {
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: var(--radius-sm);
+}
+
+.area-group.drag-over {
+  background: rgba(176, 141, 87, 0.1);
+  box-shadow: inset 0 0 0 2px var(--gold);
 }
 
 .role-item {

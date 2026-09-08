@@ -191,11 +191,13 @@
         </div>
 
         <div class="success-section" v-if="step === 4">
-          <span class="success-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
+          <div class="success-badge">
+            <svg viewBox="0 0 24 24" width="30" height="30" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
           <h2>¡Listo! Tu proceso quedó registrado</h2>
           <p>Guardamos la información del cargo <strong>{{ role?.name }}</strong>. Ya está disponible para tu equipo en el Mapa de Cargos.</p>
           <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para futuras consultas. No podrás volver a editarla — ya tienes acceso a tu Portal del Empleado.</p>
-          <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="btn-primary">
+          <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="btn-success-cta">
             {{ lockedForSelf ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
           </router-link>
         </div>
@@ -720,24 +722,72 @@ textarea:focus {
 
 .processing-section, .success-section {
   text-align: center;
-  margin-top: 60px;
+  margin-top: 48px;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.success-icon {
-  display: block;
-  font-size: 3rem;
-  margin-bottom: 12px;
+.success-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--gold-gradient);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(176, 141, 87, 0.35);
+  margin-bottom: 22px;
+}
+
+.success-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 10px 0;
+}
+
+.success-section > p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
 }
 
 .lock-note {
   max-width: 480px;
-  margin: 16px auto 24px auto;
+  margin: 16px auto 8px auto;
   padding: 12px 16px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 0.85rem;
+}
+
+.btn-success-cta {
+  display: inline-block;
+  width: auto;
+  margin-top: 28px;
+  padding: 13px 32px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success-cta:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .results-section {
