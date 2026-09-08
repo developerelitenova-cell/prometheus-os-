@@ -146,6 +146,32 @@
           </div>
         </div>
 
+        <!-- Mis KPIs: solo gerente (Nivel 1), sobre su propio cargo -->
+        <div v-if="isManagerRole" class="glass-panel kpi-card">
+          <div class="kpi-card-header">
+            <h3>Mis KPIs</h3>
+            <span v-if="!loadingKpiDetail && kpiDetail.metrics.length" class="kpi-score-badge" :class="getScoreColor(kpiDetail.overallScore)">
+              {{ kpiDetail.overallScore }}%
+            </span>
+          </div>
+          <div v-if="loadingKpiDetail" class="loading-text">Cargando...</div>
+          <div v-else-if="kpiDetail.metrics.length === 0" class="empty-state-mini">
+            Tu cargo todavía no tiene una plantilla de KPI vinculada.
+          </div>
+          <ul v-else class="kpi-metric-list">
+            <li v-for="m in kpiDetail.metrics" :key="m.id">
+              <div class="kpi-metric-row">
+                <span class="kpi-metric-name">{{ m.name }}</span>
+                <span v-if="m.percentage !== null" class="kpi-metric-pct" :class="getScoreColor(m.percentage)">{{ m.percentage }}%</span>
+                <span v-else class="kpi-metric-pct muted">Sin datos</span>
+              </div>
+              <div class="kpi-metric-meta">
+                Meta: {{ m.meta_label }}<span v-if="m.realizado_raw"> · Real: {{ m.realizado_raw }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
 
         <!-- Canal de Notificaciones Permanente -->
         <div class="glass-panel notif-permanent-card">
@@ -799,6 +825,18 @@ KPIs esperados: ${JSON.stringify(flowData.kpis)}
   }
 };
 
+const fetchKpiDetail = async (roleId) => {
+  loadingKpiDetail.value = true;
+  try {
+    kpiDetail.value = await getRoleKpiDetail(roleId);
+  } catch (e) {
+    console.error('Error cargando KPIs del cargo:', e);
+    kpiDetail.value = { overallScore: 0, metrics: [] };
+  } finally {
+    loadingKpiDetail.value = false;
+  }
+};
+
 const fetchChatHistory = async (roleId) => {
   try {
     const { data: history, error } = await supabase
@@ -1402,23 +1440,89 @@ const exitAuditMode = () => {
   font-size: 0.9rem;
 }
 
-.mini-kpi {
-  padding: 24px;
-}
-
-.mini-kpi h3, .tasks-card h3 {
+.tasks-card h3 {
   margin: 0 0 16px 0;
   color: var(--ink);
   font-size: 1.1rem;
 }
 
-.kpi-insight {
+/* Mis KPIs (solo gerente) */
+.kpi-card {
+  padding: 20px;
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.kpi-card-header h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.kpi-score-badge {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.kpi-score-badge.green { background: rgba(52, 199, 89, 0.12); color: var(--success); }
+.kpi-score-badge.yellow { background: rgba(255, 149, 0, 0.12); color: var(--warning); }
+.kpi-score-badge.red { background: rgba(255, 59, 48, 0.12); color: var(--danger); }
+.kpi-score-badge.gray { background: var(--bg-secondary); color: var(--text-tertiary); }
+
+.kpi-metric-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kpi-metric-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.kpi-metric-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.kpi-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kpi-metric-name {
   font-size: 0.85rem;
+  font-weight: 600;
   color: var(--ink-secondary);
-  background: var(--bg-secondary);
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  text-align: left;
+}
+
+.kpi-metric-pct {
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.kpi-metric-pct.green { color: var(--success); }
+.kpi-metric-pct.yellow { color: var(--warning); }
+.kpi-metric-pct.red { color: var(--danger); }
+.kpi-metric-pct.gray, .kpi-metric-pct.muted { color: var(--text-tertiary); font-weight: 500; }
+
+.kpi-metric-meta {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
 }
 
 /* Gestión Diaria (memoria del cargo) */
@@ -1501,9 +1605,12 @@ const exitAuditMode = () => {
 
 .no-tasks {
   color: var(--text-tertiary);
-  font-style: italic;
   font-size: 0.85rem;
-  padding: 8px 0;
+  text-align: center;
+  padding: 28px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
 }
 
 .notif-permanent-card {
@@ -1880,24 +1987,6 @@ const exitAuditMode = () => {
 :deep(.bubble ul) {
   margin: 10px 0;
   padding-left: 20px;
-}
-
-.kpi-notes-scroll {
-  max-height: 150px;
-  overflow-y: auto;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  background: rgba(0,0,0,0.2);
-  padding: 10px;
-  border-radius: 6px;
-  margin-top: 10px;
-}
-.kpi-notes-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-.kpi-notes-scroll::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border-radius: 4px;
 }
 
 /* --- Mobile Responsiveness --- */
