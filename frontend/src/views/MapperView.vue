@@ -197,8 +197,8 @@
           <h2>¡Listo! Tu proceso quedó registrado</h2>
           <p>Guardamos la información del cargo <strong>{{ role?.name }}</strong>. Ya está disponible para tu equipo en el Mapa de Cargos.</p>
           <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para futuras consultas. No podrás volver a editarla — ya tienes acceso a tu Portal del Empleado.</p>
-          <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="btn-success-cta">
-            {{ lockedForSelf ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
+          <router-link :to="isOwnRole ? '/workspace' : '/mapa-cargos'" class="btn-success-cta">
+            {{ isOwnRole ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
           </router-link>
         </div>
       </main>
@@ -220,6 +220,7 @@ const role_id = route.params.role_id;
 // Si quien mapea es el dueño del rol (no un admin editando por otra persona),
 // al guardar se le cierra el acceso a esta pantalla (ver saveWorkflow).
 const lockedForSelf = computed(() => currentProfile.value?.role_id === role_id && !currentProfile.value?.is_master_admin);
+const isOwnRole = computed(() => currentProfile.value?.role_id === role_id);
 
 const role = ref(null);
 const step = ref(1);
