@@ -31,3 +31,66 @@ export const getLatestRoleKpiScore = async (roleId) => {
 
   return Math.round(matching.reduce((sum, row) => sum + Number(row.percentage), 0) / matching.length);
 };
+
+const rankOf = (row) => [row.period_year, row.period_month, CHECKPOINT_RANK[row.period_checkpoint] || 0];
+const rankIsNewer = (a, b) => {
+  if (a[0] !== b[0]) return a[0] > b[0];
+  if (a[1] !== b[1]) return a[1] > b[1];
+  return a[2] > b[2];
+};
+
+// Detalle de KPIs de un cargo: puntaje global + la última medición cargada
+// de cada métrica individual (meta vs. realizado). A diferencia de
+// getLatestRoleKpiScore (que exige que todas las métricas compartan el
+// mismo corte), acá cada métrica muestra su propio dato más reciente --
+// más tolerante a que las mediciones se vayan cargando de a poco.
+// Pensado para la vista del gerente sobre su propio cargo (no para
+// empleados individuales, que no deben ver este desglose).
+export const getRoleKpiDetail = async (roleId) => {
+  const { data: links, error: linksError } = await supabase
+    .from('kpi_role_template_links')
+    .select('template_id, kpi_role_templates(area_label, kpi_template_metrics(id, name, meta_label, meta_type))')
+    .eq('role_id', roleId);
+
+  if (linksError || !links || links.length === 0) return { overallScore: 0, metrics: [] };
+
+  const allMetrics = [];
+  links.forEach(link => {
+    (link.kpi_role_templates?.kpi_template_metrics || []).forEach(m => allMetrics.push(m));
+  });
+  if (allMetrics.length === 0) return { overallScore: 0, metrics: [] };
+
+  const { data: measurements } = await supabase
+    .from('kpi_metric_measurements')
+    .select('metric_id, period_year, period_month, period_checkpoint, realizado_raw, percentage, estado')
+    .eq('role_id', roleId)
+    .in('metric_id', allMetrics.map(m => m.id));
+
+  const latestByMetric = {};
+  (measurements || []).forEach(row => {
+    const current = latestByMetric[row.metric_id];
+    if (!current || rankIsNewer(rankOf(row), rankOf(current))) {
+      latestByMetric[row.metric_id] = row;
+    }
+  });
+
+  const metrics = allMetrics.map(m => {
+    const latest = latestByMetric[m.id];
+    return {
+      id: m.id,
+      name: m.name,
+      meta_label: m.meta_label,
+      meta_type: m.meta_type,
+      realizado_raw: latest?.realizado_raw || null,
+      percentage: latest?.percentage ?? null,
+      estado: latest?.estado || null
+    };
+  });
+
+  const withData = metrics.filter(m => m.percentage !== null);
+  const overallScore = withData.length
+    ? Math.round(withData.reduce((sum, m) => sum + Number(m.percentage), 0) / withData.length)
+    : 0;
+
+  return { overallScore, metrics };
+};

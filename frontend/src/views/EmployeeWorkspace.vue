@@ -299,6 +299,7 @@ import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../a
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { getPeriodKey } from '../utils/taskPeriods';
+import { getRoleKpiDetail } from '../api/kpi';
 
 const router = useRouter();
 const route = useRoute();
@@ -355,9 +356,15 @@ const dismissedMessageIds = ref(new Set());
 const hiddenMessageIds = ref(new Set());
 
 // Datos del rol
-const currentKpi = ref({ overall_score: 0, ai_evaluation_notes: null });
 const loadingKpis = ref(false);
 const roleContextStr = ref('');
+
+// Mis KPIs: solo visible para el gerente (Nivel 1) sobre su propio cargo --
+// un empleado individual no ve este desglose. Trae el puntaje global y el
+// detalle por métrica desde el sistema real de mediciones (kpi_metric_measurements),
+// el mismo que alimenta el badge de "Mi Equipo" en el Panel de Liderazgo.
+const kpiDetail = ref({ overallScore: 0, metrics: [] });
+const loadingKpiDetail = ref(false);
 
 // Cronograma Programacional (tareas asignadas por el líder, tabla `tasks`)
 const dailyTasks = ref([]);
@@ -639,6 +646,9 @@ const initWorkspace = async () => {
     if (currentRole.value) {
       await fetchRoleData(currentRole.value.id);
       await fetchDailyManagement(currentRole.value.id, currentProfile.value.id);
+      if (isManagerRole.value) {
+        await fetchKpiDetail(currentRole.value.id);
+      }
     }
     await fetchChecklists(currentProfile.value.id);
     await fetchNotifications(currentProfile.value.id, currentRole.value);
@@ -751,25 +761,7 @@ const toggleDmTask = async (task) => {
 const fetchRoleData = async (roleId) => {
   loadingKpis.value = true;
   try {
-    // 1. Fetch KPIs
-    const { data: kpiData } = await supabase
-      .from('role_kpis')
-      .select('*')
-      .eq('role_id', roleId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-      
-    if (kpiData) {
-      currentKpi.value = {
-        overall_score: kpiData.overall_score || ((kpiData.score_financial + kpiData.score_customer + kpiData.score_process + kpiData.score_growth) / 4),
-        ai_evaluation_notes: kpiData.ai_evaluation_notes
-      };
-    } else {
-      currentKpi.value = { overall_score: 0, ai_evaluation_notes: null };
-    }
-
-    // 2. Fetch Workflows/Context for this role
+    // 1. Fetch Workflows/Context for this role
     const { data: flowData } = await supabase
       .from('role_workflows')
       .select('*')
@@ -789,7 +781,7 @@ KPIs esperados: ${JSON.stringify(flowData.kpis)}
       roleContextStr.value = '';
     }
 
-    // 3. Fetch Templates (Global or specific to this role)
+    // 2. Fetch Templates (Global or specific to this role)
     const { data: templateData } = await supabase
       .from('document_templates')
       .select('*')
