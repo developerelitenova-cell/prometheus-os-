@@ -364,8 +364,11 @@ const saveWorkflow = async () => {
 
         // Si quien mapeó es el dueño del rol, se le cierra el acceso a esta
         // pantalla -- de ahora en más solo entra a su Portal del Empleado.
-        if (lockedForSelf.value) {
-          await supabase.from('profiles').update({ mapping_completed: true }).eq('id', currentProfile.value.id);
+        if (isOwnRole.value) {
+          const { error: profileError } = await supabase.from('profiles').update({ mapping_completed: true }).eq('id', currentProfile.value.id);
+          if (profileError) {
+            console.error("Error updating profile mapping status:", profileError);
+          }
           await loadCurrentProfile();
         }
 
