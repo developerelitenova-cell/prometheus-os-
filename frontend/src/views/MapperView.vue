@@ -1,204 +1,216 @@
 <template>
   <div class="mapper-view">
-    <header class="glass-panel hub-header">
+    <header class="stitch-header">
       <div class="header-content">
         <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="back-link">
-          ← {{ lockedForSelf ? 'Volver a mi Portal' : 'Volver al Directorio' }}
+          <span class="material-symbols-outlined text-sm mr-1">arrow_back</span>
+          {{ lockedForSelf ? 'Volver a mi Portal' : 'Volver al Directorio' }}
         </router-link>
-        <h1>Mapeo de Flujo: {{ role?.name || 'Cargando...' }}</h1>
-        <p>Área: {{ role?.areas?.name || 'Cargando...' }}</p>
+        <h1 class="gold-gradient-text text-2xl font-semibold tracking-tight mt-2">Mapeo de Flujo: {{ role?.name || 'Cargando...' }}</h1>
+        <p class="text-sm text-gray-500 mt-1">Área: {{ role?.areas?.name || 'Cargando...' }}</p>
       </div>
     </header>
 
     <div class="mapper-layout">
-      <!-- Sección 1: Preguntas Guía -->
-      <aside class="glass-panel guide-panel">
-        <div class="guide-badge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Guía rápida</div>
-        <h3>Cuéntanos cómo es tu día a día</h3>
+      <!-- Sección 1: Preguntas Guía (Stitch Style) -->
+      <aside class="surface-container guide-panel">
+        <div class="guide-badge"><span class="material-symbols-outlined text-sm mr-1">lightbulb</span> Guía rápida</div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Cuéntanos cómo es tu día a día</h3>
         <p class="guide-desc">No hace falta preparar nada especial: contesta con tus propias palabras, como si se lo explicaras a un compañero nuevo. Nosotros nos encargamos de organizar toda la información por ti.</p>
 
         <ul class="questions-list">
           <li>
-            <span class="q-icon">🗣️</span>
+            <span class="q-icon material-symbols-outlined">record_voice_over</span>
             <div>
               <strong>Sé natural</strong>
-              <p>No necesitas usar términos técnicos ni seguir un formato. Simplemente cuenta lo que haces.</p>
+              <p>No necesitas usar términos técnicos ni seguir un formato.</p>
             </div>
           </li>
           <li>
-            <span class="q-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+            <span class="q-icon material-symbols-outlined">auto_awesome</span>
             <div>
-              <strong>Nosotros ordenamos los detalles</strong>
-              <p>Identificamos tus tareas, lo que entregas y los puntos donde el proceso se traba.</p>
+              <strong>Ordenamos los detalles</strong>
+              <p>Identificamos tareas, entregables y cuellos de botella.</p>
             </div>
           </li>
           <li>
-            <span class="q-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span>
+            <span class="q-icon material-symbols-outlined">check_circle</span>
             <div>
               <strong>Queda listo para tu equipo</strong>
-              <p>Al terminar, tu información aparecerá organizada en el Mapa de Cargos.</p>
-            </div>
-          </li>
-          <li>
-            <span class="q-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
-            <div>
-              <strong>¿Tienes dudas?</strong>
-              <p>Consulta a tu líder directo en cualquier momento.</p>
+              <p>Tu información aparecerá estructurada en el Mapa de Cargos.</p>
             </div>
           </li>
         </ul>
 
         <div class="recording-tip">
-          <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
-          <small>Si prefieres, alguien puede grabar la conversación, pasarla a texto y pegarla en la pestaña "Subir Transcripción / Archivo".</small>
+          <span class="material-symbols-outlined text-gold-deep mr-2">mic</span>
+          <small>También puedes grabar la conversación, pasarla a texto y subir el archivo.</small>
         </div>
       </aside>
 
-      <!-- Sección 1: Carga y Procesamiento -->
-      <main class="glass-panel process-panel">
+      <!-- Panel Principal -->
+      <main class="surface-container process-panel">
+        
+        <!-- Corporate Stepper -->
         <ol class="step-tracker">
           <li :class="{ active: step === 1, done: step > 1 }">
-            <span class="step-dot">{{ step > 1 ? '✓' : '1' }}</span> Cuéntanos
+            <span class="step-dot"><span v-if="step > 1" class="material-symbols-outlined text-sm">check</span><span v-else>1</span></span> 
+            <span class="step-label">Captura</span>
           </li>
+          <li class="connector"></li>
           <li :class="{ active: step === 2 || step === 3, done: step > 3 }">
-            <span class="step-dot">{{ step > 3 ? '✓' : '2' }}</span> Revisar
+            <span class="step-dot"><span v-if="step > 3" class="material-symbols-outlined text-sm">check</span><span v-else>2</span></span> 
+            <span class="step-label">Análisis Sintético</span>
           </li>
+          <li class="connector"></li>
           <li :class="{ active: step === 4 }">
-            <span class="step-dot">3</span> Listo
+            <span class="step-dot">3</span> 
+            <span class="step-label">Consolidación</span>
           </li>
         </ol>
 
-        <div class="upload-section" v-show="step === 1">
-          <h2>Cuéntanos tu proceso</h2>
+        <!-- Paso 1: Subida -->
+        <div class="step-content w-full" v-show="step === 1">
+          <h2 class="text-xl font-medium text-gray-900 mb-6 text-center">Cuéntanos tu proceso</h2>
 
-          <div class="tabs">
-            <button
-              :class="['tab-btn', { active: inputMode === 'wizard' }]"
-              @click="inputMode = 'wizard'"
-            >
+          <div class="stitch-tabs">
+            <button :class="['stitch-tab', { active: inputMode === 'wizard' }]" @click="inputMode = 'wizard'">
               Asistente Interactivo (Recomendado)
             </button>
-            <button
-              :class="['tab-btn', { active: inputMode === 'transcript' }]"
-              @click="inputMode = 'transcript'"
-            >
+            <button :class="['stitch-tab', { active: inputMode === 'transcript' }]" @click="inputMode = 'transcript'">
               Subir Transcripción / Archivo
             </button>
           </div>
 
-          <div v-if="inputMode === 'wizard'" class="fields-form">
+          <div v-if="inputMode === 'wizard'" class="mt-8">
             <WorkflowWizard @submit="handleWizardSubmit" />
-            <p v-if="processError" class="error-text" style="margin-top: 15px; font-weight: bold;">{{ processError }}</p>
+            <p v-if="processError" class="error-text mt-4 text-center">{{ processError }}</p>
           </div>
 
-          <div v-else class="transcript-form">
-            <p>Sube el archivo de texto de la entrevista o pega la transcripción completa aquí.</p>
+          <div v-else class="transcript-form mt-8">
+            <p class="text-center text-gray-500 text-sm mb-6">Sube el archivo de texto de la entrevista o pega la transcripción completa aquí.</p>
 
             <div class="drop-zone" @click="triggerFileInput">
-              <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span>
-              <p>Haz clic para subir archivo (.txt, .md)</p>
+              <span class="material-symbols-outlined text-4xl text-gray-300 mb-2">upload_file</span>
+              <p class="text-sm text-gray-600 font-medium">Haz clic para subir archivo (.txt, .md)</p>
               <input type="file" ref="fileInput" @change="handleFileUpload" accept=".txt,.md,.doc,.docx" style="display:none">
             </div>
-            <div class="or-divider">O Pega el Texto Directamente</div>
-            <textarea v-model="rawTranscript" placeholder="Pega aquí la transcripción de la entrevista..." rows="8"></textarea>
             
-            <p v-if="processError" class="error-text">{{ processError }}</p>
-            <button class="btn-primary" style="margin-top: 10px;" :disabled="!rawTranscript.trim() || processing" @click="processWithAI(rawTranscript)">
-              {{ processing ? 'Procesando...' : 'Procesar Transcripción con IA' }}
+            <div class="or-divider">O Pega el Texto Directamente</div>
+            
+            <textarea class="stitch-input" v-model="rawTranscript" placeholder="Pega aquí la transcripción de la entrevista..." rows="8"></textarea>
+            
+            <p v-if="processError" class="error-text mt-2">{{ processError }}</p>
+            <div class="flex justify-center mt-6">
+              <button class="btn-primary" :disabled="!rawTranscript.trim() || processing" @click="processWithAI(rawTranscript)">
+                <span class="material-symbols-outlined mr-2" v-if="!processing">memory</span>
+                {{ processing ? 'Procesando con IA...' : 'Procesar Transcripción' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paso 2: Procesamiento -->
+        <div class="processing-section w-full flex flex-col items-center justify-center py-12" v-if="step === 2">
+          <NeuronAnimation />
+          <p class="mt-6 text-gray-500 font-medium animate-pulse">Analizando correlaciones y estructurando el proceso...</p>
+        </div>
+
+        <!-- Paso 3: Resultados Visuales (Pipeline) -->
+        <div class="results-section w-full" v-if="step === 3">
+          <div class="text-center mb-8">
+            <h2 class="text-xl font-medium text-gray-900">Cartografía de Procesos</h2>
+            <p class="text-sm text-gray-500 mt-1">Revisa el flujo extraído. Si es correcto, presiona Guardar.</p>
+          </div>
+          
+          <div class="pipeline-container">
+            <!-- Columna 1: Inputs -->
+            <div class="pipeline-col">
+              <h4 class="col-title"><span class="material-symbols-outlined">login</span> Entradas (Inputs)</h4>
+              <div class="nodes-list">
+                <div class="node node-input" v-for="(item, idx) in extractedData.inputs" :key="'in'+idx">
+                  {{ item }}
+                </div>
+                <div v-if="!extractedData.inputs?.length" class="empty-node">Sin entradas identificadas</div>
+              </div>
+            </div>
+
+            <div class="pipeline-connector material-symbols-outlined">arrow_forward</div>
+
+            <!-- Columna 2: Proceso (Tasks + Bottlenecks) -->
+            <div class="pipeline-col pipeline-col-main">
+              <h4 class="col-title"><span class="material-symbols-outlined">account_tree</span> Secuencia Operativa</h4>
+              
+              <!-- Badges de Herramientas -->
+              <div class="tools-badges mb-4 flex flex-wrap gap-2 justify-center" v-if="extractedData.tools_used?.length">
+                <span class="tool-badge" v-for="(tool, i) in extractedData.tools_used" :key="'tool'+i">
+                  <span class="material-symbols-outlined text-xs mr-1">build</span> {{ tool }}
+                </span>
+              </div>
+
+              <div class="process-nodes">
+                <div class="node node-task relative" v-for="(task, idx) in extractedData.tasks" :key="'task'+idx">
+                  <div class="task-number">{{ idx + 1 }}</div>
+                  <p>{{ task }}</p>
+                </div>
+              </div>
+
+              <!-- Badges de Cuellos de botella y Decisiones -->
+              <div class="alerts-container mt-6 space-y-2">
+                <div v-for="(bn, i) in extractedData.bottlenecks" :key="'bn'+i" class="alert-node danger">
+                  <span class="material-symbols-outlined">warning</span>
+                  <div class="text-xs">{{ bn }}</div>
+                </div>
+                <div v-for="(rule, i) in extractedData.decision_rules" :key="'rule'+i" class="alert-node warning">
+                  <span class="material-symbols-outlined">alt_route</span>
+                  <div class="text-xs">{{ rule }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pipeline-connector material-symbols-outlined">arrow_forward</div>
+
+            <!-- Columna 3: Outputs & KPIs -->
+            <div class="pipeline-col">
+              <h4 class="col-title"><span class="material-symbols-outlined">logout</span> Entregables (Outputs)</h4>
+              <div class="nodes-list">
+                <div class="node node-output" v-for="(item, idx) in extractedData.outputs" :key="'out'+idx">
+                  {{ item }}
+                </div>
+                <div v-if="!extractedData.outputs?.length" class="empty-node">Sin entregables identificados</div>
+              </div>
+
+              <h4 class="col-title mt-6"><span class="material-symbols-outlined">monitoring</span> KPIs</h4>
+              <div class="nodes-list">
+                <div class="node node-kpi" v-for="(item, idx) in extractedData.kpis" :key="'kpi'+idx">
+                  <span class="material-symbols-outlined text-xs mr-1 text-green-600">trending_up</span> {{ item }}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-center gap-4 mt-10 border-t border-gray-100 pt-6">
+            <button class="btn-secondary" @click="step = 1">
+              <span class="material-symbols-outlined mr-2">refresh</span> Volver a intentar
+            </button>
+            <button class="btn-primary" @click="saveWorkflow">
+              <span class="material-symbols-outlined mr-2">save</span> Guardar Flujo
             </button>
           </div>
         </div>
 
-        <!-- Estado de Procesamiento -->
-        <div class="processing-section" v-if="step === 2">
-          <NeuronAnimation />
-        </div>
-
-        <!-- Resultados del Procesamiento -->
-        <div class="results-section" v-if="step === 3">
-          <h2>Revisa lo que entendimos</h2>
-          <p>Así organizamos tu proceso. Revísalo y, si todo está correcto, guárdalo.</p>
+        <!-- Paso 4: Éxito -->
+        <div class="success-section w-full text-center py-12" v-if="step === 4">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 mb-4">
+            <span class="material-symbols-outlined text-3xl text-green-500">task_alt</span>
+          </div>
+          <h2 class="text-2xl font-medium text-gray-900 mb-2">¡Mapeo Exitoso!</h2>
+          <p class="text-gray-500 max-w-md mx-auto mb-8">La cartografía del cargo <strong>{{ role?.name }}</strong> se ha registrado en la red central y está disponible en el Mapa de Cargos.</p>
           
-          <div class="extracted-data">
-            <div class="data-block">
-              <label>Entradas (Inputs):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.inputs" :key="idx">{{ item }}</li>
-              </ul>
-            </div>
-            
-            <div class="data-block">
-              <label>Tareas/Responsabilidades (Secuencia):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.tasks" :key="idx">{{ item }}</li>
-              </ul>
-            </div>
-            
-            <div class="data-block">
-              <label>Herramientas, Sistemas y Soportes:</label>
-              <div class="tags">
-                <span class="tag" v-for="(item, idx) in extractedData.tools_used" :key="idx">{{ item }}</span>
-              </div>
-            </div>
-            
-            <div class="data-block">
-              <label>Salidas y Entregables (Outputs):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.outputs" :key="idx">{{ item }}</li>
-              </ul>
-            </div>
-            
-            <div class="data-block">
-              <label>Cuellos de Botella (Desperdicios y Demoras):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.bottlenecks" :key="idx" class="warning-item">{{ item }}</li>
-              </ul>
-            </div>
-
-            <div class="data-block">
-              <label>Indicadores de Éxito (KPIs):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.kpis" :key="idx" style="color: var(--success);">{{ item }}</li>
-              </ul>
-            </div>
-            <div class="data-block" style="border-left: 4px solid var(--gold);">
-              <label>Reglas de Decisión (Bifurcaciones):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.decision_rules" :key="idx">{{ item }}</li>
-              </ul>
-            </div>
-
-            <div class="data-block" style="border-left: 4px solid var(--gold-deep);">
-              <label>Coordinación Interdepartamental (Puntos de contacto):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.coordination" :key="idx">{{ item }}</li>
-              </ul>
-            </div>
-
-            <div class="data-block" style="border-left: 4px solid var(--danger);">
-              <label>Necesidades Operativas (Falta de herramientas/procesos):</label>
-              <ul>
-                <li v-for="(item, idx) in extractedData.unmet_needs" :key="idx" class="warning-item">{{ item }}</li>
-              </ul>
-            </div>
-            
-          </div>
+          <p v-if="lockedForSelf" class="text-xs text-red-400 mb-6 font-medium">Información archivada. Como titular, ahora ingresarás directamente a tu Portal.</p>
           
-          <div class="actions">
-            <button class="btn-edit" @click="step = 1">Volver a intentar</button>
-            <button class="btn-primary" @click="saveWorkflow">Guardar Flujo de Trabajo</button>
-          </div>
-        </div>
-
-        <div class="success-section" v-if="step === 4">
-          <div class="success-badge">
-            <svg viewBox="0 0 24 24" width="30" height="30" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          </div>
-          <h2>¡Listo! Tu proceso quedó registrado</h2>
-          <p>Guardamos la información del cargo <strong>{{ role?.name }}</strong>. Ya está disponible para tu equipo en el Mapa de Cargos.</p>
-          <p v-if="lockedForSelf" class="lock-note">Esta información queda archivada para futuras consultas. No podrás volver a editarla — ya tienes acceso a tu Portal del Empleado.</p>
-          <a :href="isOwnRole ? '/workspace' : '/mapa-cargos'" class="btn-success-cta">
-            {{ isOwnRole ? 'Ir a mi Portal del Empleado' : 'Volver al Directorio' }}
+          <a :href="isOwnRole ? '/workspace' : '/mapa-cargos'" class="btn-primary inline-flex">
+            {{ isOwnRole ? 'Ir a mi Portal' : 'Volver al Directorio' }}
           </a>
         </div>
       </main>
@@ -217,14 +229,12 @@ import NeuronAnimation from '../components/NeuronAnimation.vue';
 const route = useRoute();
 const role_id = route.params.role_id;
 
-// Si quien mapea es el dueño del rol (no un admin editando por otra persona),
-// al guardar se le cierra el acceso a esta pantalla (ver saveWorkflow).
 const lockedForSelf = computed(() => currentProfile.value?.role_id === role_id && !currentProfile.value?.is_master_admin);
 const isOwnRole = computed(() => currentProfile.value?.role_id === role_id);
 
 const role = ref(null);
 const step = ref(1);
-const inputMode = ref('wizard'); // 'wizard' | 'transcript'
+const inputMode = ref('wizard'); 
 const rawTranscript = ref('');
 const selectedFile = ref(null);
 const fileInput = ref(null);
@@ -260,11 +270,9 @@ onMounted(async () => {
   }
 });
 
-// Auditoría del proceso de mapeo -- queda registrado quién sube qué archivo
-// y cuándo se guarda el flujo, para revisión de ciberseguridad posterior.
 const logMappingAudit = async (action, fileName = null) => {
   const profileId = currentProfile.value?.id;
-  if (!profileId) return; // Sin sesión (ej. entorno de pruebas) -- no bloquea el flujo, solo no queda registro.
+  if (!profileId) return;
   try {
     await supabase.from('mapping_audit_log').insert({
       profile_id: profileId,
@@ -362,13 +370,9 @@ const saveWorkflow = async () => {
       } else {
         await logMappingAudit('workflow_saved');
 
-        // Si quien mapeó es el dueño del rol, se le cierra el acceso a esta
-        // pantalla -- de ahora en más solo entra a su Portal del Empleado.
         if (isOwnRole.value) {
           const { error: profileError } = await supabase.from('profiles').update({ mapping_completed: true }).eq('id', currentProfile.value.id);
-          if (profileError) {
-            console.error("Error updating profile mapping status:", profileError);
-          }
+          if (profileError) console.error("Error updating profile mapping status:", profileError);
           await loadCurrentProfile();
         }
 
@@ -384,92 +388,72 @@ const saveWorkflow = async () => {
 <style scoped>
 .mapper-view {
   padding: 24px;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  background-color: var(--bg-tertiary, #f5f5f7);
+  font-family: 'Inter', sans-serif;
 }
 
-.glass-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: var(--shadow-sm);
-}
-
-.hub-header {
-  padding: 24px;
+.stitch-header {
+  padding: 16px 24px;
 }
 
 .back-link {
-  color: var(--gold-deep);
+  display: inline-flex;
+  align-items: center;
+  color: #b08d57;
   text-decoration: none;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-  display: inline-block;
+  font-weight: 500;
+  transition: opacity 0.2s;
 }
+.back-link:hover { opacity: 0.8; }
 
-.back-link:hover {
-  text-decoration: underline;
-}
-
-.hub-header h1 {
-  font-size: 1.5rem;
-  background: var(--gold-gradient);
+.gold-gradient-text {
+  background: linear-gradient(135deg, #d4b06a 0%, #b08d57 50%, #8a6d3d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin: 0;
-}
-
-.hub-header p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-top: 4px;
 }
 
 .mapper-layout {
   display: flex;
   gap: 24px;
   flex: 1;
-  min-height: 0;
+}
+
+.surface-container {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
 }
 
 .guide-panel {
-  width: 340px;
-  padding: 28px;
+  width: 320px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .guide-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(212, 176, 106, 0.1);
+  color: #b08d57;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  margin-bottom: 16px;
   align-self: flex-start;
-  background: var(--gold-light);
-  color: var(--gold-deep);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  margin-bottom: 14px;
-}
-
-.guide-panel h3 {
-  color: var(--ink);
-  font-size: 1.25rem;
-  line-height: 1.3;
-  margin-bottom: 10px;
 }
 
 .guide-desc {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.55;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.5;
   margin-bottom: 24px;
 }
 
@@ -479,7 +463,7 @@ const saveWorkflow = async () => {
   margin: 0 0 24px 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .questions-list li {
@@ -490,375 +474,397 @@ const saveWorkflow = async () => {
 
 .q-icon {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.05rem;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
+  color: #8a6d3d;
+  background: rgba(212, 176, 106, 0.05);
+  border-radius: 8px;
 }
 
 .questions-list li strong {
-  color: var(--ink);
+  color: #1e293b;
+  font-size: 0.875rem;
   display: block;
-  font-size: 0.92rem;
-  margin-bottom: 3px;
 }
 
 .questions-list li p {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  line-height: 1.45;
-  margin: 0;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 2px 0 0 0;
 }
 
 .recording-tip {
   margin-top: auto;
-  background: var(--gold-light);
-  border: 1px solid var(--gold-light);
-  padding: 14px;
-  border-radius: var(--radius-sm);
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
   display: flex;
-  gap: 12px;
-  color: var(--gold-deep);
+  gap: 8px;
+  color: #475569;
 }
-
-.recording-tip small {
-  line-height: 1.4;
-}
+.recording-tip small { line-height: 1.4; }
 
 .process-panel {
   flex: 1;
-  padding: 40px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
 }
 
+/* Stepper */
 .step-tracker {
-  list-style: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0;
-  margin: 0 0 36px 0;
   width: 100%;
-  max-width: 700px;
+  max-width: 600px;
+  margin-bottom: 40px;
 }
 
 .step-tracker li {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  color: var(--text-tertiary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  white-space: nowrap;
+  position: relative;
 }
 
-.step-tracker li:not(:last-child)::after {
-  content: '';
+.step-tracker li.connector {
   flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-  margin: 0 4px;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 16px;
+  margin-bottom: 20px;
 }
 
 .step-dot {
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: #f1f5f9;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.78rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
 }
 
-.step-tracker li.active {
-  color: var(--ink);
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
 }
 
 .step-tracker li.active .step-dot {
-  background: var(--gold-gradient);
-  border-color: transparent;
-  color: #fff;
+  background: #ffffff;
+  border-color: #b08d57;
+  color: #b08d57;
 }
+
+.step-tracker li.active .step-label { color: #1e293b; }
 
 .step-tracker li.done .step-dot {
-  background: var(--success);
-  border-color: transparent;
-  color: #fff;
+  background: #b08d57;
+  border-color: #b08d57;
+  color: #ffffff;
 }
+.step-tracker li.done .step-label { color: #b08d57; }
 
-.upload-section {
-  width: 100%;
-  max-width: 700px;
+
+/* Form / Upload */
+.stitch-tabs {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
+  justify-content: center;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 99px;
+  width: fit-content;
+  margin: 0 auto;
 }
 
-.tabs {
-  display: flex;
-  gap: 12px;
-}
-
-.tab-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--ink);
+.stitch-tab {
   padding: 8px 16px;
-  border-radius: var(--radius-sm);
+  border-radius: 99px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: none;
   cursor: pointer;
-  font-family: var(--font-sans);
+  transition: all 0.2s;
 }
 
-.tab-btn.active {
-  background: var(--gold-light);
-  border-color: var(--gold);
-  color: var(--gold-deep);
-}
-
-.fields-form, .transcript-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.error-text {
-  color: var(--danger);
-  font-size: 0.9rem;
-  margin: 0;
+.stitch-tab.active {
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .drop-zone {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-md);
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
   padding: 40px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
+  background: #f8fafc;
 }
-
 .drop-zone:hover {
-  background: var(--bg-secondary);
-  border-color: var(--gold);
-}
-
-.drop-zone .icon {
-  font-size: 2rem;
-  display: block;
-  margin-bottom: 12px;
+  border-color: #cbd5e1;
+  background: #f1f5f9;
 }
 
 .or-divider {
   text-align: center;
-  color: var(--text-tertiary);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-textarea {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  padding: 16px;
-  font-family: inherit;
-  resize: vertical;
-}
-
-textarea:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-light);
-}
-
-.btn-primary {
-  background: var(--ink);
-  color: #fff;
-  border: none;
-  padding: 12px 24px;
-  border-radius: var(--radius-pill);
+  color: #94a3b8;
+  font-size: 0.75rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  text-transform: uppercase;
+  margin: 24px 0;
+  position: relative;
+}
+.or-divider::before, .or-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 100px);
+  height: 1px;
+  background: #e2e8f0;
+}
+.or-divider::before { left: 0; }
+.or-divider::after { right: 0; }
+
+.stitch-input {
   width: 100%;
-  font-size: 1rem;
-  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 0.875rem;
+  resize: vertical;
+  transition: all 0.2s;
+}
+.stitch-input:focus {
+  outline: none;
+  border-color: #b08d57;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(176, 141, 87, 0.1);
 }
 
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-edit {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 12px 24px;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-edit:hover {
-  background: var(--bg-secondary);
-  border-color: var(--gold);
-  color: var(--gold-deep);
-}
-
-.processing-section, .success-section {
-  text-align: center;
-  margin-top: 48px;
+/* Pipeline Visualizer (Paso 3) */
+.pipeline-container {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
   width: 100%;
-  max-width: 460px;
+  background: #f8fafc;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+}
+
+.pipeline-col {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.success-badge {
+.pipeline-col-main {
+  flex: 2; /* El centro (procesos) es más ancho */
+}
+
+.pipeline-connector {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--gold-gradient);
-  color: #fff;
-  box-shadow: 0 10px 28px rgba(176, 141, 87, 0.35);
-  margin-bottom: 22px;
-}
-
-.success-section h2 {
+  color: #cbd5e1;
   font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0 0 10px 0;
+  padding: 0 8px;
 }
 
-.success-section > p {
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0;
+.col-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.col-title .material-symbols-outlined { font-size: 1.1rem; }
+
+.nodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.lock-note {
-  max-width: 480px;
-  margin: 16px auto 8px auto;
+.node {
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.node-input {
+  border-left: 3px solid #3b82f6;
+}
+
+.node-output {
+  border-left: 3px solid #b08d57;
+}
+
+.node-kpi {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+  display: flex;
+  align-items: center;
+}
+
+.process-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.process-nodes::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 14px;
+  width: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+.node-task {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
   padding: 12px 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  border-color: #cbd5e1;
+  position: relative;
+  z-index: 1;
 }
 
-.btn-success-cta {
-  display: inline-block;
-  width: auto;
-  margin-top: 28px;
-  padding: 13px 32px;
-  background: var(--ink);
+.task-number {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #cbd5e1;
+  margin-top: -2px;
+}
+
+.tool-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.alert-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.alert-node.danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.alert-node.warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.alert-node .material-symbols-outlined { font-size: 1rem; margin-top: 1px; }
+
+.empty-node {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Botones */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  background: #1e293b;
   color: #fff;
   border: none;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  font-size: 0.95rem;
-  text-decoration: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.15);
 }
-
-.btn-success-cta:hover {
-  opacity: 0.9;
+.btn-primary:hover:not(:disabled) {
+  background: #0f172a;
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
 }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.results-section {
-  width: 100%;
-  max-width: 800px;
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
+.btn-secondary:hover { background: #f8fafc; }
 
-.results-section h2 {
-  color: var(--ink);
-  margin-bottom: 8px;
-}
-
-.results-section p {
-  color: var(--text-secondary);
-  margin-bottom: 24px;
-}
-
-.data-block {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow-sm);
-}
-
-.data-block label {
-  display: block;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  color: var(--gold-deep);
-  letter-spacing: 1px;
-  margin-bottom: 12px;
-}
-
-.data-block ul {
-  margin: 0;
-  padding-left: 20px;
-  color: var(--ink-secondary);
-}
-
-.data-block li {
-  margin-bottom: 8px;
-}
-
-.warning-item {
-  color: var(--danger);
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag {
-  background: var(--bg-secondary);
-  color: var(--ink-secondary);
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  font-size: 0.85rem;
-  font-family: var(--font-mono);
-}
-
-.actions {
-  display: flex;
-  gap: 16px;
-  margin-top: 32px;
-}
 </style>

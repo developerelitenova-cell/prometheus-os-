@@ -1,322 +1,298 @@
+
 <template>
-  <div class="workspace-container">
-    <!-- Navbar Superior -->
-    <header class="glass-panel workspace-header">
-      <div class="header-left">
-        <router-link to="/" class="back-link">← Volver al Inicio</router-link>
-        <h1>Mi Espacio Elite</h1>
-        
-        <div v-if="isAuditMode" class="audit-badge">
-          🕵️‍♂️ <strong>MODO AUDITORÍA:</strong> Estás viendo el espacio de {{ currentProfile?.full_name }}
-          <button class="btn-logout-global" @click="exitAuditMode" style="margin-left: 12px;">
-            <span class="icon">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-            </span>
-            Salir
-          </button>
-        </div>
-      </div>
-      <div class="header-right">
-        <!-- Campana de Notificaciones -->
-        <div class="notif-bell-wrapper">
-          <button
-            class="notif-bell"
-            @click="showNotifPanel = !showNotifPanel"
-            :disabled="!currentProfile"
-            title="Notificaciones"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
-          </button>
-
-          <div v-if="showNotifPanel" class="notif-panel-backdrop" @click="showNotifPanel = false"></div>
-
-          <div v-if="showNotifPanel" class="notif-panel glass-panel">
-            <div class="notif-panel-header">
-              <h4>Notificaciones</h4>
-              <button class="mark-all-btn" v-if="unreadCount > 0" @click="markAllRead">Marcar todas como leídas</button>
-            </div>
-            <div class="notif-panel-list">
-              <div v-if="loadingNotifications" class="loading-text">Cargando...</div>
-              <div v-else-if="unifiedFeed.length === 0" class="empty-state-mini">No tienes notificaciones.</div>
-              <div
-                v-else
-                v-for="item in unifiedFeed"
-                :key="item.id"
-                class="notif-item"
-                :class="{ unread: item.unread }"
-                @click="handleNotifClick(item)"
-              >
-                <span class="notif-icon" v-html="notifIcon(item)"></span>
-                <div class="notif-body">
-                  <div class="notif-source">{{ notifSourceLabel(item) }}</div>
-                  <p class="notif-text">{{ item.text }}</p>
-                  <span class="notif-time">{{ formatRelativeTime(item.created_at) }}</span>
-                </div>
-                <button class="notif-delete-btn" @click.stop="deleteNotification(item)" title="Eliminar notificación">✕</button>
-              </div>
-            </div>
+  <div class="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans antialiased flex flex-col">
+    <!-- Navbar / Header -->
+    <header class="sticky top-0 z-50 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-[#e5e5ea] px-6 py-4">
+      <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b08d57] to-[#80663f] flex items-center justify-center text-white shadow-sm">
+            <span class="material-symbols-outlined text-[20px]">nutrition</span>
+          </div>
+          <div>
+            <h1 class="text-lg font-semibold tracking-tight text-[#1d1d1f] leading-tight">Elite Nutrition</h1>
+            <p class="text-[13px] text-[#86868b] font-medium leading-none">PROMETHEUS OS</p>
+          </div>
+          <div v-if="isAuditMode" class="ml-4 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-bold border border-red-200 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[14px]">visibility</span>
+            MODO AUDITORÍA
+            <button @click="exitAuditMode" class="ml-2 underline hover:text-red-900 cursor-pointer">Salir</button>
           </div>
         </div>
 
-        <!-- Identidad de la sesión -->
-        <div class="session-identity" v-if="currentProfile">
-          <span class="session-name">{{ currentProfile.full_name }}</span>
-          <button class="btn-logout-global" @click="handleSignOut" title="Cerrar sesión">
-            <span class="icon">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-            </span>
-            Salir
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 bg-white border border-[#e5e5ea] rounded-full px-4 py-1.5 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-[#34c759] shadow-[0_0_8px_rgba(52,199,89,0.4)]"></span>
+            <span class="text-[13px] font-medium text-[#1d1d1f]">Sistema Activo</span>
+          </div>
+          
+          <button @click="router.push('/workspace')" class="p-2 text-[#86868b] hover:text-[#1d1d1f] transition-colors rounded-full hover:bg-[#e5e5ea]/50">
+            <span class="material-symbols-outlined">home</span>
+          </button>
+          <button @click="handleSignOut" class="p-2 text-[#86868b] hover:text-[#ff3b30] transition-colors rounded-full hover:bg-[#ffebee]">
+            <span class="material-symbols-outlined">logout</span>
           </button>
         </div>
       </div>
     </header>
 
-    <div v-if="loadingProfile" class="empty-state glass-panel">
-      <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></span>
-      <h2>Cargando tu espacio de trabajo...</h2>
-    </div>
+    <!-- Main Content Grid -->
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-    <div v-else-if="!currentProfile" class="empty-state glass-panel">
-      <span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg></span>
-      <h2>Bienvenido a Mi Espacio Elite</h2>
-      <p>No pudimos cargar tu perfil. Iniciá sesión nuevamente.</p>
-      <router-link to="/login" class="btn-primary" style="margin-top: 16px;">Ir a iniciar sesión</router-link>
-    </div>
-
-    <div v-else-if="currentProfile && bannerItems.length" class="announce-banner">
-      <div
-        v-for="item in bannerItems"
-        :key="'b-' + item.id"
-        class="announce-card glass-panel"
-        :class="{ urgente: item.category === 'urgente' }"
-      >
-        <span class="announce-icon" v-html="notifIcon(item)"></span>
-        <div class="announce-content">
-          <strong>{{ notifSourceLabel(item) }}</strong>
-          <p>{{ item.text }}</p>
-        </div>
-        <button class="announce-dismiss" @click="handleNotifClick(item)" title="Descartar">✕</button>
-      </div>
-    </div>
-
-    <!-- Alerta de Mapeo Incompleto -->
-    <div v-if="currentProfile && !currentProfile.mapping_completed && !currentProfile.is_master_admin" class="announce-banner">
-      <div class="announce-card glass-panel urgente">
-        <span class="announce-icon">⚠️</span>
-        <div class="announce-content">
-          <strong>Acción Requerida: Mapeo de Cargo Pendiente</strong>
-          <p>Para personalizar tu IA y activar todas las funciones de tu Espacio Elite, necesitamos conocer los detalles de tus responsabilidades.</p>
-        </div>
-        <router-link :to="`/mapper/${currentProfile.role_id}`" class="btn-primary" style="margin-left: auto;">
-          Completar Mapeo Ahora
-        </router-link>
-      </div>
-    </div>
-
-    <div v-if="currentProfile" class="workspace-body">
-
-    <div class="workspace-content">
-      <!-- Columna Izquierda: Perfil, Notificaciones y Biblioteca -->
-      <div class="sidebar-column">
-        <!-- Tarjeta de Identidad -->
-        <div class="glass-panel profile-card">
-          <div class="avatar">{{ getInitials(currentProfile?.full_name) }}</div>
-          <div class="profile-info">
-            <h2>{{ currentProfile?.full_name }}</h2>
-            <p>
-              {{ currentRole?.name }} - {{ currentRole?.areas?.name || 'Área General' }}
-              <span v-if="currentRole?.access_level" class="role-level-badge" :class="'level-' + currentRole.access_level">
-                Nivel {{ currentRole.access_level }}
-              </span>
-            </p>
-            <div v-if="isManagerRole" style="margin-top: 12px;">
-              <router-link to="/team" class="btn-primary" style="font-size: 0.85rem; padding: 8px 12px; display: inline-block;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 4h20"></path><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4"></path><polyline points="2 12 12 22 22 12"></polyline></svg> Panel de Liderazgo
-              </router-link>
+        <!-- LEFT COLUMN (3 cols): Perfil, KPI, Academia, Docs -->
+        <div class="lg:col-span-3 space-y-6">
+          
+          <!-- Perfil -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6 relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#b08d57]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div class="relative z-10 flex items-center gap-4">
+              <div class="w-14 h-14 rounded-full bg-[#1d1d1f] flex items-center justify-center text-white text-xl font-medium shadow-md">
+                {{ getInitials(currentProfile?.full_name) }}
+              </div>
+              <div>
+                <h2 class="text-xl font-semibold tracking-tight text-[#1d1d1f]">{{ currentProfile?.full_name || 'Cargando...' }}</h2>
+                <p class="text-[14px] text-[#b08d57] font-medium mt-0.5">{{ currentRole?.name || '---' }}</p>
+                <div class="flex items-center gap-2 mt-2">
+                   <span class="px-2 py-0.5 bg-[#f5f5f7] border border-[#e5e5ea] rounded-full text-[11px] font-semibold text-[#86868b]">ID: {{ currentProfile?.id?.substring(0,6) }}</span>
+                   <span class="px-2 py-0.5 bg-[#f5f5f7] border border-[#e5e5ea] rounded-full text-[11px] font-semibold text-[#86868b]">Ciclo: Activo</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Mis KPIs: solo gerente (Nivel 1), sobre su propio cargo -->
-        <div v-if="isManagerRole" class="glass-panel kpi-card">
-          <div class="kpi-card-header">
-            <h3>Mis KPIs</h3>
-            <span v-if="!loadingKpiDetail && kpiDetail.metrics.length" class="kpi-score-badge" :class="getScoreColor(kpiDetail.overallScore)">
-              {{ kpiDetail.overallScore }}%
-            </span>
-          </div>
-          <div v-if="loadingKpiDetail" class="loading-text">Cargando...</div>
-          <div v-else-if="kpiDetail.metrics.length === 0" class="empty-state-mini">
-            Tu cargo todavía no tiene una plantilla de KPI vinculada.
-          </div>
-          <ul v-else class="kpi-metric-list">
-            <li v-for="m in kpiDetail.metrics" :key="m.id">
-              <div class="kpi-metric-row">
-                <span class="kpi-metric-name">{{ m.name }}</span>
-                <span v-if="m.percentage !== null" class="kpi-metric-pct" :class="getScoreColor(m.percentage)">{{ m.percentage }}%</span>
-                <span v-else class="kpi-metric-pct muted">Sin datos</span>
+          <!-- KPI de Productividad (IA) -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-4">
+               <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Mi Progreso Diario</h3>
+               <span class="material-symbols-outlined text-[#86868b] text-[20px]">analytics</span>
+            </div>
+            
+            <div class="flex flex-col items-center justify-center py-4">
+              <div class="relative w-32 h-32 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#f5f5f7" stroke-width="8" />
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#b08d57" stroke-width="8" stroke-linecap="round" 
+                          :stroke-dasharray="283" :stroke-dashoffset="283 - (283 * kpiPercentage) / 100" class="transition-all duration-1000 ease-out" />
+                </svg>
+                <div class="absolute flex flex-col items-center justify-center">
+                  <span class="text-3xl font-bold tracking-tight text-[#1d1d1f]">{{ kpiPercentage }}%</span>
+                  <span class="text-[11px] font-medium text-[#86868b] uppercase tracking-wider">KPI</span>
+                </div>
               </div>
-              <div class="kpi-metric-meta">
-                Meta: {{ m.meta_label }}<span v-if="m.realizado_raw"> · Real: {{ m.realizado_raw }}</span>
+              <p class="text-center text-[13px] text-[#86868b] mt-4 max-w-[200px]">
+                Te falta un <strong class="text-[#1d1d1f]">{{ 100 - kpiPercentage }}%</strong> para tu meta de hoy.
+              </p>
+              <div :class="['mt-3 px-3 py-1 rounded-full text-xs font-bold border border-current opacity-80', kpiColor]">
+                Calificación IA en tiempo real
               </div>
-            </li>
-          </ul>
-        </div>
-
-
-        <!-- Canal de Notificaciones Permanente -->
-        <div class="glass-panel notif-permanent-card">
-          <h3>Canal de Notificaciones</h3>
-          <div class="notif-list-mini">
-            <div v-if="loadingNotifications" class="loading-text">Cargando...</div>
-            <div v-else-if="unifiedFeed.length === 0" class="empty-state-mini">No tienes notificaciones.</div>
-            <div
-              v-else
-              v-for="item in unifiedFeed.slice(0, 4)"
-              :key="'perm-' + item.id"
-              class="notif-item"
-              :class="{ unread: item.unread }"
-              @click="handleNotifClick(item)"
-            >
-              <span class="notif-icon" v-html="notifIcon(item)"></span>
-              <div class="notif-body">
-                <div class="notif-source">{{ notifSourceLabel(item) }}</div>
-                <p class="notif-text">{{ item.text }}</p>
-                <span class="notif-time">{{ formatRelativeTime(item.created_at) }}</span>
-              </div>
-              <button class="notif-delete-btn" @click.stop="deleteNotification(item)" title="Eliminar notificación">✕</button>
             </div>
           </div>
-        </div>
 
-        <!-- Biblioteca Documental Mini -->
-        <div class="glass-panel documents-column-mini">
-          <div class="documents-header">
-            <h3><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> Biblioteca Oficial</h3>
-          </div>
-          <div class="documents-list-mini">
-            <div v-if="loadingKpis" class="loading-text">Cargando biblioteca...</div>
-            <div v-else-if="templates.length === 0" class="empty-state-mini">
-              <p>Sin documentos.</p>
+          <!-- Academia Elite -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Academia Elite</h3>
+              <button class="text-[13px] font-medium text-[#b08d57] hover:text-[#80663f] transition-colors">Ver Todo</button>
             </div>
-            <div v-else class="template-list-mini">
-              <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank" class="template-card-mini">
-                <div class="template-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
-                <div class="template-info">
-                  <h4>{{ tpl.title }}</h4>
+            <div class="space-y-3">
+              <div class="group cursor-pointer rounded-xl bg-[#f5f5f7] p-3 border border-transparent hover:border-[#e5e5ea] hover:bg-white transition-all">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-[#e5e5ea] flex items-center justify-center text-xl shrink-0">🎓</div>
+                  <div>
+                    <h4 class="text-[14px] font-semibold text-[#1d1d1f] leading-snug group-hover:text-[#b08d57] transition-colors">Onboarding de Ventas</h4>
+                    <p class="text-[12px] text-[#86868b] mt-1">Módulo 1: Políticas base</p>
+                    <div class="w-full h-1.5 bg-[#e5e5ea] rounded-full mt-2 overflow-hidden">
+                      <div class="w-[30%] h-full bg-[#b08d57] rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Biblioteca -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Biblioteca Oficial</h3>
+              <button class="text-[13px] font-medium text-[#b08d57] hover:text-[#80663f] transition-colors">Repositorio</button>
+            </div>
+            <div class="space-y-2">
+              <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank"
+                 class="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5f7] hover:bg-[#e5e5ea]/50 transition-colors border border-transparent hover:border-[#e5e5ea] group">
+                <div class="w-8 h-8 rounded-lg bg-white border border-[#e5e5ea] flex items-center justify-center text-[#ff3b30] shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h4 class="text-[13px] font-medium text-[#1d1d1f] truncate group-hover:text-[#b08d57] transition-colors">{{ tpl.title }}</h4>
+                  <p class="text-[11px] text-[#86868b] truncate">{{ tpl.description || 'Documento oficial' }}</p>
                 </div>
               </a>
+              <div v-if="!templates.length" class="text-center text-sm text-gray-500 py-4">
+                No hay documentos en tu rol.
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Columna Central: Tableros Operativos -->
-      <div class="main-column">
-        <!-- Gestión Diaria: actividades recurrentes y estándar del cargo -->
-        <div class="glass-panel checklist-card">
-          <div class="board-header">
-            <h3>Gestión Diaria</h3>
-            <p>Actividades recurrentes y estándar de tu cargo</p>
-          </div>
-
-          <div class="checklist-tabs">
-            <button :class="{ active: dmTab === 'daily' }" @click="dmTab = 'daily'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Diario</button>
-            <button :class="{ active: dmTab === 'weekly' }" @click="dmTab = 'weekly'">🗓 Semanal</button>
-            <button :class="{ active: dmTab === 'monthly' }" @click="dmTab = 'monthly'"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Mensual</button>
-          </div>
-
-          <ul class="dm-task-list">
-            <li v-for="task in activeDmTaskList" :key="task.id" :class="{ completed: task.completed }">
-              <input type="checkbox" :checked="task.completed" @change="toggleDmTask(task)" />
-              <span class="task-title">{{ task.title }}</span>
-            </li>
-            <li v-if="activeDmTaskList.length === 0" class="no-tasks">Tu cargo aún no tiene tareas de Gestión Diaria asignadas.</li>
-          </ul>
-        </div>
-
-        <!-- Cronograma Programacional -->
-        <div class="glass-panel schedule-column">
-          <div class="board-header">
-            <h3>Cronograma Programacional</h3>
-            <p>Compromisos, reportes y tareas asignadas por tu líder</p>
-          </div>
+        <!-- CENTER COLUMN (6 cols): Tareas y Alertas -->
+        <div class="lg:col-span-6 space-y-6">
           
-          <div class="schedule-calendar-tabs">
-            <button :class="{ active: taskTab === 'daily' }" @click="taskTab = 'daily'">Rutina Diaria</button>
-            <button :class="{ active: taskTab === 'weekly' }" @click="taskTab = 'weekly'">Plan Semanal</button>
-            <button :class="{ active: taskTab === 'monthly' }" @click="taskTab = 'monthly'">Plan Mensual</button>
+          <!-- Alertas de Productividad (IA) -->
+          <div v-if="overdueTasks.length > 0" class="bg-[#ffebee] border border-[#ffcdd2] rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+            <span class="material-symbols-outlined text-[#c62828] mt-0.5">warning</span>
+            <div>
+              <h4 class="text-[#c62828] font-bold text-[14px]">Alerta de Seguimiento (IA)</h4>
+              <p class="text-[#b71c1c] text-[13px] mt-1 leading-snug">
+                Tienes {{ overdueTasks.length }} tareas atrasadas del día anterior sin resolver. Esto impacta negativamente tu KPI de productividad. Ciérralas lo antes posible.
+              </p>
+            </div>
           </div>
 
-          <div class="schedule-calendar-view">
-             <ul class="task-list interactive schedule-list">
-              <li v-for="task in activeTaskList" :key="task.id" :class="{ completed: task.status === 'completed' }">
-                <input type="checkbox" :checked="task.status === 'completed'" @change="toggleTaskStatus(task)" />
-                <div class="task-details">
-                  <span class="task-title">{{ task.title }}</span>
-                  <span v-if="task.description" class="task-desc">{{ task.description }}</span>
-                  <span v-if="task.due_date" class="task-date">Vence: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}</span>
+          <!-- Tareas Atrasadas -->
+          <div v-if="overdueTasks.length > 0" class="bg-white rounded-2xl border border-[#ffcdd2] shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-[#ffebee] bg-[#fff5f5]">
+              <h3 class="text-[16px] font-semibold text-[#c62828] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">history</span>
+                Pendientes Atrasados
+              </h3>
+            </div>
+            <ul class="divide-y divide-[#e5e5ea]">
+              <li v-for="task in overdueTasks" :key="task.id" class="p-4 hover:bg-[#f5f5f7]/50 transition-colors flex items-start gap-4">
+                <input type="checkbox" @click="toggleTaskStatus(task)" class="w-5 h-5 mt-0.5 rounded-md border-[#d1d1d6] text-[#c62828] focus:ring-[#c62828] cursor-pointer" />
+                <div class="flex-1 min-w-0">
+                  <h4 class="text-[14px] font-medium text-[#1d1d1f] line-clamp-1">{{ task.title }}</h4>
+                  <p class="text-[13px] text-[#86868b] mt-1 line-clamp-2">{{ task.description }}</p>
+                  <div class="flex items-center gap-3 mt-2">
+                    <span class="px-2 py-0.5 rounded-md bg-[#ffebee] text-[#c62828] text-[11px] font-bold tracking-wide">
+                      Venció: {{ new Date(task.due_date).toLocaleDateString() }}
+                    </span>
+                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium">
+                      <span class="material-symbols-outlined text-[14px]">timer</span>
+                      Tiempo prom: 45 min
+                    </span>
+                  </div>
                 </div>
-              </li>
-              <li v-if="activeTaskList.length === 0" class="no-tasks">
-                No tienes compromisos asignados en esta vista.
               </li>
             </ul>
           </div>
-        </div>
-      </div>
 
-      <!-- Columna Derecha: Chatbot Especializado -->
-      <div class="glass-panel chat-column">
-        <div class="chat-header">
-          <h3>Asistente IA PROMETHEUS OS</h3>
-          <span class="status-dot"></span> <small>Especializado para {{ currentRole?.name }}</small>
+          <!-- Programados del Gerente -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-center">
+              <h3 class="text-[16px] font-semibold text-[#1d1d1f] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-[#b08d57]">event_note</span>
+                Programados del Día
+              </h3>
+              <span class="text-[12px] font-medium text-[#86868b] bg-[#f5f5f7] px-2 py-1 rounded-md">Asignados por Liderazgo</span>
+            </div>
+            <ul class="divide-y divide-[#e5e5ea]">
+              <li v-for="task in scheduledTasks" :key="task.id" class="p-4 hover:bg-[#f5f5f7]/50 transition-colors flex items-start gap-4">
+                <input type="checkbox" @click="toggleTaskStatus(task)" :checked="task.status === 'completed'" class="w-5 h-5 mt-0.5 rounded-md border-[#d1d1d6] text-[#b08d57] focus:ring-[#b08d57] cursor-pointer" />
+                <div class="flex-1 min-w-0">
+                  <h4 :class="['text-[14px] font-medium line-clamp-1', task.status === 'completed' ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</h4>
+                  <p class="text-[13px] text-[#86868b] mt-1 line-clamp-2">{{ task.description }}</p>
+                  <div class="flex items-center gap-3 mt-2">
+                    <span v-if="task.priority === 'high'" class="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-[11px] font-bold tracking-wide">
+                      Alta Prioridad
+                    </span>
+                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium">
+                      <span class="material-symbols-outlined text-[14px]">timer</span>
+                      Tiempo prom: 30 min
+                    </span>
+                  </div>
+                </div>
+              </li>
+              <li v-if="!scheduledTasks.length" class="p-6 text-center text-[13px] text-[#86868b]">No hay tareas programadas para hoy.</li>
+            </ul>
+          </div>
+
+          <!-- Gestión Diaria -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-[#e5e5ea]">
+              <h3 class="text-[16px] font-semibold text-[#1d1d1f] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-[#34c759]">checklist</span>
+                Gestiones Diarias
+              </h3>
+            </div>
+            <ul class="divide-y divide-[#e5e5ea]">
+              <li v-for="task in activeDailyTasks" :key="task.id" class="p-4 hover:bg-[#f5f5f7]/50 transition-colors flex items-start gap-4">
+                <input type="checkbox" @click="toggleDmTaskStatus(task)" :checked="task.status === 'completed'" class="w-5 h-5 mt-0.5 rounded-md border-[#d1d1d6] text-[#34c759] focus:ring-[#34c759] cursor-pointer" />
+                <div class="flex-1 min-w-0">
+                  <h4 :class="['text-[14px] font-medium line-clamp-1', task.status === 'completed' ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</h4>
+                  <div class="flex items-center gap-3 mt-2">
+                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium bg-[#f5f5f7] px-2 py-0.5 rounded-md">
+                      <span class="material-symbols-outlined text-[14px]">autorenew</span>
+                      Recurrente
+                    </span>
+                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium">
+                      <span class="material-symbols-outlined text-[14px]">timer</span>
+                      Tiempo prom: 15 min
+                    </span>
+                  </div>
+                </div>
+              </li>
+              <li v-if="!dailyTasks.length" class="p-6 text-center text-[13px] text-[#86868b]">No hay gestiones diarias.</li>
+            </ul>
+          </div>
         </div>
-        
-        <div class="chat-messages" ref="chatContainer">
-          <div v-if="messages.length === 0" class="empty-chat">
-            <p>Hola. Hazme preguntas o pídeme ayuda para completar tus tareas y objetivos.</p>
+
+        <!-- RIGHT COLUMN (3 cols): Agente Prometheus (Chat) -->
+        <div class="lg:col-span-3 h-[calc(100vh-120px)] sticky top-[90px] flex flex-col bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
+          <div class="px-5 py-4 border-b border-[#e5e5ea] bg-[#f5f5f7]/50">
+            <h3 class="text-[15px] font-semibold text-[#1d1d1f] flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#b08d57]">smart_toy</span>
+              Agente Prometheus
+            </h3>
+            <p class="text-[11px] text-[#86868b] mt-1 font-medium flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#34c759]"></span>
+              Especializado en tu cargo
+            </p>
           </div>
           
-          <div 
-            v-for="(msg, index) in messages" 
-            :key="index"
-            :class="['message', msg.sender]"
-          >
-            <div class="avatar-small">{{ msg.sender === 'user' ? 'TÚ' : 'IA' }}</div>
-            <div class="bubble" v-html="DOMPurify.sanitize(formatMessage(msg.text))"></div>
+          <!-- Chat Messages -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f5f5f7]/20" ref="chatContainer">
+            <div v-if="messages.length === 0" class="text-center text-[13px] text-[#86868b] mt-10">
+              Hola, soy la IA de Prometheus. ¿En qué te puedo asistir hoy?
+            </div>
+            
+            <div v-for="(msg, index) in messages" :key="index" 
+                 :class="['flex gap-3 max-w-[90%]', msg.sender === 'user' ? 'ml-auto flex-row-reverse' : '']">
+              
+              <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm', 
+                            msg.sender === 'user' ? 'bg-[#1d1d1f] text-white' : 'bg-gradient-to-br from-[#b08d57] to-[#80663f] text-white']">
+                {{ msg.sender === 'user' ? getInitials(currentProfile?.full_name) : 'AI' }}
+              </div>
+              
+              <div :class="['p-3 rounded-2xl text-[13px] leading-relaxed shadow-sm', 
+                            msg.sender === 'user' ? 'bg-[#b08d57] text-white rounded-tr-none' : 'bg-white border border-[#e5e5ea] text-[#1d1d1f] rounded-tl-none']" 
+                   v-html="formatMessage(msg.text)">
+              </div>
+            </div>
+
+            <div v-if="isTyping" class="flex gap-3 max-w-[90%]">
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#b08d57] to-[#80663f] text-white flex items-center justify-center text-xs shrink-0 shadow-sm">AI</div>
+              <div class="p-3 rounded-2xl text-[13px] bg-white border border-[#e5e5ea] rounded-tl-none shadow-sm text-[#86868b] italic">
+                Analizando métricas...
+              </div>
+            </div>
           </div>
-          
-          <div v-if="isTyping" class="message ai typing">
-            <div class="avatar-small">IA</div>
-            <div class="bubble">Pensando...</div>
+
+          <!-- Chat Input -->
+          <div class="p-3 border-t border-[#e5e5ea] bg-white">
+            <div class="relative">
+              <input type="text" v-model="newMessage" @keyup.enter="sendMessage" :disabled="isTyping" 
+                     placeholder="Haz una consulta a la IA..." 
+                     class="w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl pl-4 pr-10 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#b08d57]/30 focus:border-[#b08d57] transition-all" />
+              <button @click="sendMessage" :disabled="isTyping" 
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-[#b08d57] hover:text-[#80663f] p-1 disabled:opacity-50 transition-colors">
+                <span class="material-symbols-outlined text-[20px]">send</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="chat-input-area">
-          <input 
-            v-model="newMessage" 
-            type="text" 
-            placeholder="Pregunta sobre tus procesos..." 
-            @keyup.enter="sendMessage"
-            :disabled="isTyping"
-          />
-          <button class="send-btn" @click="sendMessage" :disabled="isTyping || !newMessage.trim()">
-            Enviar
-          </button>
-        </div>
       </div>
-    </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -329,6 +305,53 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { getPeriodKey } from '../utils/taskPeriods';
 import { getRoleKpiDetail } from '../api/kpi';
+
+// --- Inyección del Motor Matemático de Tiempo ---
+const overdueTasks = computed(() => {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const all = [...(dailyTasks.value||[]), ...(weeklyTasks.value||[]), ...(monthlyTasks.value||[])];
+  return all.filter(t => t.status !== 'completed' && t.due_date && new Date(t.due_date) < today);
+});
+
+const scheduledTasks = computed(() => {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const all = [...(dailyTasks.value||[]), ...(weeklyTasks.value||[]), ...(monthlyTasks.value||[])];
+  return all.filter(t => t.status !== 'completed' && (!t.due_date || new Date(t.due_date) >= today));
+});
+
+const activeDailyTasks = computed(() => {
+  return [...(dmDailyTasks.value||[]), ...(dmWeeklyTasks.value||[]), ...(dmMonthlyTasks.value||[])];
+});
+
+const kpiPercentage = computed(() => {
+  // Motor Matemático de Tiempos
+  // Asignamos pesos en minutos:
+  // Tarea de cronograma (scheduled/overdue) = 30 min
+  // Gestión diaria (activeDailyTasks) = 15 min
+  
+  const allSched = [...(dailyTasks.value||[]), ...(weeklyTasks.value||[]), ...(monthlyTasks.value||[])];
+  const allDaily = [...(dmDailyTasks.value||[]), ...(dmWeeklyTasks.value||[]), ...(dmMonthlyTasks.value||[])];
+  
+  const totalAllocatedTime = (allSched.length * 30) + (allDaily.length * 15);
+  
+  if (totalAllocatedTime === 0) return 100; // Día perfecto si no hay asignaciones
+  
+  const completedSched = allSched.filter(t => t.status === 'completed').length;
+  const completedDaily = allDaily.filter(t => t.status === 'completed').length;
+  
+  const totalCompletedTime = (completedSched * 30) + (completedDaily * 15);
+  
+  return Math.round((totalCompletedTime / totalAllocatedTime) * 100);
+});
+
+const kpiColor = computed(() => {
+  if (kpiPercentage.value >= 85) return 'text-[#2e7d32] bg-[#e8f5e9] border-[#c8e6c9]';
+  if (kpiPercentage.value >= 60) return 'text-[#b46b00] bg-[#fff8e1] border-[#ffecb3]';
+  return 'text-[#c62828] bg-[#ffebee] border-[#ffcdd2]';
+});
+// ------------------------------------------------
 
 const router = useRouter();
 const route = useRoute();
@@ -927,1095 +950,13 @@ const exitAuditMode = () => {
   router.push('/workspace');
   setTimeout(() => { window.location.reload(); }, 100);
 };
+
+
+
 </script>
-
 <style scoped>
-.workspace-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  padding: 24px;
-  gap: 24px;
-  font-family: var(--font-sans);
-}
-
-.glass-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: var(--shadow-sm);
-}
-
-.workspace-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  /* Debe quedar por encima de las tarjetas del cuerpo (todas .glass-panel con
-     z-index:1) para que el panel de notificaciones, que cuelga de aquí, no
-     quede pintado detrás de ellas. */
-  z-index: 30;
-}
-
-.header-left .back-link {
-  color: var(--gold-deep);
-  text-decoration: none;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-  display: inline-block;
-}
-
-.header-left h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--ink);
-}
-
-.audit-badge {
-  margin-top: 10px;
-  background: rgba(255, 149, 0, 0.15);
-  border: 1px solid var(--warning);
-  color: #b46b00;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.btn-exit-audit {
-  background: var(--warning);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.role-selector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.session-identity {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.session-name {
-  font-weight: 600;
-  color: var(--ink);
-  font-size: 0.9rem;
-}
-
-.signout-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  padding: 8px 16px;
-  border-radius: var(--radius-pill);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.signout-btn:hover {
-  background: var(--bg-secondary);
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-/* Notificaciones */
-.notif-bell-wrapper {
-  position: relative;
-}
-
-.notif-bell {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.notif-bell:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  border-color: var(--gold);
-}
-
-.notif-bell:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.notif-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: var(--danger);
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  min-width: 18px;
-  height: 18px;
-  border-radius: var(--radius-pill);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
-  border: 2px solid var(--bg-primary);
-}
-
-.notif-panel-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-}
-
-.notif-panel {
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
-  width: 360px;
-  max-width: calc(100vw - 48px);
-  max-height: 420px;
-  display: flex;
-  flex-direction: column;
-  z-index: 50;
-  overflow: hidden;
-  /* Fondo propio y más sólido que el glass-panel base: este panel flota sobre
-     contenido con el que puede superponerse, y necesita leerse como una
-     tarjeta opaca, no como un cristal translúcido. */
-  background: var(--surface);
-  box-shadow: var(--shadow-lg);
-}
-
-.notif-panel-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.notif-panel-header h4 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1rem;
-}
-
-.mark-all-btn {
-  background: none;
-  border: none;
-  color: var(--gold-deep);
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.mark-all-btn:hover {
-  text-decoration: underline;
-}
-
-.notif-panel-list {
-  overflow-y: auto;
-  flex: 1;
-}
-
-.notif-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-subtle);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.notif-item:last-child {
-  border-bottom: none;
-}
-
-.notif-delete-btn {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  font-size: 0.85rem;
-  line-height: 1;
-  padding: 4px 6px;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.notif-delete-btn:hover {
-  color: var(--danger);
-  background: rgba(255, 59, 48, 0.1);
-}
-
-.notif-item:hover {
-  background: var(--bg-secondary);
-}
-
-.notif-item.unread {
-  background: var(--gold-light);
-}
-
-.notif-icon {
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
-
-.notif-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.notif-source {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--gold-deep);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 2px;
-}
-
-.notif-text {
-  margin: 0 0 4px 0;
-  font-size: 0.87rem;
-  color: var(--ink-secondary);
-  line-height: 1.4;
-}
-
-.notif-time {
-  font-size: 0.72rem;
-  color: var(--text-tertiary);
-}
-
-/* Banner de anuncios importantes */
-.announce-banner {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.announce-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 14px 18px;
-  border-left: 4px solid var(--gold);
-}
-
-.announce-card.urgente {
-  border-left-color: var(--danger);
-}
-
-.announce-icon {
-  font-size: 1.3rem;
-  flex-shrink: 0;
-}
-
-.announce-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.announce-content strong {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--gold-deep);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 2px;
-}
-
-.announce-content p {
-  margin: 0;
-  color: var(--ink);
-  font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-.announce-dismiss {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.announce-dismiss:hover {
-  color: var(--ink);
-}
-
-.role-selector label {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.glass-select {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 10px 16px;
-  border-radius: var(--radius-sm);
-  font-family: inherit;
-  font-weight: 600;
-  min-width: 250px;
-}
-
-.glass-select:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-light);
-}
-
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: var(--text-secondary);
-}
-
-.empty-state .icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
-}
-
-.empty-state .btn-primary {
-  display: inline-block;
-  background: var(--ink);
-  color: #fff;
-  text-decoration: none;
-  padding: 12px 28px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.3s var(--ease-apple);
-}
-
-.empty-state .btn-primary:hover {
-  background: #000;
-  transform: translateY(-1px);
-}
-
-.main-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  overflow-y: auto;
-  height: 100%;
-  padding-right: 6px;
-}
-
-/* Custom scrollbar para columnas interiores */
-.sidebar-column::-webkit-scrollbar,
-.main-column::-webkit-scrollbar,
-.chat-messages::-webkit-scrollbar {
-  width: 4px;
-}
-.sidebar-column::-webkit-scrollbar-thumb,
-.main-column::-webkit-scrollbar-thumb,
-.chat-messages::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-.workspace-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 24px;
-  min-height: 0;
-}
-
-
-.role-level-badge {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 8px;
-  border-radius: var(--radius-pill);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: white;
-}
-
-.role-level-badge.level-1 { background: var(--danger); }
-.role-level-badge.level-2 { background: var(--warning); }
-.role-level-badge.level-3 { background: var(--success); }
-
-/* Grid de 3 columnas con proporciones fijas -- antes era flex con las tres
-   columnas creciendo por igual, lo que estiraba el chat (casi siempre vacío)
-   al mismo ancho que el contenido central, generando mucho espacio muerto
-   y una sensación de desbalance. Con columnas de ancho fijo/proporcional el
-   layout se ve simétrico sin importar cuánto contenido tenga cada una. */
-.workspace-content {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1.6fr) minmax(320px, 380px);
-  gap: 24px;
-  flex: 1;
-  min-height: 0;
-}
-
-/* Sidebar Column */
-.sidebar-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.profile-card {
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--gold-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #fff;
-}
-
-.profile-info h2 {
-  margin: 0 0 4px 0;
-  font-size: 1.2rem;
-  color: var(--ink);
-}
-
-.profile-info p {
-  margin: 0;
-  color: var(--gold-deep);
-  font-size: 0.9rem;
-}
-
-.tasks-card h3 {
-  margin: 0 0 16px 0;
-  color: var(--ink);
-  font-size: 1.1rem;
-}
-
-/* Mis KPIs (solo gerente) */
-.kpi-card {
-  padding: 20px;
-}
-
-.kpi-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.kpi-card-header h3 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.05rem;
-}
-
-.kpi-score-badge {
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.kpi-score-badge.green { background: rgba(52, 199, 89, 0.12); color: var(--success); }
-.kpi-score-badge.yellow { background: rgba(255, 149, 0, 0.12); color: var(--warning); }
-.kpi-score-badge.red { background: rgba(255, 59, 48, 0.12); color: var(--danger); }
-.kpi-score-badge.gray { background: var(--bg-secondary); color: var(--text-tertiary); }
-
-.kpi-metric-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.kpi-metric-list li {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.kpi-metric-list li:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.kpi-metric-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.kpi-metric-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ink-secondary);
-}
-
-.kpi-metric-pct {
-  font-size: 0.8rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.kpi-metric-pct.green { color: var(--success); }
-.kpi-metric-pct.yellow { color: var(--warning); }
-.kpi-metric-pct.red { color: var(--danger); }
-.kpi-metric-pct.gray, .kpi-metric-pct.muted { color: var(--text-tertiary); font-weight: 500; }
-
-.kpi-metric-meta {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
-/* Gestión Diaria (memoria del cargo) */
-.checklist-card {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Encabezado compartido por Gestión Diaria y Cronograma Programacional --
-   mismo tamaño de título y misma línea de subtítulo, para que ambas
-   tarjetas apiladas en la columna central se lean como un mismo sistema
-   en vez de dos componentes con estilos distintos. */
-.board-header {
-  padding: 24px 24px 16px 24px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.board-header h3 {
-  margin: 0 0 4px 0;
-  color: var(--ink);
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.board-header p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
-
-.checklist-tabs {
-  display: flex;
-  background: var(--bg-secondary);
-  padding: 4px;
-  border-radius: 8px;
-  margin: 16px 24px 0 24px;
-  gap: 4px;
-}
-
-.checklist-tabs button {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.checklist-tabs button:hover {
-  color: var(--ink);
-}
-
-.checklist-tabs button.active {
-  background: #fff;
-  color: var(--ink);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.dm-task-list {
-  list-style: none;
-  padding: 16px 24px 24px 24px;
-  margin: 0;
-}
-
-.dm-task-list li {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--ink-secondary);
-}
-
-.dm-task-list li:last-child {
-  border-bottom: none;
-}
-
-.dm-task-list input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--gold);
-  flex-shrink: 0;
-}
-
-.dm-task-list li.completed .task-title {
-  text-decoration: line-through;
-  color: var(--text-tertiary);
-}
-
-.no-tasks {
-  color: var(--text-tertiary);
-  font-size: 0.85rem;
-  text-align: center;
-  padding: 28px 16px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-}
-
-.notif-permanent-card {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.notif-permanent-card h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--ink);
-}
-
-.notif-list-mini {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.notif-list-mini .notif-item {
-  padding: 8px;
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  margin-bottom: 0;
-}
-
-.notif-list-mini .notif-item.unread {
-  border-left: 3px solid var(--gold);
-}
-
-.documents-column-mini {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.documents-header h3 {
-  margin: 0;
-  padding: 16px;
-  font-size: 1rem;
-  color: var(--ink);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.documents-list-mini {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.template-list-mini {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.template-card-mini {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  color: var(--ink);
-  transition: all 0.2s ease;
-}
-
-.template-card-mini:hover {
-  border-color: var(--gold);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Schedule Column (Central) */
-.schedule-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-
-.schedule-calendar-tabs {
-  display: flex;
-  gap: 12px;
-  padding: 16px 24px 0;
-}
-
-.schedule-calendar-tabs button {
-  flex: 1;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  padding: 10px 16px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.schedule-calendar-tabs button.active {
-  background: var(--ink);
-  color: #fff;
-  border-color: var(--ink);
-}
-
-.schedule-calendar-view {
-  padding: 24px;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.schedule-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  margin-bottom: 12px;
-  transition: all 0.2s ease;
-}
-
-.schedule-list li:hover {
-  border-color: var(--gold-light);
-}
-
-.schedule-list input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  cursor: pointer;
-  accent-color: var(--gold);
-}
-
-.task-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.task-title {
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--ink);
-}
-
-.task-desc {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.task-date {
-  font-size: 0.8rem;
-  color: var(--gold-deep);
-  font-weight: 600;
-  margin-top: 4px;
-}
-
-.schedule-list li.completed {
-  opacity: 0.7;
-}
-
-.schedule-list li.completed .task-title {
-  text-decoration: line-through;
-  color: var(--text-tertiary);
-}
-
-.template-icon {
-  font-size: 1.2rem;
-  background: var(--bg-secondary);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-}
-
-.template-info {
-  flex: 1;
-}
-
-.template-info h4 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: var(--ink);
-}
-
-.empty-state-mini {
-  color: var(--text-tertiary);
-  text-align: center;
-  padding: 40px 0;
-  font-style: italic;
-}
-
-/* Chat Column */
-.chat-column {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.chat-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.chat-header h3 {
-  margin: 0;
-  color: var(--ink);
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  background: var(--success);
-  border-radius: 50%;
-}
-
-.chat-header small {
-  color: var(--text-secondary);
-}
-
-.chat-messages {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.empty-chat {
-  text-align: center;
-  color: var(--text-tertiary);
-  margin: auto 0;
-}
-
-.message {
-  display: flex;
-  gap: 16px;
-  max-width: 85%;
-}
-
-.message.user {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.avatar-small {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
-  flex-shrink: 0;
-}
-
-.message.ai .avatar-small {
-  background: var(--gold-gradient);
-  color: #fff;
-}
-
-.message.user .avatar-small {
-  background: var(--ink);
-  color: #fff;
-}
-
-.bubble {
-  padding: 16px;
-  border-radius: var(--radius-md);
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.message.ai .bubble {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  color: var(--ink-secondary);
-  border-top-left-radius: 0;
-  box-shadow: var(--shadow-sm);
-}
-
-.message.user .bubble {
-  background: var(--gold-light);
-  border: 1px solid var(--gold-light);
-  color: var(--ink);
-  border-top-right-radius: 0;
-}
-
-.typing .bubble {
-  color: var(--gold-deep);
-  font-style: italic;
-}
-
-.chat-input-area {
-  padding: 20px;
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  gap: 12px;
-}
-
-.chat-input-area input {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 16px;
-  border-radius: var(--radius-sm);
-  font-family: inherit;
-  font-size: 1rem;
-}
-
-.chat-input-area input:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-light);
-}
-
-.send-btn {
-  background: var(--gold-gradient);
-  color: #fff;
-  border: none;
-  padding: 0 32px;
-  border-radius: var(--radius-sm);
-  font-weight: bold;
-  cursor: pointer;
-  transition: opacity 0.3s;
-}
-
-.send-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Fix for marked HTML in bubble */
-:deep(.bubble p) {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-:deep(.bubble p:last-child) {
-  margin-bottom: 0;
-}
-:deep(.bubble ul) {
-  margin: 10px 0;
-  padding-left: 20px;
-}
-
-/* --- Mobile Responsiveness --- */
-@media (max-width: 1024px) {
-  .workspace-content {
-    grid-template-columns: 1fr;
-  }
-  .sidebar-column, .main-column, .chat-column {
-    height: auto;
-  }
-  .chat-column {
-    min-height: 480px;
-  }
-}
-@media (max-width: 768px) {
-  .workspace-container {
-    padding: 16px;
-  }
-  .header-actions {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .btn-action, .btn-primary, .btn-danger-outline {
-    width: 100%;
-    justify-content: center;
-  }
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-  .modal-content {
-    width: 95% !important;
-    padding: 24px 16px;
-    margin: 20px auto;
-  }
-  .filters-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .filters-row select, .filters-row input {
-    width: 100%;
-  }
-}
+/* Tailwind classes handle the layout now */
+.material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-variation-settings: 'FILL' 1; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #d1d1d6; border-radius: 6px; }
 </style>

@@ -1,143 +1,331 @@
 <template>
-  <div class="oracle-view">
-    <header class="glass-panel hub-header">
-      <div class="header-content">
-        <router-link to="/" class="back-link">← Volver al Inicio</router-link>
-        <h1>Oráculo PROMETHEUS OS (Cerebro Corporativo)</h1>
-        <p>Conectado a la Memoria Inteligente de la Corporación</p>
-      </div>
-      <div class="tabs">
-        <button :class="{ active: tab === 'chat' }" @click="tab = 'chat'">Chat</button>
-        <button :class="{ active: tab === 'panorama' }" @click="tab = 'panorama'; loadPanorama()">Panorama de Conocimiento</button>
-      </div>
-    </header>
-
-    <div v-if="tab === 'chat'" class="oracle-layout">
-      <!-- Chat interface -->
-      <main class="glass-panel chat-container">
-        <div class="chat-history" ref="chatHistory">
-          <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.role]">
-            <div class="avatar">
-              <svg v-if="msg.role === 'ai'" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
-              <span v-else>👤</span>
-            </div>
-            <div class="bubble">
-              <div v-html="DOMPurify.sanitize(formatMessage(msg.text))"></div>
+  <div class="oracle-view bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen">
+    
+    <main class="w-full pt-6 bg-background max-w-7xl mx-auto px-margin min-h-screen">
+      <div class="flex flex-col w-full">
+        <!-- Sub-Header Status Ribbon -->
+        <div class="w-full bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.02)] mb-space-md rounded-xl p-space-sm px-space-md flex flex-wrap items-center justify-between gap-space-sm">
+          <div class="flex items-center gap-space-sm text-on-surface-variant">
+            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface-container text-primary">
+              <span class="material-symbols-outlined text-[18px]">account_tree</span>
+            </span>
+            <div class="flex items-center gap-1.5 font-label-sm text-label-sm">
+              <router-link to="/" class="text-on-surface font-semibold hover:text-primary transition-colors">Elite Nova Group</router-link>
+              <span class="text-outline-variant">/</span>
+              <span class="text-on-surface">Centro de Conocimiento</span>
+              <span class="text-outline-variant">/</span>
+              <span class="text-primary font-medium">El Oráculo Enterprise</span>
             </div>
           </div>
-          <div v-if="loading" class="message ai loading-msg">
-            <div class="avatar"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg></div>
-            <div class="bubble">
-              <span class="typing-indicator">
-                <span></span><span></span><span></span>
-              </span>
+          <div class="flex items-center gap-space-md">
+            <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-caption text-caption">
+              <span class="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(52,199,89,0.5)]" :class="dbStatus ? 'bg-[#34c759]' : 'bg-error'"></span>
+              <span class="font-medium text-on-surface">Base de Conocimiento: {{ dbStatus ? 'Sincronizada' : 'Desconectada' }}</span>
+              <span class="text-secondary" v-if="panoramaLoaded">• {{ totalRoles }} Nodos Activos</span>
             </div>
-          </div>
-        </div>
-
-        <div class="chat-input-area">
-          <div class="input-wrapper">
-            <input 
-              type="text" 
-              v-model="currentQuery" 
-              placeholder="Ej: ¿Cuáles son las métricas del Gerente Comercial?" 
-              @keyup.enter="sendQuery"
-            />
-            <button class="btn-send" @click="sendQuery" :disabled="!currentQuery.trim() || loading">
-              Enviar
+            <div class="hidden md:flex items-center gap-1 font-caption text-caption text-on-surface-variant">
+              <span class="material-symbols-outlined text-[15px] text-primary">verified_user</span>
+              <span>Normativa ISO-9001 & RGPD</span>
+            </div>
+            <!-- Toggle Tab Button -->
+            <button class="text-caption px-3 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface font-semibold" @click="toggleTab">
+              {{ tab === 'chat' ? 'Ver Panorama' : 'Volver al Chat' }}
             </button>
           </div>
-          <small class="hint">Usando RAG Neural con la Memoria Corporativa.</small>
-        </div>
-      </main>
-
-      <!-- Sidebar -->
-      <aside class="glass-panel memory-stats">
-        <h3>Estado de la Memoria</h3>
-        <div class="stat-card">
-          <div class="stat-value" :class="{ 'connected': dbStatus, 'disconnected': !dbStatus }">
-            {{ dbStatus ? 'Establecida' : 'Desconectada' }}
-          </div>
-          <div class="stat-label">Conexión Neuronal Vectorial</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">PROMETHEUS OS</div>
-          <div class="stat-label">Motor de Razonamiento</div>
-        </div>
-        <div class="info-text">
-          <p>Este oráculo busca dentro de:</p>
-          <ul>
-            <li>Manuales de Cargo</li>
-            <li>Entrevistas de Mapeo</li>
-            <li>Políticas Corporativas</li>
-          </ul>
-        </div>
-      </aside>
-    </div>
-
-    <!-- Panorama de Conocimiento: qué sabe y qué NO sabe el Oráculo, por área/cargo -->
-    <div v-else class="oracle-layout panorama-layout">
-      <div v-if="panoramaLoading" class="glass-panel panorama-loading">Analizando la memoria corporativa...</div>
-      <template v-else>
-        <div class="panorama-summary-row">
-          <div class="glass-panel summary-card">
-            <div class="summary-value">{{ panorama.length }}</div>
-            <div class="summary-label">Áreas</div>
-          </div>
-          <div class="glass-panel summary-card">
-            <div class="summary-value">{{ totalRoles }}</div>
-            <div class="summary-label">Cargos</div>
-          </div>
-          <div class="glass-panel summary-card">
-            <div class="summary-value good">{{ fullyCoveredRoles }}</div>
-            <div class="summary-label">Cargos con cobertura completa</div>
-          </div>
-          <div class="glass-panel summary-card">
-            <div class="summary-value bad">{{ totalRoles - fullyCoveredRoles }}</div>
-            <div class="summary-label">Cargos con al menos un vacío</div>
-          </div>
         </div>
 
-        <div class="glass-panel area-block" v-for="area in panorama" :key="area.id">
-          <div class="area-header">
-            <h3>{{ area.name }}</h3>
-            <div class="coverage-bar-wrap">
-              <div class="coverage-bar"><div class="coverage-fill" :style="{ width: area.coveragePct + '%' }"></div></div>
-              <span class="coverage-pct">{{ area.coveragePct }}% cubierto</span>
+        <!-- TWO-COLUMN ARCHITECTURE -->
+        <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start pb-space-xl">
+          
+          <!-- LEFT SIDEBAR: Historial & Sesiones (Col span 3.5 ~ 4) -->
+          <aside class="lg:col-span-4 xl:col-span-3 flex flex-col gap-space-md bg-surface-container-lowest rounded-2xl p-space-md shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-full lg:max-h-[820px]">
+            <!-- Search & New Session -->
+            <div class="flex flex-col gap-space-sm">
+              <button @click="messages = [{role: 'ai', text: 'Nueva sesión iniciada. ¿En qué puedo asistirte hoy?'}]" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all group shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                <span class="material-symbols-outlined text-primary text-[20px] transition-transform group-hover:rotate-90">add</span>
+                <span class="font-semibold text-primary">Nueva Consulta</span>
+              </button>
+              <div class="relative w-full">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[18px]">search</span>
+                <input class="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-secondary font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container" placeholder="Buscar consultas anteriores..." type="text"/>
+              </div>
             </div>
-          </div>
-          <table class="panorama-table">
-            <thead>
-              <tr>
-                <th>Cargo</th>
-                <th>Mapeo</th>
-                <th>Manual</th>
-                <th>KPI vinculado</th>
-                <th>Conocimiento en el Oráculo</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="role in area.roles" :key="role.id">
-                <td>{{ role.name }}</td>
-                <td><span :class="['dot', role.hasMapping ? 'ok' : 'gap']">{{ role.hasMapping ? '✓' : '✗' }}</span></td>
-                <td><span :class="['dot', role.hasManual ? 'ok' : 'gap']">{{ role.hasManual ? '✓' : '✗' }}</span></td>
-                <td><span :class="['dot', role.hasKpi ? 'ok' : 'gap']">{{ role.hasKpi ? '✓' : '✗' }}</span></td>
-                <td>
-                  <span :class="['dot', role.memoryCount > 0 ? 'ok' : 'gap']">
-                    {{ role.memoryCount > 0 ? `✓ (${role.memoryCount})` : '✗' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            
+            <!-- Categories & History Feed (MOCKUP VISUAL PRESERVADO) -->
+            <div class="flex flex-col gap-space-md overflow-y-auto pr-1 flex-1">
+              <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between px-2">
+                  <span class="font-caption text-caption uppercase tracking-wider text-secondary font-semibold">Hoy</span>
+                  <span class="text-[10px] text-secondary font-mono">1 chat</span>
+                </div>
+                <!-- Active Conversation Card -->
+                <div class="relative p-3 rounded-xl bg-surface-container-low shadow-sm flex flex-col gap-1 cursor-pointer transition-all hover:bg-surface-container">
+                  <div class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-[#d4b06a] to-[#8a6d3d]"></div>
+                  <div class="flex items-center justify-between pl-1">
+                    <span class="font-label-md text-label-md font-semibold text-on-surface truncate">Consulta en Curso</span>
+                    <span class="font-caption text-caption text-secondary shrink-0">Ahora</span>
+                  </div>
+                  <p class="pl-1 font-body-sm text-body-sm text-secondary line-clamp-1">Interacción actual con el Oráculo</p>
+                  <div class="flex items-center gap-2 pl-1 mt-1 font-caption text-caption text-on-surface-variant">
+                    <span class="inline-flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                      {{ messages.length }} mensajes
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex flex-col gap-1.5 opacity-60">
+                <div class="flex items-center justify-between px-2 pt-2">
+                  <span class="font-caption text-caption uppercase tracking-wider text-secondary font-semibold">Ayer</span>
+                </div>
+                <div class="p-3 rounded-xl hover:bg-surface-container-low flex flex-col gap-1 cursor-pointer transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="font-label-md text-label-md text-on-surface truncate">Estatutos de Gobernanza COFEPRIS</span>
+                  </div>
+                  <p class="font-body-sm text-body-sm text-secondary line-clamp-1">Certificación sanitaria de formulación aminoácidos</p>
+                </div>
+                <div class="p-3 rounded-xl hover:bg-surface-container-low flex flex-col gap-1 cursor-pointer transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="font-label-md text-label-md text-on-surface truncate">Flujo de Auditoría ISO-9001</span>
+                  </div>
+                  <p class="font-body-sm text-body-sm text-secondary line-clamp-1">Cronograma de revisiones internas para laboratorio</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom System Stamp -->
+            <div class="mt-auto pt-3 flex flex-col gap-2">
+              <div class="p-2.5 rounded-xl bg-surface-container-low flex items-start gap-2.5">
+                <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">verified</span>
+                <div class="flex flex-col">
+                  <span class="font-label-sm text-label-sm font-semibold text-on-surface">Oráculo Enterprise v4.2</span>
+                  <span class="font-caption text-caption text-secondary leading-tight">Certificado para Gobernanza Institucional</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- MAIN CHAT AREA (Col span 8.5 ~ 9) -->
+          <section v-if="tab === 'chat'" class="lg:col-span-8 xl:col-span-9 flex flex-col bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-[820px] relative overflow-hidden">
+            <!-- Top Action Bar inside Chat Window -->
+            <div class="px-space-lg py-space-md bg-surface-container-lowest flex flex-wrap items-center justify-between gap-space-sm shadow-[0_1px_4px_rgba(0,0,0,0.02)] z-10 shrink-0">
+              <div class="flex items-center gap-space-md">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ffdea3]/40 via-[#e8c086]/20 to-transparent flex items-center justify-center text-primary shadow-sm">
+                  <span class="material-symbols-outlined text-[24px]">auto_awesome</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Oráculo IA — Asistente Corporativo</h2>
+                    <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#34c759]/10 text-[#248a3d] font-caption text-caption font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#34c759]"></span> En Línea
+                    </span>
+                  </div>
+                  <p class="font-body-sm text-body-sm text-secondary">Motor de Conocimiento y Gobernanza de Procesos</p>
+                </div>
+              </div>
+              <!-- Action tools -->
+              <div class="flex items-center gap-2">
+                <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors">
+                  <span class="material-symbols-outlined text-[16px] text-secondary">picture_as_pdf</span>
+                  <span class="hidden md:inline">Exportar (.PDF)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Scrollable Message Canvas -->
+            <div class="flex-1 p-space-md lg:p-space-lg flex flex-col gap-space-lg overflow-y-auto" ref="chatHistory">
+              
+              <!-- Timestamp Separator -->
+              <div class="flex items-center justify-center my-1">
+                <span class="px-3 py-1 rounded-full bg-surface-container-low text-secondary font-caption text-caption tracking-wider uppercase">
+                  Sesión iniciada
+                </span>
+              </div>
+
+              <!-- DYNAMIC MESSAGES LOOP -->
+              <div v-for="(msg, index) in messages" :key="index" :class="[msg.role === 'user' ? 'flex justify-end w-full' : 'flex justify-start w-full']">
+                
+                <!-- USER QUERY -->
+                <div v-if="msg.role === 'user'" class="max-w-2xl flex flex-col items-end gap-1">
+                  <div class="bg-surface-container-low text-on-surface p-4 rounded-2xl rounded-tr-sm shadow-sm font-body-md text-body-md leading-relaxed whitespace-pre-wrap">{{ msg.text }}</div>
+                  <div class="flex items-center gap-1 text-secondary font-caption text-caption pr-1">
+                    <span class="material-symbols-outlined text-[13px] text-primary">done_all</span>
+                  </div>
+                </div>
+
+                <!-- ORACLE AI RESPONSE -->
+                <div v-else class="max-w-3xl flex items-start gap-space-md">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#ffdea3] to-[#af8e4c] flex items-center justify-center text-on-primary shrink-0 shadow-sm mt-1">
+                    <span class="material-symbols-outlined text-[18px]">neurology</span>
+                  </div>
+                  <div class="flex flex-col gap-space-sm w-full">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="font-label-md text-label-md font-semibold text-on-surface">Oráculo IA</span>
+                      <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#b08d57]/10 text-primary font-caption text-caption font-semibold">
+                        <span class="material-symbols-outlined text-[13px]">verified</span> Respaldo Corporativo
+                      </div>
+                    </div>
+                    
+                    <div class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-[0_4px_16px_rgba(0,0,0,0.03)] bg-gradient-to-br from-surface-container-lowest to-surface-container-low/40 flex flex-col gap-space-md">
+                      
+                      <!-- Markdown Rendered Content -->
+                      <div class="text-on-surface font-body-md text-body-md leading-relaxed markdown-body" v-html="DOMPurify.sanitize(formatMessage(msg.text))"></div>
+                      
+                      <!-- Action Footer inside Card -->
+                      <div class="pt-3 flex flex-wrap items-center justify-between gap-space-sm border-t border-surface-container-low mt-2">
+                        <div class="flex items-center gap-1">
+                          <button class="p-1.5 rounded-lg hover:bg-surface-container-low text-secondary hover:text-primary transition-colors" title="Respuesta útil">
+                            <span class="material-symbols-outlined text-[18px]">thumb_up</span>
+                          </button>
+                          <button class="p-1.5 rounded-lg hover:bg-surface-container-low text-secondary hover:text-error transition-colors" title="Reportar inconsistencia">
+                            <span class="material-symbols-outlined text-[18px]">thumb_down</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TYPING INDICATOR -->
+              <div v-if="loading" class="flex justify-start w-full">
+                <div class="max-w-3xl flex items-start gap-space-md">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#ffdea3] to-[#af8e4c] flex items-center justify-center text-on-primary shrink-0 shadow-sm mt-1">
+                    <span class="material-symbols-outlined text-[18px]">neurology</span>
+                  </div>
+                  <div class="flex flex-col justify-center h-10 px-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
+                    <span class="flex gap-1">
+                      <span class="w-2 h-2 rounded-full bg-surface-container-highest animate-bounce" style="animation-delay: 0s;"></span>
+                      <span class="w-2 h-2 rounded-full bg-surface-container-highest animate-bounce" style="animation-delay: 0.2s;"></span>
+                      <span class="w-2 h-2 rounded-full bg-surface-container-highest animate-bounce" style="animation-delay: 0.4s;"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FLOATING INPUT AREA (Bottom Anchor) -->
+            <div class="p-space-md lg:p-space-lg bg-surface-container-lowest/95 backdrop-blur-md mt-auto shadow-[0_-4px_16px_rgba(0,0,0,0.02)] shrink-0 z-20">
+              <div class="flex flex-col gap-2">
+                
+                <!-- Main Input Field Capsule -->
+                <div class="relative flex items-center bg-surface-container-low rounded-2xl p-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-within:ring-2 focus-within:ring-primary-container focus-within:bg-surface-container-lowest transition-all">
+                  <input 
+                    class="w-full py-3 px-4 bg-transparent text-on-surface placeholder:text-secondary font-body-md text-body-md focus:outline-none" 
+                    placeholder="Pregunta sobre cualquier proceso corporativo, manual de cargo o gobernanza..." 
+                    type="text"
+                    v-model="currentQuery"
+                    @keyup.enter="sendQuery"
+                    :disabled="loading"
+                  />
+                  <!-- Send Action Button -->
+                  <button 
+                    @click="sendQuery"
+                    :disabled="loading || !currentQuery.trim()"
+                    class="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 active:scale-95 disabled:opacity-50 text-on-primary flex items-center justify-center transition-transform shadow-[0_2px_8px_rgba(176,141,87,0.3)]" 
+                    title="Enviar Consulta">
+                    <span class="material-symbols-outlined text-[22px]">arrow_upward</span>
+                  </button>
+                </div>
+                
+                <div class="flex items-center justify-center gap-1.5 text-secondary font-caption text-caption text-center px-4">
+                  <span class="material-symbols-outlined text-[13px] text-primary">verified_user</span>
+                  <span>El Oráculo IA responde exclusivamente con base en la documentación oficial aprobada.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- PANORAMA VIEW (Alternative Tab) -->
+          <section v-else class="lg:col-span-8 xl:col-span-9 flex flex-col bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-[820px] p-8 overflow-y-auto">
+            <div class="mb-6">
+              <h2 class="font-headline-md text-headline-md font-semibold text-on-surface">Panorama de Conocimiento (Gobernanza)</h2>
+              <p class="text-secondary font-body-sm text-body-sm mt-2">Visibilidad de cobertura del Oráculo sobre los Nodos Corporativos.</p>
+            </div>
+
+            <div v-if="panoramaLoading" class="w-full flex justify-center py-20 text-secondary">
+              Calculando métricas de cobertura...
+            </div>
+            
+            <template v-else>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-surface-container-low p-4 rounded-xl flex flex-col items-center justify-center text-center">
+                  <span class="font-display text-display font-semibold text-on-surface">{{ panorama.length }}</span>
+                  <span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mt-1">Áreas</span>
+                </div>
+                <div class="bg-surface-container-low p-4 rounded-xl flex flex-col items-center justify-center text-center">
+                  <span class="font-display text-display font-semibold text-on-surface">{{ totalRoles }}</span>
+                  <span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mt-1">Cargos</span>
+                </div>
+                <div class="bg-surface-container-low p-4 rounded-xl flex flex-col items-center justify-center text-center">
+                  <span class="font-display text-display font-semibold text-[#248a3d]">{{ fullyCoveredRoles }}</span>
+                  <span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mt-1">Óptimos</span>
+                </div>
+                <div class="bg-surface-container-low p-4 rounded-xl flex flex-col items-center justify-center text-center">
+                  <span class="font-display text-display font-semibold text-error">{{ totalRoles - fullyCoveredRoles }}</span>
+                  <span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mt-1">Con Vacíos</span>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <div v-for="area in panorama" :key="area.id" class="border border-surface-container rounded-2xl overflow-hidden">
+                  <div class="bg-surface-container-low p-4 flex items-center justify-between border-b border-surface-container">
+                    <h3 class="font-label-md text-label-md font-bold text-on-surface">{{ area.name }}</h3>
+                    <div class="flex items-center gap-3">
+                      <div class="w-32 h-2 rounded-full bg-surface-container-highest overflow-hidden">
+                        <div class="h-full bg-primary transition-all" :style="{ width: area.coveragePct + '%' }"></div>
+                      </div>
+                      <span class="font-caption text-caption text-secondary font-semibold">{{ area.coveragePct }}% Cubierto</span>
+                    </div>
+                  </div>
+                  
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left font-body-sm text-body-sm">
+                      <thead class="bg-surface-container-lowest text-secondary font-caption text-caption uppercase tracking-wider">
+                        <tr>
+                          <th class="py-3 px-4 font-semibold">Cargo (Nodo)</th>
+                          <th class="py-3 px-4 font-semibold text-center">Mapeo</th>
+                          <th class="py-3 px-4 font-semibold text-center">Manual</th>
+                          <th class="py-3 px-4 font-semibold text-center">KPI</th>
+                          <th class="py-3 px-4 font-semibold text-center">Memoria IA</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-surface-container">
+                        <tr v-for="role in area.roles" :key="role.id" class="hover:bg-surface-container-lowest/50 transition-colors">
+                          <td class="py-3 px-4 font-medium text-on-surface">{{ role.name }}</td>
+                          <td class="py-3 px-4 text-center">
+                            <span class="material-symbols-outlined text-[18px]" :class="role.hasMapping ? 'text-[#248a3d]' : 'text-error'">{{ role.hasMapping ? 'check_circle' : 'cancel' }}</span>
+                          </td>
+                          <td class="py-3 px-4 text-center">
+                            <span class="material-symbols-outlined text-[18px]" :class="role.hasManual ? 'text-[#248a3d]' : 'text-error'">{{ role.hasManual ? 'check_circle' : 'cancel' }}</span>
+                          </td>
+                          <td class="py-3 px-4 text-center">
+                            <span class="material-symbols-outlined text-[18px]" :class="role.hasKpi ? 'text-[#248a3d]' : 'text-error'">{{ role.hasKpi ? 'check_circle' : 'cancel' }}</span>
+                          </td>
+                          <td class="py-3 px-4 text-center font-semibold">
+                            <span v-if="role.memoryCount > 0" class="text-[#248a3d] inline-flex items-center gap-1">
+                              <span class="material-symbols-outlined text-[18px]">check_circle</span> ({{ role.memoryCount }})
+                            </span>
+                            <span v-else class="material-symbols-outlined text-[18px] text-error">cancel</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </section>
+
         </div>
-      </template>
-    </div>
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from 'vue';
+import { ref, nextTick, computed, onMounted } from 'vue';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../api/supabase';
@@ -150,6 +338,20 @@ const tab = ref('chat');
 const panorama = ref([]);
 const panoramaLoading = ref(false);
 let panoramaLoaded = false;
+
+const messages = ref([
+  {
+    role: 'ai',
+    text: 'Saludos. Soy el Oráculo de PROMETHEUS OS. He indexado la base de conocimiento de la corporación. ¿Qué deseas consultar sobre el ecosistema de la empresa?'
+  }
+]);
+
+const toggleTab = () => {
+  tab.value = tab.value === 'chat' ? 'panorama' : 'chat';
+  if (tab.value === 'panorama') {
+    loadPanorama();
+  }
+};
 
 const totalRoles = computed(() => panorama.value.reduce((sum, a) => sum + a.roles.length, 0));
 const fullyCoveredRoles = computed(() =>
@@ -204,7 +406,7 @@ const loadPanorama = async () => {
         coveragePct: dimensions > 0 ? Math.round((covered / dimensions) * 100) : 0
       };
     }).filter(a => a.roles.length > 0)
-      .sort((a, b) => a.coveragePct - b.coveragePct);
+      .sort((a, b) => b.coveragePct - a.coveragePct); // Sort by lowest coverage first
 
     panorama.value = areas;
     panoramaLoaded = true;
@@ -215,12 +417,10 @@ const loadPanorama = async () => {
   }
 };
 
-const messages = ref([
-  {
-    role: 'ai',
-    text: 'Saludos. Soy el Oráculo de PROMETHEUS OS. He indexado la base de conocimiento de la corporación. ¿Qué deseas consultar sobre el ecosistema de la empresa?'
-  }
-]);
+onMounted(() => {
+  // Pre-load panorama in background to have stats ready
+  loadPanorama();
+});
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -240,6 +440,9 @@ const sendQuery = async () => {
   scrollToBottom();
 
   try {
+    const { data: session } = await supabase.auth.getSession();
+    const userId = session?.session?.user?.id;
+    
     const response = await fetch('/api/memory', {
       method: 'POST',
       headers: {
@@ -248,19 +451,19 @@ const sendQuery = async () => {
       body: JSON.stringify({
         action: 'chat',
         query: query,
-        history: messages.value
+        user_id: userId
       })
     });
 
-    const data = await response.json();
-    
-    if (response.ok) {
-      messages.value.push({ role: 'ai', text: data.response });
-    } else {
-      messages.value.push({ role: 'ai', text: `Error de conexión con el Oráculo: ${data.error || 'Configura tu ANTHROPIC_API_KEY en Vercel.'}` });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  } catch (error) {
-    messages.value.push({ role: 'ai', text: 'Error de red. Asegúrate de que estás en producción (Vercel) o configuraste tu backend localmente.' });
+
+    const data = await response.json();
+    messages.value.push({ role: 'ai', text: data.answer || data.response || "No recibí respuesta del oráculo." });
+  } catch (e) {
+    console.error('Error querying Oracle:', e);
+    messages.value.push({ role: 'ai', text: 'Lo siento, ha ocurrido un error al conectar con la base de conocimiento vectorial. Verifica la consola para más detalles.' });
   } finally {
     loading.value = false;
     scrollToBottom();
@@ -268,410 +471,85 @@ const sendQuery = async () => {
 };
 
 const formatMessage = (text) => {
-  return marked.parse(text);
+  if (!text) return '';
+  return marked(text);
 };
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .oracle-view {
-  padding: 24px;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  --color-primary: #775928;
+  --color-primary-container: #b08d57;
+  --color-surface: #faf8fe;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3f8;
+  --color-surface-container: #eeedf3;
+  --color-surface-container-high: #e9e7ed;
+  --color-surface-container-highest: #e3e2e7;
+  --color-on-surface: #1a1b1f;
+  --color-secondary: #5f5e60;
+  --color-error: #ba1a1a;
+  --color-background: #faf8fe;
 }
 
-.glass-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: var(--shadow-sm);
-}
+.bg-background { background-color: var(--color-background); }
+.bg-surface-container-lowest { background-color: var(--color-surface-container-lowest); }
+.bg-surface-container-low { background-color: var(--color-surface-container-low); }
+.bg-surface-container { background-color: var(--color-surface-container); }
+.bg-surface-container-high { background-color: var(--color-surface-container-high); }
+.bg-surface-container-highest { background-color: var(--color-surface-container-highest); }
+.bg-primary { background-color: var(--color-primary); }
+.bg-error { background-color: var(--color-error); }
 
-.hub-header {
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-  flex-wrap: wrap;
-}
+.text-on-surface { color: var(--color-on-surface); }
+.text-secondary { color: var(--color-secondary); }
+.text-primary { color: var(--color-primary); }
+.text-on-primary { color: #ffffff; }
+.text-error { color: var(--color-error); }
+.text-on-surface-variant { color: #4e453a; }
 
-.tabs {
-  display: flex;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
-  padding: 4px;
-  height: fit-content;
-}
-
-.tabs button {
-  padding: 9px 18px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  font-family: inherit;
-  font-size: 0.85rem;
+/* Markdown Styling overrides */
+.markdown-body :deep(h1), 
+.markdown-body :deep(h2), 
+.markdown-body :deep(h3) {
   font-weight: 600;
-  color: var(--text-secondary);
-  transition: all 0.2s;
-  white-space: nowrap;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
-
-.tabs button.active {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+.markdown-body :deep(p) {
+  margin-bottom: 0.75rem;
 }
-
-.panorama-layout {
-  flex-direction: column;
-  overflow-y: auto;
-  gap: 20px;
+.markdown-body :deep(ul) {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
 }
-
-.panorama-loading {
-  padding: 48px;
-  text-align: center;
-  color: var(--text-tertiary);
+.markdown-body :deep(ol) {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
 }
-
-.panorama-summary-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+.markdown-body :deep(li) {
+  margin-bottom: 0.25rem;
 }
-
-.summary-card {
-  padding: 20px;
-  text-align: center;
+.markdown-body :deep(strong) {
+  font-weight: 600;
+  color: var(--color-primary);
 }
-
-.summary-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.summary-value.good { color: var(--success); }
-.summary-value.bad { color: var(--danger); }
-
-.summary-label {
-  font-size: 0.78rem;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-top: 4px;
-}
-
-.area-block {
-  padding: 20px 24px;
-}
-
-.area-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-
-.area-header h3 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.05rem;
-}
-
-.coverage-bar-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 220px;
-}
-
-.coverage-bar {
-  flex: 1;
-  height: 8px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.coverage-fill {
-  height: 100%;
-  background: var(--gold-gradient);
-  border-radius: var(--radius-pill);
-}
-
-.coverage-pct {
-  font-size: 0.78rem;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-.panorama-table {
+.markdown-body :deep(table) {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  margin-bottom: 1rem;
 }
-
-.panorama-table th {
-  text-align: left;
-  padding: 8px 10px;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--text-tertiary);
-  border-bottom: 1px solid var(--border-subtle);
+.markdown-body :deep(th), .markdown-body :deep(td) {
+  border: 1px solid var(--color-surface-container-high);
+  padding: 0.5rem;
 }
-
-.panorama-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-subtle);
-  color: var(--ink-secondary);
-}
-
-.dot.ok { color: var(--success); font-weight: 600; }
-.dot.gap { color: var(--danger); font-weight: 600; }
-
-.back-link {
-  color: var(--gold-deep);
-  text-decoration: none;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-  display: inline-block;
-}
-
-.back-link:hover {
-  text-decoration: underline;
-}
-
-.hub-header h1 {
-  font-size: 1.5rem;
-  background: var(--gold-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
-}
-
-.hub-header p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-top: 4px;
-}
-
-.oracle-layout {
-  display: flex;
-  gap: 24px;
-  flex: 1;
-  min-height: 0;
-}
-
-.chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.chat-history {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.message {
-  display: flex;
-  gap: 16px;
-  max-width: 80%;
-}
-
-.message.user {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.avatar {
-  font-size: 1.5rem;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-secondary);
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.message.ai .avatar {
-  background: var(--gold-light);
-}
-
-.bubble {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  padding: 16px;
-  border-radius: var(--radius-md);
-  line-height: 1.5;
-  color: var(--ink-secondary);
-  box-shadow: var(--shadow-sm);
-}
-
-.message.user .bubble {
-  background: var(--gold-light);
-  color: var(--ink);
-  border-bottom-right-radius: 0;
-}
-
-.message.ai .bubble {
-  border-bottom-left-radius: 0;
-}
-
-.bubble :deep(p) {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-
-.bubble :deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-.bubble :deep(ul) {
-  margin: 10px 0;
-  padding-left: 20px;
-}
-
-.typing-indicator span {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  background: var(--gold);
-  border-radius: 50%;
-  margin: 0 2px;
-  animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
-
-.chat-input-area {
-  padding: 24px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.input-wrapper {
-  display: flex;
-  gap: 12px;
-}
-
-.input-wrapper input {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 16px;
-  border-radius: var(--radius-sm);
-  font-family: inherit;
-  font-size: 1rem;
-}
-
-.input-wrapper input:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-light);
-}
-
-.btn-send {
-  background: var(--ink);
-  color: #fff;
-  border: none;
-  padding: 0 32px;
-  border-radius: var(--radius-pill);
+.markdown-body :deep(th) {
+  background-color: var(--color-surface-container-low);
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-send:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-send:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.hint {
-  display: block;
-  margin-top: 8px;
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.memory-stats {
-  width: 300px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.memory-stats h3 {
-  color: var(--ink);
-  margin-bottom: 8px;
-}
-
-.stat-card {
-  background: var(--bg-secondary);
-  padding: 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-}
-
-.stat-value {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: var(--ink);
-}
-
-.stat-value.connected { color: var(--success); }
-.stat-value.disconnected { color: var(--danger); }
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  margin-top: 4px;
-}
-
-.info-text {
-  margin-top: auto;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.info-text ul {
-  padding-left: 16px;
-  margin-top: 8px;
-}
-
-.info-text li {
-  margin-bottom: 4px;
 }
 </style>

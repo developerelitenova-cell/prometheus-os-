@@ -1,167 +1,327 @@
 <template>
-  <div class="mapa-de-cargos">
-    <header class="glass-panel hub-header">
-      <div class="header-left-nav" style="margin-bottom: 12px;">
-        <router-link to="/" class="back-link" style="color: var(--gold-deep); text-decoration: none; font-size: 0.9rem;">← Volver al Inicio</router-link>
-      </div>
-      <div class="header-content">
-        <h1>Mapa de Cargos</h1>
-        <p class="subtitle">Directorio organizacional y base de conocimiento de procesos.</p>
-        <p>Red de Arquitectura Organizacional ({{ roles.length }} Nodos)</p>
-      </div>
-      <div class="header-actions">
-        <router-link v-if="isMaster" to="/knowledge-loader" class="btn-primary knowledge-btn"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"></path><path d="M6.002 6.5A3 3 0 0 1 5.603 5.125"></path><path d="M11.8 12a1 1 0 0 0-1.6 0"></path></svg> Inyectar Conocimiento</router-link>
-        <button class="btn-primary" @click="fetchRoles">Actualizar Datos</button>
-      </div>
-    </header>
-
-    <div class="hub-layout">
-      <!-- Sidebar / Filters -->
-      <aside class="glass-panel sidebar">
-        <h3>Filtro por Áreas</h3>
-        <ul>
-          <li :class="{ active: activeArea === '' }" @click="activeArea = ''">
-            Todas las Áreas
-          </li>
-          <li v-for="area in areas" :key="area" @click="activeArea = area" :class="{ active: activeArea === area }">
-            {{ area }}
-          </li>
-        </ul>
-      </aside>
-
-      <!-- Main Content / Table -->
-      <main class="glass-panel content">
-        <div v-if="loading" class="empty-state">
-          <TechLoader text="Sincronizando Nodos Neuronales" />
-        </div>
-        <div v-else-if="filteredRoles.length === 0" class="empty-state">
-          <p>No se encontraron nodos que coincidan con la búsqueda.</p>
-          <p>La red puede estar vacía o restringida por nivel de acceso.</p>
-        </div>
-        <div v-else class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Cargo</th>
-                <th>Área Funcional</th>
-                <th>Nivel</th>
-                <th>Flujo</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="role in filteredRoles" :key="role.id">
-                <td class="role-name">{{ role.name }}</td>
-                <td>{{ role.areas?.name || 'General' }}</td>
-                <td><span class="badge" :class="'level-' + role.access_level">Nivel {{ role.access_level }}</span></td>
-                <td>
-                  <span class="badge" :class="mappedRoleIds.has(role.id) ? 'badge-mapped' : 'badge-unmapped'">
-                    {{ mappedRoleIds.has(role.id) ? 'Mapeado' : 'Sin mapear' }}
-                  </span>
-                </td>
-                <td class="actions-cell">
-                  <button class="btn-action-small btn-ghost" @click="openRoleDetails(role)">
-                    <span title="Ver Detalles">👁️</span>
-                  </button>
-                  <router-link :to="`/mapper/${role.id}`" class="btn-action-small btn-gradient">Mapear Flujo</router-link>
-                  <button class="btn-action-small btn-outline" @click="copyMapperLink(role)">
-                    <span :title="copiedRoleId === role.id ? 'Copiado!' : 'Copiar enlace'">
-                      {{ copiedRoleId === role.id ? '✓' : '🔗' }}
-                    </span>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </main>
-    </div>
-
-    <!-- Role Details Modal -->
-    <div v-if="selectedRole" class="modal-overlay" @click="closeRoleDetails">
-      <div class="modal-content glass-panel" @click.stop>
-        <div class="modal-header">
-          <h2>{{ selectedRole.name }}</h2>
-          <button class="close-btn" @click="closeRoleDetails">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="detail-group">
-            <label>Área Funcional</label>
-            <p>{{ selectedRole.areas?.name || 'General' }}</p>
-          </div>
-          <div class="detail-group">
-            <label>Nivel de Acceso</label>
-            <span class="badge" :class="'level-' + selectedRole.access_level">Nivel {{ selectedRole.access_level }}</span>
-          </div>
-          <div class="detail-group">
-            <label>Flujo de Trabajo Mapeado</label>
-            <div v-if="loadingWorkflow" class="hint">Cargando flujo...</div>
-            <div v-else-if="!selectedWorkflow" class="empty-workflow">
-              <p class="hint">Aún no hay nodos de información disponibles para este cargo.</p>
-              <router-link :to="`/mapper/${selectedRole.id}`" class="btn-primary btn-small">Mapear Flujo</router-link>
+  <div class="organigrama-view bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen pb-12">
+    <!-- Header ya no lo ponemos fijo para que no choque con el router global, pero mantenemos el estilo -->
+    
+    <main class="w-full pt-6 bg-surface">
+      <div class="flex flex-col w-full">
+        <!-- Section Title & Meta Header -->
+        <section class="max-w-7xl mx-auto px-6 lg:px-12 w-full pb-4">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-caption text-caption uppercase tracking-wider">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                  Estructura Corporativa Oficial
+                </span>
+                <span class="font-caption text-caption text-secondary">Actualizado: En tiempo real</span>
+              </div>
+              <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+                Organigrama y Estructura
+              </h1>
+              <p class="font-body-md text-body-md text-secondary max-w-3xl">
+                Directorio organizacional, dependencias jerárquicas y base de conocimiento de procesos operacionales en tiempo real (<span class="text-on-surface font-semibold">{{ roles.length }} Nodos</span>).
+              </p>
             </div>
-            <div v-else class="workflow-graph">
-              <RoleGraph :role="selectedRole" :workflow="selectedWorkflow" />
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
+              <router-link to="/workspace" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm hover:shadow-md transition-all">
+                <span class="material-symbols-outlined text-primary-container text-[18px]">arrow_back</span>
+                <span>Ir al Workspace</span>
+              </router-link>
             </div>
           </div>
 
-          <div class="detail-group">
-            <label>Gestión Diaria (memoria del cargo)</label>
-            <p class="hint" style="margin-top: -4px; margin-bottom: 12px;">
-              Las tareas que agregues aquí son las que cada persona con este cargo debe chulear en su Espacio Elite, todos los días/semanas/meses según la frecuencia.
-            </p>
+          <!-- Interactive Filter & Canvas Toolbar -->
+          <div class="bg-surface-container-lowest p-3 rounded-2xl shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto">
+              <!-- Search Input -->
+              <div class="relative w-full sm:w-80">
+                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none text-[18px]">search</span>
+                <input v-model="searchQuery" class="w-full bg-surface-container-low pl-10 pr-4 py-2 rounded-xl text-on-surface font-body-sm text-body-sm placeholder-secondary focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all" id="node-search" placeholder="Buscar por cargo..." type="text"/>
+              </div>
+              
+              <!-- Filter Dropdown -->
+              <div class="relative w-full sm:w-56">
+                <select v-model="activeArea" class="w-full appearance-none bg-surface-container-low px-4 py-2 rounded-xl text-on-surface font-label-md text-label-md focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all cursor-pointer pr-10" id="area-filter">
+                  <option value="all">Todas las Áreas ({{ roles.length }} Nodos)</option>
+                  <option v-for="area in areas" :key="area" :value="area">{{ area }}</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none text-[18px]">expand_more</span>
+              </div>
+            </div>
+            
+            <!-- Canvas Navigation Controls -->
+            <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 lg:pt-0">
+              <div class="flex items-center bg-surface-container-low rounded-xl p-1 gap-1">
+                <button @click="zoomOut" class="p-1.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-lowest transition-all" title="Reducir Zoom">
+                  <span class="material-symbols-outlined text-[18px]">zoom_out</span>
+                </button>
+                <span class="px-2 font-caption text-caption font-semibold text-on-surface-variant min-w-[48px] text-center" id="zoom-indicator">{{ Math.round(currentZoom * 100) }}%</span>
+                <button @click="zoomIn" class="p-1.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-lowest transition-all" title="Aumentar Zoom">
+                  <span class="material-symbols-outlined text-[18px]">zoom_in</span>
+                </button>
+                <div class="w-px h-4 bg-surface-container-highest mx-0.5"></div>
+                <button @click="resetZoom" class="p-1.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-lowest transition-all" title="Re-centrar">
+                  <span class="material-symbols-outlined text-[18px]">center_focus_strong</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <div v-if="loadingRoleTasks" class="hint">Cargando tareas...</div>
+        <div v-if="loading" class="w-full flex justify-center py-20 text-secondary">
+          <p>Cargando nodos...</p>
+        </div>
 
-            <div v-else class="daily-mgmt">
-              <div v-for="freq in FREQUENCIES" :key="freq" class="daily-mgmt-group">
-                <h4 class="daily-mgmt-group-title">{{ FREQUENCY_LABELS[freq] }}</h4>
-
-                <ul class="role-task-list">
-                  <li v-for="task in tasksByFrequency[freq]" :key="task.id" :class="{ inactive: !task.active }">
-                    <div class="role-task-main">
-                      <span class="priority-dot" :class="task.priority"></span>
-                      <div>
-                        <span class="role-task-title">{{ task.title }}</span>
-                        <p v-if="task.description" class="role-task-desc">{{ task.description }}</p>
+        <!-- Interactive Org Canvas & Drawer Workspace -->
+        <section v-else class="max-w-7xl mx-auto px-6 lg:px-12 w-full mt-4 mb-12 relative overflow-hidden">
+          <div class="relative bg-surface-container-low rounded-3xl overflow-hidden shadow-sm flex min-h-[820px]">
+            
+            <!-- Flow Board Area -->
+            <div class="flex-1 overflow-auto p-10 cursor-grab active:cursor-grabbing relative" id="chart-viewport" @mousedown="startPan" @mousemove="pan" @mouseup="endPan" @mouseleave="endPan">
+              <div class="absolute inset-0 bg-[radial-gradient(#d1c5b6_1px,transparent_1px)] [background-size:24px_24px] opacity-25 pointer-events-none"></div>
+              
+              <div :style="{ transform: `scale(${currentZoom}) translate(${panX}px, ${panY}px)` }" class="relative flex flex-col items-center min-w-[1100px] transition-transform duration-100 origin-top" id="canvas-content">
+                
+                <!-- LEVEL 1: DIRECCIÓN EJECUTIVA -->
+                <div v-if="level1Roles.length > 0" class="relative flex flex-col items-center z-20">
+                  <div class="flex gap-12">
+                    <div v-for="role in level1Roles" :key="role.id" class="node-card group bg-surface-container-lowest rounded-2xl shadow-sm p-4 w-64 hover:shadow-md transition-all relative cursor-pointer" @click="selectRole(role)">
+                      <div class="flex items-center justify-between gap-2 mb-2">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-caption text-caption font-semibold">
+                          <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                          Nivel 1 • Activo
+                        </span>
+                        <span class="font-caption text-caption text-secondary">EN-{{ role.id.substring(0, 3).toUpperCase() }}</span>
+                      </div>
+                      <div class="space-y-0.5 mb-3">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">{{ role.name }}</h3>
+                        <p class="font-caption text-caption text-primary-container font-semibold tracking-wide uppercase">{{ role.areas?.name || 'Dirección' }}</p>
+                      </div>
+                      <div class="flex items-center gap-3 pt-3 bg-surface-container-low/50 -mx-4 -mb-4 px-4 py-2.5 rounded-b-2xl">
+                        <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0">
+                          {{ role.name.substring(0, 2).toUpperCase() }}
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                          <span class="font-label-sm text-label-sm text-on-surface font-semibold truncate">Posición Core</span>
+                          <span class="font-caption text-caption text-secondary">{{ mappedRoleIds.has(role.id) ? 'Flujo Mapeado' : 'Sin Mapear' }}</span>
+                        </div>
+                      </div>
+                      <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute inset-x-2 -bottom-4 z-30 flex items-center justify-center gap-2 pointer-events-none">
+                        <span class="px-2.5 py-1 rounded-full bg-inverse-surface text-inverse-on-surface font-caption text-caption shadow-md inline-flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[13px] text-tertiary-fixed">visibility</span> Abrir Ficha
+                        </span>
                       </div>
                     </div>
-                    <div v-if="canManageTasks" class="role-task-actions">
-                      <button class="btn-text-small" @click="toggleTaskActive(task)">
-                        {{ task.active ? 'Desactivar' : 'Reactivar' }}
-                      </button>
-                      <button class="btn-text-small" style="color: var(--danger);" @click="deleteRoleTask(task)">Eliminar</button>
+                  </div>
+                  <!-- Stem line dropping from CEO -->
+                  <div class="w-0.5 h-10 bg-surface-container-highest"></div>
+                </div>
+
+                <!-- LEVEL 2 CONNECTOR SVG -->
+                <div v-if="areasList.length > 0 && level1Roles.length > 0" class="w-full flex justify-center -mt-0.5 z-10 pointer-events-none">
+                  <svg class="overflow-visible stroke-surface-container-highest" fill="none" height="40" :width="Math.max(200, (areasList.length - 1) * 260)">
+                    <path :d="`M 0 20 H ${Math.max(200, (areasList.length - 1) * 260)}`" stroke-width="2"></path>
+                    <path v-for="(area, i) in areasList" :key="'drop'+i" :d="`M ${i * 260} 20 V 40`" stroke-width="2"></path>
+                    <path :d="`M ${(Math.max(200, (areasList.length - 1) * 260)) / 2} 0 V 20`" stroke-width="2"></path>
+                  </svg>
+                </div>
+
+                <!-- LEVEL 2 & 3 GRIDS BY AREA -->
+                <div class="flex gap-6 w-auto justify-center z-20 pt-2">
+                  <div v-for="area in areasList" :key="area" class="flex flex-col items-center w-60">
+                    
+                    <!-- L2 Roles for this area -->
+                    <div class="flex flex-col items-center gap-4 w-full">
+                      <div v-for="role in getRolesByLevelAndArea(2, area)" :key="role.id" class="node-card group bg-surface-container-lowest rounded-2xl shadow-sm p-4 w-full hover:shadow-md transition-all relative cursor-pointer" @click="selectRole(role)">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-secondary font-caption text-caption font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Nivel 2
+                          </span>
+                        </div>
+                        <div class="space-y-0.5 mb-3">
+                          <h4 class="font-label-md text-label-md text-on-surface font-bold">{{ role.name }}</h4>
+                          <p class="font-caption text-caption text-primary-container font-semibold uppercase">{{ role.areas?.name }}</p>
+                        </div>
+                        <div class="flex items-center gap-2.5 pt-2.5 bg-surface-container-low/50 -mx-4 -mb-4 px-4 py-2.5 rounded-b-2xl">
+                          <div class="w-7 h-7 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-xs text-secondary shrink-0">L2</div>
+                          <div class="flex flex-col min-w-0">
+                            <span class="font-label-sm text-label-sm text-on-surface font-semibold truncate">{{ mappedRoleIds.has(role.id) ? 'Flujo Mapeado' : 'Sin Mapear' }}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </li>
-                  <li v-if="tasksByFrequency[freq].length === 0" class="no-tasks">
-                    Sin tareas {{ FREQUENCY_LABELS[freq].toLowerCase() }}s todavía.
-                  </li>
-                </ul>
+
+                    <!-- Connection Line to Level 3 -->
+                    <div v-if="getRolesByLevelAndArea(3, area).length > 0" class="w-0.5 h-12 bg-surface-container-highest"></div>
+
+                    <!-- L3 Roles for this area -->
+                    <div class="flex flex-col items-center gap-4 w-full mt-2">
+                      <div v-for="role in getRolesByLevelAndArea(3, area)" :key="role.id" class="node-card group bg-surface-container-lowest rounded-2xl shadow-sm p-3.5 w-full hover:shadow-md transition-all relative cursor-pointer" @click="selectRole(role)">
+                        <div class="flex items-center justify-between mb-1.5">
+                          <span class="px-1.5 py-0.5 rounded bg-surface-container-low text-secondary font-caption text-caption">Nivel 3</span>
+                        </div>
+                        <h5 class="font-label-md text-label-md font-bold text-on-surface leading-tight">{{ role.name }}</h5>
+                        <div class="flex items-center gap-2 pt-2 bg-surface-container-low/40 -mx-3.5 -mb-3.5 px-3 py-2 rounded-b-2xl mt-2">
+                          <div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-secondary font-caption text-caption font-bold">L3</div>
+                          <span class="font-body-sm text-body-sm text-secondary truncate">{{ mappedRoleIds.has(role.id) ? 'Mapeado' : 'Sin Mapear' }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Slide-in Details Drawer for Cargo Seleccionado -->
+            <aside 
+              :class="['bg-surface-container-lowest shadow-xl flex flex-col transition-all duration-300 transform relative z-30 shrink-0 border-l border-surface-container-high', drawerOpen ? 'translate-x-0 w-[420px] opacity-100' : 'translate-x-full w-0 opacity-0 overflow-hidden border-none']" 
+            >
+              <!-- Drawer Header -->
+              <div class="p-6 bg-surface-container-low/50 flex items-center justify-between border-b border-surface-container">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-[18px]">badge</span>
+                  </div>
+                  <div>
+                    <span class="font-caption text-caption text-secondary uppercase tracking-wider block">Ficha de Posición</span>
+                    <span class="font-label-md text-label-md font-bold text-on-surface">ID: EN-{{ selectedRole?.id?.substring(0,4).toUpperCase() }}</span>
+                  </div>
+                </div>
+                <button class="p-1.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container transition-all" @click="closeDrawer" title="Cerrar panel">
+                  <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
               </div>
 
-              <form v-if="canManageTasks" class="new-role-task-form" @submit.prevent="addRoleTask">
-                <input type="text" v-model="newRoleTask.title" placeholder="Nueva tarea (ej: Cierre de caja)" required />
-                <input type="text" v-model="newRoleTask.description" placeholder="Descripción (opcional)" />
-                <select v-model="newRoleTask.frequency">
-                  <option value="daily">Diario</option>
-                  <option value="weekly">Semanal</option>
-                  <option value="monthly">Mensual</option>
-                </select>
-                <select v-model="newRoleTask.priority">
-                  <option value="low">Baja</option>
-                  <option value="medium">Media</option>
-                  <option value="high">Alta</option>
-                </select>
-                <button type="submit" class="btn-primary btn-small" :disabled="savingRoleTask">Agregar</button>
-              </form>
+              <!-- Drawer Body -->
+              <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                <div v-if="selectedRole">
+                  <!-- Role Main Title -->
+                  <div class="space-y-1 mb-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-caption text-caption font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                      Nivel {{ selectedRole.access_level }} • {{ mappedRoleIds.has(selectedRole.id) ? 'Mapeado' : 'Sin Mapear' }}
+                    </span>
+                    <h2 class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight mt-2 leading-snug">{{ selectedRole.name }}</h2>
+                    <p class="font-label-md text-label-md text-primary-container font-medium">{{ selectedRole.areas?.name || 'Área General' }}</p>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="space-y-2 mb-6">
+                    <router-link :to="`/mapper/${selectedRole.id}`" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary/90 transition-all shadow-sm">
+                      <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">account_tree</span>
+                        {{ mappedRoleIds.has(selectedRole.id) ? 'Editar Mapeo de Flujo' : 'Mapear Cadena Operativa' }}
+                      </span>
+                      <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </router-link>
+                  </div>
+
+                  <hr class="border-surface-container-high my-6">
+
+                  <!-- Daily Management Section -->
+                  <div class="space-y-4">
+                    <div>
+                      <h4 class="font-label-md text-label-md font-bold text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[18px]">checklist</span>
+                        Gestión Diaria (Memoria Consciente)
+                      </h4>
+                      <p class="font-caption text-caption text-secondary mt-1 leading-relaxed">
+                        Estas tareas alimentarán directamente la bandeja de pendientes del colaborador para asegurar el seguimiento diario.
+                      </p>
+                    </div>
+
+                    <div v-if="loadingRoleTasks" class="text-sm text-secondary">Cargando tareas...</div>
+                    <div v-else class="space-y-5">
+                      
+                      <!-- Tasks Grouped by frequency -->
+                      <div v-for="freq in FREQUENCIES" :key="freq" class="bg-surface-container-lowest border border-surface-container-high rounded-xl overflow-hidden">
+                        <div class="bg-surface-container-low px-3 py-2 font-label-sm text-label-sm font-semibold text-on-surface-variant flex items-center justify-between">
+                          {{ FREQUENCY_LABELS[freq] }}
+                          <span class="bg-surface-container-highest text-secondary px-2 rounded-full text-[10px]">{{ tasksByFrequency[freq].length }}</span>
+                        </div>
+                        
+                        <ul class="divide-y divide-surface-container-high">
+                          <li v-for="task in tasksByFrequency[freq]" :key="task.id" class="p-3 hover:bg-surface-container/30 transition-colors" :class="{ 'opacity-50': !task.active }">
+                            <div class="flex justify-between items-start gap-2">
+                              <div>
+                                <span class="font-label-sm text-label-sm text-on-surface font-medium block">{{ task.title }}</span>
+                                <p v-if="task.description" class="font-caption text-caption text-secondary mt-0.5">{{ task.description }}</p>
+                              </div>
+                              <div v-if="canManageTasks" class="flex items-center gap-1 shrink-0">
+                                <button @click="toggleTaskActive(task)" class="p-1 rounded text-secondary hover:bg-surface-container hover:text-on-surface transition-colors" :title="task.active ? 'Desactivar' : 'Activar'">
+                                  <span class="material-symbols-outlined text-[14px]">{{ task.active ? 'visibility_off' : 'visibility' }}</span>
+                                </button>
+                                <button @click="deleteRoleTask(task)" class="p-1 rounded text-error hover:bg-error-container transition-colors" title="Eliminar">
+                                  <span class="material-symbols-outlined text-[14px]">delete</span>
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                          <li v-if="tasksByFrequency[freq].length === 0" class="p-3 text-center text-secondary font-caption text-caption italic">
+                            Sin tareas registradas
+                          </li>
+                        </ul>
+                      </div>
+
+                      <!-- Add New Task Form -->
+                      <form v-if="canManageTasks" @submit.prevent="addRoleTask" class="mt-4 bg-surface-container-low p-4 rounded-xl border border-surface-container-highest">
+                        <span class="font-label-sm text-label-sm text-on-surface font-bold mb-3 block">Inyectar nueva tarea a la memoria</span>
+                        <div class="space-y-2">
+                          <input type="text" v-model="newRoleTask.title" placeholder="Ej: Reporte de Cierre" required class="w-full bg-surface-container-lowest px-3 py-1.5 rounded-lg text-on-surface font-body-sm text-body-sm border border-surface-container-highest focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"/>
+                          <input type="text" v-model="newRoleTask.description" placeholder="Instrucciones breves (Opcional)" class="w-full bg-surface-container-lowest px-3 py-1.5 rounded-lg text-on-surface font-body-sm text-body-sm border border-surface-container-highest focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"/>
+                          
+                          <div class="flex gap-2">
+                            <select v-model="newRoleTask.frequency" class="flex-1 bg-surface-container-lowest px-2 py-1.5 rounded-lg text-on-surface font-body-sm text-body-sm border border-surface-container-highest focus:outline-none">
+                              <option value="daily">Diario</option>
+                              <option value="weekly">Semanal</option>
+                              <option value="monthly">Mensual</option>
+                            </select>
+                            <select v-model="newRoleTask.priority" class="w-24 bg-surface-container-lowest px-2 py-1.5 rounded-lg text-on-surface font-body-sm text-body-sm border border-surface-container-highest focus:outline-none">
+                              <option value="high">Alta</option>
+                              <option value="medium">Media</option>
+                              <option value="low">Baja</option>
+                            </select>
+                          </div>
+                          <button type="submit" :disabled="savingRoleTask" class="w-full mt-2 bg-inverse-surface text-inverse-on-surface font-label-sm text-label-sm py-2 rounded-lg hover:bg-on-surface transition-colors">
+                            {{ savingRoleTask ? 'Guardando...' : 'Agregar Tarea' }}
+                          </button>
+                        </div>
+                      </form>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- Governance Footprint -->
+        <section class="max-w-7xl mx-auto px-6 lg:px-12 w-full pb-8">
+          <div class="bg-surface-container-lowest p-6 rounded-3xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 border border-surface-container">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <span class="material-symbols-outlined text-[22px]">policy</span>
+              </div>
+              <div>
+                <h4 class="font-label-md text-label-md font-bold text-on-surface">Marco de Gobernanza de Prometeus OS</h4>
+                <p class="font-caption text-caption text-secondary">La alteración de la memoria consciente requiere auditoría.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-6 shrink-0">
+              <div class="flex items-center gap-2 text-secondary font-caption text-caption">
+                <span class="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+                <span>{{ roles.length }} Posiciones Auditables</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-primary" @click="closeRoleDetails">Cerrar</button>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -169,24 +329,28 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { supabase } from '../api/supabase';
-import RoleGraph from '../components/RoleGraph.vue';
-import TechLoader from '../components/TechLoader.vue';
 import { FREQUENCIES, FREQUENCY_LABELS } from '../utils/taskPeriods';
 
-const route = useRoute();
-
+// Base reactive state
 const roles = ref([]);
 const loading = ref(true);
-const activeArea = ref('');
-const selectedRole = ref(null);
+const activeArea = ref('all');
+const searchQuery = ref('');
 const mappedRoleIds = ref(new Set());
-const selectedWorkflow = ref(null);
-const loadingWorkflow = ref(false);
-const copiedRoleId = ref(null);
 
-// Perfil de quien mira el hub: determina si ve TODOS los cargos (admin
-// master) o solo los de su propia área (líder Nivel 1/2), y si puede
-// editar la Gestión Diaria del cargo abierto.
+// Drawer & Selection state
+const selectedRole = ref(null);
+const drawerOpen = ref(false);
+
+// Zoom and Pan state
+const currentZoom = ref(1);
+const panX = ref(0);
+const panY = ref(0);
+let isPanning = false;
+let startX = 0;
+let startY = 0;
+
+// User session state
 const currentProfile = ref(null);
 const isMaster = computed(() => !!currentProfile.value?.is_master_admin);
 const leaderAreaId = computed(() => currentProfile.value?.roles?.area_id || null);
@@ -203,14 +367,11 @@ const fetchCurrentProfile = async () => {
   currentProfile.value = data || null;
 };
 
-// Fetch data from Supabase
+// Fetch roles
 const fetchRoles = async () => {
   loading.value = true;
   try {
-    // Usamos el left join con la tabla areas para obtener el nombre del área
     let query = supabase.from('roles').select('*, areas(name)');
-    // Un líder de área (no admin master) solo gestiona los cargos de su
-    // propia área -- el admin master sigue viendo el organigrama completo.
     if (!isMaster.value && leaderAreaId.value) {
       query = query.eq('area_id', leaderAreaId.value);
     }
@@ -220,7 +381,6 @@ const fetchRoles = async () => {
       console.error('Error fetching nodes:', error);
       alert('Error conectando con la red central: ' + error.message);
     } else {
-      // Filtrar duplicados por nombre (para mantener el directorio limpio) y ordenar por área
       const uniqueRoles = [];
       const seenNames = new Set();
       for (const r of (data || [])) {
@@ -229,12 +389,7 @@ const fetchRoles = async () => {
           uniqueRoles.push(r);
         }
       }
-
-      roles.value = uniqueRoles.sort((a, b) => {
-        const areaA = a.areas?.name || '';
-        const areaB = b.areas?.name || '';
-        return areaA.localeCompare(areaB);
-      });
+      roles.value = uniqueRoles.sort((a, b) => (a.areas?.name || '').localeCompare(b.areas?.name || ''));
     }
   } catch (err) {
     console.error('Unexpected error:', err);
@@ -254,14 +409,19 @@ onMounted(async () => {
   await fetchCurrentProfile();
   await fetchRoles();
   fetchMappedRoleIds();
+});
 
-  // Llegó desde "Editar Gestión Diaria del Cargo" en el Panel de Liderazgo:
-  // abre directo el modal de ese cargo en vez de obligar a buscarlo en la tabla.
-  const targetRoleId = route.query.role;
-  if (targetRoleId) {
-    const targetRole = roles.value.find((r) => r.id === targetRoleId);
-    if (targetRole) openRoleDetails(targetRole);
+// Filtering and Grouping Logic
+const filteredRoles = computed(() => {
+  let result = roles.value;
+  if (activeArea.value !== 'all') {
+    result = result.filter(r => (r.areas?.name || 'General') === activeArea.value);
   }
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter(r => r.name.toLowerCase().includes(q) || (r.areas?.name || '').toLowerCase().includes(q));
+  }
+  return result;
 });
 
 const areas = computed(() => {
@@ -269,43 +429,57 @@ const areas = computed(() => {
   return [...new Set(allAreas)].sort();
 });
 
-const filteredRoles = computed(() => {
-  if (!activeArea.value) return roles.value;
-  return roles.value.filter(r => (r.areas?.name || 'General') === activeArea.value);
+// To build the tree:
+const level1Roles = computed(() => filteredRoles.value.filter(r => r.access_level === 1));
+
+const areasList = computed(() => {
+  // Get all unique areas present in filtered level 2 & 3 roles to build the columns
+  const l2l3 = filteredRoles.value.filter(r => r.access_level === 2 || r.access_level === 3);
+  const relevantAreas = l2l3.map(r => r.areas?.name || 'General').filter(a => a);
+  return [...new Set(relevantAreas)].sort();
 });
 
-const openRoleDetails = async (role) => {
+const getRolesByLevelAndArea = (level, areaName) => {
+  return filteredRoles.value.filter(r => r.access_level === level && (r.areas?.name || 'General') === areaName);
+};
+
+
+// Interactions
+const zoomIn = () => { if (currentZoom.value < 1.5) currentZoom.value += 0.1; };
+const zoomOut = () => { if (currentZoom.value > 0.5) currentZoom.value -= 0.1; };
+const resetZoom = () => { currentZoom.value = 1; panX.value = 0; panY.value = 0; };
+
+const startPan = (e) => {
+  isPanning = true;
+  startX = e.clientX - panX.value;
+  startY = e.clientY - panY.value;
+};
+const pan = (e) => {
+  if (!isPanning) return;
+  panX.value = e.clientX - startX;
+  panY.value = e.clientY - startY;
+};
+const endPan = () => { isPanning = false; };
+
+
+const selectRole = async (role) => {
   selectedRole.value = role;
-  selectedWorkflow.value = null;
-  loadingWorkflow.value = true;
-  try {
-    const { data } = await supabase
-      .from('role_workflows')
-      .select('tasks, inputs, outputs, tools_used, bottlenecks, kpis')
-      .eq('role_id', role.id)
-      .maybeSingle();
-    selectedWorkflow.value = data || null;
-  } finally {
-    loadingWorkflow.value = false;
-  }
+  drawerOpen.value = true;
   await fetchRoleTasks(role.id);
 };
 
-const closeRoleDetails = () => {
-  selectedRole.value = null;
-  selectedWorkflow.value = null;
-  roleTasks.value = [];
+const closeDrawer = () => {
+  drawerOpen.value = false;
+  setTimeout(() => { selectedRole.value = null; }, 300); // clear after animation
 };
 
-// --- Gestión Diaria (memoria del cargo) ---
 
+// --- Gestión Diaria (memoria del cargo) ---
 const roleTasks = ref([]);
 const loadingRoleTasks = ref(false);
 const savingRoleTask = ref(false);
 const newRoleTask = ref({ title: '', description: '', frequency: 'daily', priority: 'medium' });
 
-// El admin master puede editar cualquier cargo; un líder solo el de su
-// propia área (coincide con la política RLS role_task_templates_write).
 const canManageTasks = computed(() => {
   if (isMaster.value) return true;
   if (!selectedRole.value || !leaderAreaId.value) return false;
@@ -331,7 +505,7 @@ const fetchRoleTasks = async (roleId) => {
     if (error) throw error;
     roleTasks.value = data || [];
   } catch (err) {
-    console.error('Error cargando tareas del cargo:', err);
+    console.error('Error cargando tareas:', err);
     roleTasks.value = [];
   } finally {
     loadingRoleTasks.value = false;
@@ -355,8 +529,7 @@ const addRoleTask = async () => {
     newRoleTask.value = { title: '', description: '', frequency: 'daily', priority: 'medium' };
     await fetchRoleTasks(selectedRole.value.id);
   } catch (err) {
-    console.error('Error agregando tarea del cargo:', err);
-    alert('No se pudo agregar la tarea: ' + err.message);
+    alert('No se pudo agregar: ' + err.message);
   } finally {
     savingRoleTask.value = false;
   }
@@ -364,7 +537,7 @@ const addRoleTask = async () => {
 
 const toggleTaskActive = async (task) => {
   const previous = task.active;
-  task.active = !previous; // Optimista
+  task.active = !previous;
   try {
     const { error } = await supabase
       .from('role_task_templates')
@@ -373,549 +546,68 @@ const toggleTaskActive = async (task) => {
     if (error) throw error;
   } catch (err) {
     task.active = previous;
-    console.error('Error actualizando tarea del cargo:', err);
   }
 };
 
 const deleteRoleTask = async (task) => {
-  if (!confirm(`¿Eliminar la tarea "${task.title}" de la Gestión Diaria de este cargo?`)) return;
+  if (!confirm(`¿Eliminar la tarea "${task.title}"?`)) return;
   try {
     const { error } = await supabase.from('role_task_templates').delete().eq('id', task.id);
     if (error) throw error;
     roleTasks.value = roleTasks.value.filter((t) => t.id !== task.id);
   } catch (err) {
-    console.error('Error eliminando tarea del cargo:', err);
-    alert('No se pudo eliminar la tarea: ' + err.message);
-  }
-};
-
-const copyMapperLink = async (role) => {
-  const url = `${window.location.origin}/mapper/${role.id}`;
-  try {
-    await navigator.clipboard.writeText(url);
-    copiedRoleId.value = role.id;
-    setTimeout(() => {
-      if (copiedRoleId.value === role.id) copiedRoleId.value = null;
-    }, 2000);
-  } catch (err) {
-    console.error('No se pudo copiar el enlace:', err);
-    alert(`Copia este enlace manualmente: ${url}`);
+    alert('No se pudo eliminar: ' + err.message);
   }
 };
 </script>
 
 <style scoped>
-.data-hub {
-  padding: 24px;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-}
-
-.glass-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: var(--shadow-sm);
-}
-
-.hub-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.knowledge-btn {
-  background: var(--gold-gradient) !important;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-}
-
-.hub-header h1 {
-  font-size: 1.5rem;
-  background: var(--gold-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
-}
-
-.hub-header p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-top: 4px;
-}
-
-.hub-layout {
-  display: flex;
-  gap: 24px;
-  flex: 1;
-  min-height: 0;
-}
-
-.sidebar {
-  width: 280px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  /* Sin esto, un flex item no se deja encoger por debajo de la altura de su
-     contenido, así que la lista de áreas de abajo (flex:1; overflow-y:auto)
-     nunca llega a activar su propio scroll -- en su lugar empuja y hace
-     scrollear la página completa cuando hay muchas áreas. */
-  min-height: 0;
-}
-
-.sidebar h3 {
-  margin-bottom: 16px;
-  font-size: 1.1rem;
-  color: var(--ink);
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.sidebar li {
-  padding: 10px 16px;
-  margin-bottom: 8px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.sidebar li:hover {
-  background: var(--bg-secondary);
-  color: var(--ink);
-}
-
-.sidebar li.active {
-  background: var(--gold-light);
-  color: var(--gold-deep);
-  border-left: 3px solid var(--gold);
-}
-
-.content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.loading-state, .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  color: var(--gold-deep);
-}
-
-.empty-state h3 {
-  margin-bottom: 10px;
-  color: var(--danger);
-}
-
-.empty-state p {
-  color: var(--text-secondary);
-}
-
-.table-container {
-  overflow-y: auto;
-  flex: 1;
-}
-
-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-th {
-  position: sticky;
-  top: 0;
-  background: rgba(251, 251, 253, 0.95);
-  padding: 20px 24px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  z-index: 10;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-td {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.95rem;
-  color: var(--ink-secondary);
-  vertical-align: middle;
-}
-
-tr {
-  transition: all 0.3s ease;
-}
-
-tr:hover td {
-  background: var(--bg-secondary);
-}
-
-.role-name {
-  font-weight: 600;
-  color: var(--ink);
-  letter-spacing: 0.3px;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-}
-
-.level-1 { background: rgba(255, 59, 48, 0.1); color: var(--danger); border: 1px solid rgba(255, 59, 48, 0.25); }
-.level-2 { background: var(--gold-light); color: var(--gold-deep); border: 1px solid var(--gold-light); }
-.level-3 { background: var(--bg-secondary); color: var(--gold); border: 1px solid var(--border-subtle); }
-.level-4 { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
-
-.badge-mapped { background: rgba(52, 199, 89, 0.1); color: var(--success); border: 1px solid rgba(52, 199, 89, 0.3); }
-.badge-unmapped { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px solid var(--border-subtle); }
-
-.btn-primary {
-  background: var(--ink);
-  color: #fff;
-  border: none;
-  padding: 12px 28px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-edit {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 8px 18px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-edit:hover {
-  background: var(--bg-secondary);
-  border-color: var(--gold);
-  color: var(--gold-deep);
-}
-
-.actions-cell {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.btn-action-small {
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
-  letter-spacing: 0.5px;
-}
-
-.btn-gradient {
-  background: var(--gold-gradient);
-  color: #fff;
-  box-shadow: var(--shadow-sm);
-}
-.btn-gradient:hover {
-  opacity: 0.95;
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
-
-.btn-outline {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--ink);
-}
-.btn-outline:hover {
-  border-color: var(--gold);
-  background: var(--gold-light);
-  color: var(--gold-deep);
-  transform: translateY(-1px);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 1.1rem;
-  padding: 8px;
-  border-radius: 50%;
-}
-.btn-ghost:hover {
-  color: var(--gold-deep);
-  background: var(--gold-light);
-  transform: scale(1.1);
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  width: 900px;
-  max-width: 95vw;
-  max-height: 95vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  box-shadow: var(--shadow-lg);
-}
-
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.4rem;
-  color: var(--ink);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.close-btn:hover {
-  color: var(--ink);
-}
-
-.modal-body {
-  padding: 24px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.detail-group {
-  margin-bottom: 24px;
-}
-
-.detail-group label {
-  display: block;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 8px;
-  letter-spacing: 1px;
-}
-
-.detail-group p {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--ink);
-}
-
-.hint {
-  display: block;
-  margin-top: 8px;
-  color: var(--text-tertiary);
-  font-size: 0.8rem;
-}
-
-.empty-workflow {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.workflow-graph {
-  width: 100%;
-  margin-top: 16px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.modal-footer {
-  padding: 20px;
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Gestión Diaria (memoria del cargo) */
-.daily-mgmt {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.daily-mgmt-group-title {
-  margin: 0 0 8px 0;
-  font-size: 0.85rem;
-  color: var(--gold-deep);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.role-task-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.role-task-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-}
-
-.role-task-list li.inactive {
-  opacity: 0.5;
-}
-
-.role-task-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-width: 0;
-}
-
-.priority-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-top: 6px;
-  flex-shrink: 0;
-  background: var(--text-tertiary);
-}
-
-.priority-dot.high { background: var(--danger); }
-.priority-dot.medium { background: var(--warning); }
-.priority-dot.low { background: var(--success); }
-
-.role-task-title {
-  font-size: 0.92rem;
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.role-task-desc {
-  margin: 2px 0 0 0;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-}
-
-.role-task-actions {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.new-role-task-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--border-subtle);
-}
-
-.new-role-task-form input[type="text"] {
-  flex: 1;
-  min-width: 160px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: inherit;
-}
-
-.new-role-task-form select {
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: inherit;
-}
-
-.btn-text-small {
-  background: none;
-  border: none;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--text-secondary);
-  white-space: nowrap;
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.organigrama-view {
+  --color-primary: #775928;
+  --color-primary-container: #b08d57;
+  --color-surface: #faf8fe;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3f8;
+  --color-surface-container: #eeedf3;
+  --color-surface-container-high: #e9e7ed;
+  --color-surface-container-highest: #e3e2e7;
+  --color-on-surface: #1a1b1f;
+  --color-secondary: #5f5e60;
+  --color-inverse-surface: #2f3034;
+  --color-inverse-on-surface: #f1f0f5;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+}
+
+/* Base utility overwrites matching Tailwind from Stitch */
+.bg-surface { background-color: var(--color-surface); }
+.bg-surface-container-lowest { background-color: var(--color-surface-container-lowest); }
+.bg-surface-container-low { background-color: var(--color-surface-container-low); }
+.bg-surface-container { background-color: var(--color-surface-container); }
+.bg-surface-container-high { background-color: var(--color-surface-container-high); }
+.bg-surface-container-highest { background-color: var(--color-surface-container-highest); }
+.bg-primary { background-color: var(--color-primary); }
+.bg-primary\/10 { background-color: rgba(119, 89, 40, 0.1); }
+.bg-inverse-surface { background-color: var(--color-inverse-surface); }
+.bg-error-container { background-color: var(--color-error-container); }
+
+.text-on-surface { color: var(--color-on-surface); }
+.text-secondary { color: var(--color-secondary); }
+.text-primary { color: var(--color-primary); }
+.text-primary-container { color: var(--color-primary-container); }
+.text-on-primary { color: #ffffff; }
+.text-inverse-on-surface { color: var(--color-inverse-on-surface); }
+.text-error { color: var(--color-error); }
+
+.border-surface-container { border-color: var(--color-surface-container); }
+.border-surface-container-high { border-color: var(--color-surface-container-high); }
+.border-surface-container-highest { border-color: var(--color-surface-container-highest); }
+.border-primary { border-color: var(--color-primary); }
+
+.node-card {
+  border: 1px solid rgba(0,0,0,0.03);
 }
 </style>
