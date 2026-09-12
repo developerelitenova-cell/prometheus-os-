@@ -103,7 +103,13 @@ const handleSubmit = async () => {
       if (typeof redirect === 'string' && redirect) {
         router.replace(redirect);
       } else {
-        router.replace('/workspace');
+        if (profile.is_master_admin) {
+          router.replace('/');
+        } else if (profile.roles && profile.roles.access_level === 1) {
+          router.replace('/team');
+        } else {
+          router.replace('/workspace');
+        }
       }
     } else {
       // Registro

@@ -4,13 +4,13 @@
     <!-- Navbar / Header -->
     <header class="sticky top-0 z-50 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-[#e5e5ea] px-6 py-4">
       <div class="max-w-[1600px] mx-auto flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b08d57] to-[#80663f] flex items-center justify-center text-white shadow-sm">
-            <span class="material-symbols-outlined text-[20px]">nutrition</span>
+        <div class="flex items-center gap-4">
+          <div class="w-20 h-20 flex items-center justify-center">
+            <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 class="text-lg font-semibold tracking-tight text-[#1d1d1f] leading-tight">Elite Nutrition</h1>
-            <p class="text-[13px] text-[#86868b] font-medium leading-none">PROMETHEUS OS</p>
+            <h1 class="text-xl font-semibold tracking-tight text-[#1d1d1f] leading-tight">Elite Nutrition</h1>
+            <p class="text-sm text-[#86868b] font-medium leading-none mt-1">PROMETHEUS OS</p>
           </div>
           <div v-if="isAuditMode" class="ml-4 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-bold border border-red-200 flex items-center gap-2">
             <span class="material-symbols-outlined text-[14px]">visibility</span>
@@ -25,7 +25,7 @@
             <span class="text-[13px] font-medium text-[#1d1d1f]">Sistema Activo</span>
           </div>
           
-          <button @click="router.push('/workspace')" class="p-2 text-[#86868b] hover:text-[#1d1d1f] transition-colors rounded-full hover:bg-[#e5e5ea]/50">
+          <button @click="router.push('/')" class="p-2 text-[#86868b] hover:text-[#1d1d1f] transition-colors rounded-full hover:bg-[#e5e5ea]/50">
             <span class="material-symbols-outlined">home</span>
           </button>
           <button @click="handleSignOut" class="p-2 text-[#86868b] hover:text-[#ff3b30] transition-colors rounded-full hover:bg-[#ffebee]">
