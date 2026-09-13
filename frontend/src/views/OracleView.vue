@@ -292,7 +292,7 @@
                           <th class="py-3 px-4 font-semibold text-center">Manual</th>
                           <th class="py-3 px-4 font-semibold text-center">KPI</th>
                           <th class="py-3 px-4 font-semibold text-center">Memoria IA</th>
-                          <th class="py-3 px-4 font-semibold text-center">Documentos</th>
+                          <th class="py-3 px-4 font-semibold text-center">Información</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-surface-container">
@@ -315,7 +315,7 @@
                           </td>
                           <td class="py-3 px-4 text-center">
                             <button @click="openDocsModal(role)" class="text-xs font-semibold text-primary underline hover:text-[#d4b06a] transition-colors">
-                              Ver Archivos
+                              Ver Mapeo
                             </button>
                           </td>
                         </tr>
@@ -333,16 +333,73 @@
 
     <!-- Docs Modal -->
     <div v-if="showDocsModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div class="bg-surface-container-lowest w-full max-w-2xl rounded-3xl p-8 shadow-2xl relative">
+      <div class="bg-surface-container-lowest w-full max-w-4xl rounded-3xl p-8 shadow-2xl relative max-h-[90vh] flex flex-col">
         <button @click="showDocsModal = false" class="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
-        <h3 class="text-xl font-bold text-on-surface mb-2">Documentación del Cargo</h3>
-        <p class="text-secondary font-body-sm text-body-sm mb-6">Archivos cargados en la base de conocimiento para <strong>{{ selectedRole?.name }}</strong>.</p>
+        <h3 class="text-xl font-bold text-on-surface mb-2">Información del Cargo Mapeada</h3>
+        <p class="text-secondary font-body-sm text-body-sm mb-6">Mapeo del rol <strong>{{ selectedRole?.name }}</strong> recuperado de la base de conocimiento.</p>
         
-        <div class="flex flex-col gap-3 min-h-[150px] justify-center items-center bg-surface-container-low rounded-xl border border-surface-container p-6">
-          <span class="material-symbols-outlined text-4xl text-secondary">folder_open</span>
-          <span class="text-secondary font-body-sm">Funcionalidad en desarrollo. Aquí se listarán los PDFs, manuales y contratos asociados.</span>
+        <div class="overflow-y-auto pr-2 flex-1 space-y-6">
+          <div v-if="loadingMapping" class="flex flex-col items-center justify-center py-10 text-secondary">
+            <span class="material-symbols-outlined text-4xl mb-2 animate-spin">refresh</span>
+            Cargando información...
+          </div>
+          <div v-else-if="!roleMappingData" class="flex flex-col items-center justify-center py-10 text-secondary bg-surface-container-low rounded-xl">
+            <span class="material-symbols-outlined text-4xl mb-2">find_in_page</span>
+            No hay datos de mapeo registrados para este cargo.
+          </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="bg-surface-container-low p-5 rounded-2xl border border-surface-container">
+              <h4 class="font-label-md font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[18px]">task_alt</span> Tareas y Responsabilidades</h4>
+              <ul class="list-disc pl-5 space-y-1 text-sm text-on-surface-variant">
+                <li v-for="(task, i) in roleMappingData.tasks" :key="'task'+i">{{ task }}</li>
+                <li v-if="!roleMappingData.tasks?.length">Ninguna registrada</li>
+              </ul>
+            </div>
+
+            <div class="bg-surface-container-low p-5 rounded-2xl border border-surface-container">
+              <h4 class="font-label-md font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[18px]">input</span> Entradas / Insumos</h4>
+              <ul class="list-disc pl-5 space-y-1 text-sm text-on-surface-variant">
+                <li v-for="(input, i) in roleMappingData.inputs" :key="'input'+i">{{ input }}</li>
+                <li v-if="!roleMappingData.inputs?.length">Ninguna registrada</li>
+              </ul>
+            </div>
+
+            <div class="bg-surface-container-low p-5 rounded-2xl border border-surface-container">
+              <h4 class="font-label-md font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[18px]">output</span> Entregables / Outputs</h4>
+              <ul class="list-disc pl-5 space-y-1 text-sm text-on-surface-variant">
+                <li v-for="(out, i) in roleMappingData.outputs" :key="'out'+i">{{ out }}</li>
+                <li v-if="!roleMappingData.outputs?.length">Ninguno registrado</li>
+              </ul>
+            </div>
+
+            <div class="bg-surface-container-low p-5 rounded-2xl border border-surface-container">
+              <h4 class="font-label-md font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[18px]">build</span> Herramientas Utilizadas</h4>
+              <div class="flex flex-wrap gap-2">
+                <span v-for="(tool, i) in roleMappingData.tools_used" :key="'tool'+i" class="px-2.5 py-1 bg-surface-container border border-surface-container-high rounded-lg text-xs font-medium">{{ tool }}</span>
+                <span v-if="!roleMappingData.tools_used?.length" class="text-sm text-secondary">Ninguna registrada</span>
+              </div>
+            </div>
+
+            <div class="bg-surface-container-low p-5 rounded-2xl border border-surface-container">
+              <h4 class="font-label-md font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-error text-[18px]">warning</span> Cuellos de Botella</h4>
+              <ul class="list-disc pl-5 space-y-1 text-sm text-error">
+                <li v-for="(bn, i) in roleMappingData.bottlenecks" :key="'bn'+i">{{ bn }}</li>
+                <li v-if="!roleMappingData.bottlenecks?.length" class="text-secondary">Ninguno registrado</li>
+              </ul>
+            </div>
+
+            <div class="bg-surface-container-low p-5 rounded-2xl border border-surface-container">
+              <h4 class="font-label-md font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[#2e7d32] text-[18px]">monitoring</span> KPIs Asignados</h4>
+              <ul class="list-disc pl-5 space-y-1 text-sm text-[#2e7d32] font-medium">
+                <li v-for="(kpi, i) in roleMappingData.kpis" :key="'kpi'+i">{{ kpi }}</li>
+                <li v-if="!roleMappingData.kpis?.length" class="text-secondary font-normal">Ninguno registrado</li>
+              </ul>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -369,10 +426,30 @@ let panoramaLoaded = false;
 
 const showDocsModal = ref(false);
 const selectedRole = ref(null);
+const loadingMapping = ref(false);
+const roleMappingData = ref(null);
 
-const openDocsModal = (role) => {
+const openDocsModal = async (role) => {
   selectedRole.value = role;
   showDocsModal.value = true;
+  loadingMapping.value = true;
+  roleMappingData.value = null;
+
+  try {
+    const { data, error } = await supabase
+      .from('role_workflows')
+      .select('*')
+      .eq('role_id', role.id)
+      .single();
+    
+    if (data && !error) {
+      roleMappingData.value = data;
+    }
+  } catch (err) {
+    console.error("Error fetching role mapping:", err);
+  } finally {
+    loadingMapping.value = false;
+  }
 };
 
 const messages = ref([
