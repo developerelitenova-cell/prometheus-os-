@@ -477,40 +477,6 @@ const formatMessage = (text) => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-.oracle-view {
-  --color-primary: #775928;
-  --color-primary-container: #b08d57;
-  --color-surface: #faf8fe;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f4f3f8;
-  --color-surface-container: #eeedf3;
-  --color-surface-container-high: #e9e7ed;
-  --color-surface-container-highest: #e3e2e7;
-  --color-on-surface: #1a1b1f;
-  --color-secondary: #5f5e60;
-  --color-error: #ba1a1a;
-  --color-background: #faf8fe;
-}
-
-.bg-background { background-color: var(--color-background); }
-.bg-surface-container-lowest { background-color: var(--color-surface-container-lowest); }
-.bg-surface-container-low { background-color: var(--color-surface-container-low); }
-.bg-surface-container { background-color: var(--color-surface-container); }
-.bg-surface-container-high { background-color: var(--color-surface-container-high); }
-.bg-surface-container-highest { background-color: var(--color-surface-container-highest); }
-.bg-primary { background-color: var(--color-primary); }
-.bg-error { background-color: var(--color-error); }
-
-.text-on-surface { color: var(--color-on-surface); }
-.text-secondary { color: var(--color-secondary); }
-.text-primary { color: var(--color-primary); }
-.text-on-primary { color: #ffffff; }
-.text-error { color: var(--color-error); }
-.text-on-surface-variant { color: #4e453a; }
-
 /* Markdown Styling overrides */
 .markdown-body :deep(h1), 
 .markdown-body :deep(h2), 

@@ -8,19 +8,20 @@
     <header class="relative z-50 w-full border-b border-black/5 bg-white/80 backdrop-blur-md sticky top-0">
       <div class="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4b06a] to-[#8a6d3d] flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-[#d4b06a]/20">
-            EN
+          <div class="w-10 h-10 flex-shrink-0">
+            <img src="@/assets/elite-nova-logo.png" alt="Elite Nova Group" class="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 class="text-xl font-bold tracking-tight text-[#1d1d1f] leading-none">Elite Nova Group</h1>
-            <p class="text-[11px] font-semibold text-[#8a6d3d] tracking-widest uppercase mt-1">Global Holding</p>
+            <h1 class="text-xl font-bold tracking-tight text-[#1d1d1f] leading-none">Elite Nutrition</h1>
+            <p class="text-[11px] font-semibold text-[#86868b] tracking-widest uppercase mt-1">PROMETHEUS OS</p>
           </div>
         </div>
 
         <nav class="hidden md:flex items-center gap-8">
-          <router-link to="/login" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Portal Corporativo</router-link>
-          <a href="#" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Compliance</a>
-          <a href="#" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Directorio</a>
+          <router-link to="/workspace" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Portal Corporativo</router-link>
+          <router-link to="/mapa-cargos" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Compliance</router-link>
+          <router-link to="/team" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Directorio</router-link>
+          <router-link v-if="isMasterUser" to="/master" class="text-sm font-bold text-[#8a6d3d] hover:text-[#d4b06a] transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">admin_panel_settings</span> Auditoría Master</router-link>
         </nav>
 
         <div class="flex items-center gap-4">
@@ -73,7 +74,11 @@
 
             <div class="flex flex-wrap items-center gap-4">
               <template v-if="isLoggedIn">
-                <router-link v-if="isControlUser" to="/team" class="h-14 px-8 rounded-full bg-[#1d1d1f] text-white text-[15px] font-medium flex items-center gap-3 hover:scale-105 transition-transform shadow-xl shadow-black/10">
+                <router-link v-if="isMasterUser" to="/master" class="h-14 px-8 rounded-full bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white text-[15px] font-bold flex items-center gap-3 hover:scale-105 transition-transform shadow-xl shadow-[#d4b06a]/20">
+                  <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                  Auditoría Global (God Mode)
+                </router-link>
+                <router-link v-else-if="isControlUser" to="/team" class="h-14 px-8 rounded-full bg-[#1d1d1f] text-white text-[15px] font-medium flex items-center gap-3 hover:scale-105 transition-transform shadow-xl shadow-black/10">
                   <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
                   Centro de Control
                 </router-link>
@@ -167,7 +172,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             
             <!-- Card 1: ERP & Presupuestos -->
-            <a href="#" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
+            <router-link to="/kpis" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
               <div class="flex items-center justify-between mb-6 relative z-10">
                 <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[#1d1d1f] group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors">
                   <span class="material-symbols-outlined">account_balance_wallet</span>
@@ -197,10 +202,10 @@
                 Gestionar presupuestos
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </a>
+            </router-link>
 
             <!-- Card 2: Legal -->
-            <a href="#" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
+            <router-link to="/manuals" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
               <div class="flex items-center justify-between mb-6 relative z-10">
                 <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[#1d1d1f] group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors">
                   <span class="material-symbols-outlined">gavel</span>
@@ -231,10 +236,10 @@
                 Revisar contratos
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </a>
+            </router-link>
 
             <!-- Card 3: Marcas -->
-            <a href="#" class="group block bg-gradient-to-br from-[#1d1d1f] to-[#2d2d2f] rounded-[2rem] p-8 border border-black/10 transition-all duration-300 hover:shadow-2xl hover:shadow-[#1d1d1f]/20 relative overflow-hidden flex flex-col h-full text-white">
+            <router-link to="/mapa-cargos" class="group block bg-gradient-to-br from-[#1d1d1f] to-[#2d2d2f] rounded-[2rem] p-8 border border-black/10 transition-all duration-300 hover:shadow-2xl hover:shadow-[#1d1d1f]/20 relative overflow-hidden flex flex-col h-full text-white">
               <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDIiLz4KPC9zdmc+')] opacity-20"></div>
               
               <div class="flex items-center justify-between mb-6 relative z-10">
@@ -267,10 +272,10 @@
                 Explorar filiales
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </a>
+            </router-link>
 
             <!-- Card 4: Auditoría -->
-            <a href="#" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
+            <router-link to="/oracle" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
               <div class="flex items-center justify-between mb-6 relative z-10">
                 <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[#1d1d1f] group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors">
                   <span class="material-symbols-outlined">account_balance</span>
@@ -304,7 +309,7 @@
                 Acceder a juntas
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </a>
+            </router-link>
 
           </div>
         </div>
@@ -369,6 +374,7 @@ import { currentProfile, loadCurrentProfile, isMasterAdmin, isManager, signOut }
 const router = useRouter()
 const isLoggedIn = ref(false)
 const isControlUser = computed(() => isMasterAdmin() || isManager())
+const isMasterUser = computed(() => isMasterAdmin())
 
 const statRoles = ref(0) // Total cargos
 const statMappedRoles = ref(0) // Cargos que están en role_workflows

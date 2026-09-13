@@ -51,7 +51,7 @@
               </div>
               <div>
                 <h2 class="text-xl font-semibold tracking-tight text-[#1d1d1f]">{{ currentProfile?.full_name || 'Cargando...' }}</h2>
-                <p class="text-[14px] text-[#b08d57] font-medium mt-0.5">{{ currentRole?.name || '---' }}</p>
+                <p class="text-[14px] text-[#b08d57] font-medium mt-0.5">{{ currentProfile?.is_master_admin ? 'Master Admin / Holding' : (currentRole?.name || '---') }}</p>
                 <div class="flex items-center gap-2 mt-2">
                    <span class="px-2 py-0.5 bg-[#f5f5f7] border border-[#e5e5ea] rounded-full text-[11px] font-semibold text-[#86868b]">ID: {{ currentProfile?.id?.substring(0,6) }}</span>
                    <span class="px-2 py-0.5 bg-[#f5f5f7] border border-[#e5e5ea] rounded-full text-[11px] font-semibold text-[#86868b]">Ciclo: Activo</span>
@@ -238,15 +238,20 @@
 
         <!-- RIGHT COLUMN (3 cols): Agente Prometheus (Chat) -->
         <div class="lg:col-span-3 h-[calc(100vh-120px)] sticky top-[90px] flex flex-col bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
-          <div class="px-5 py-4 border-b border-[#e5e5ea] bg-[#f5f5f7]/50">
-            <h3 class="text-[15px] font-semibold text-[#1d1d1f] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#b08d57]">smart_toy</span>
-              Agente Prometheus
-            </h3>
-            <p class="text-[11px] text-[#86868b] mt-1 font-medium flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#34c759]"></span>
-              Especializado en tu cargo
-            </p>
+          <div class="px-5 py-4 border-b border-[#e5e5ea] bg-[#f5f5f7]/50 flex justify-between items-center">
+            <div>
+              <h3 class="text-[15px] font-semibold text-[#1d1d1f] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#b08d57]">smart_toy</span>
+                Agente Prometheus
+              </h3>
+              <p class="text-[11px] text-[#86868b] mt-1 font-medium flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#34c759]"></span>
+                Especializado en tu cargo
+              </p>
+            </div>
+            <button @click="clearChatHistory" class="p-1.5 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ffebee] rounded-lg transition-colors flex items-center justify-center" title="Limpiar Historial del Chat">
+              <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+            </button>
           </div>
           
           <!-- Chat Messages -->
@@ -880,6 +885,18 @@ const fetchChatHistory = async (roleId) => {
     }
   } catch (e) {
     console.error('Error fetching chat history:', e);
+  }
+};
+
+const clearChatHistory = async () => {
+  if (!confirm('¿Estás seguro de que deseas borrar el historial del chat?')) return;
+  try {
+    if (currentRole.value?.id) {
+      await supabase.from('chat_history').delete().eq('role_id', currentRole.value.id);
+    }
+    messages.value = [];
+  } catch (e) {
+    console.error('Error borrando historial:', e);
   }
 };
 

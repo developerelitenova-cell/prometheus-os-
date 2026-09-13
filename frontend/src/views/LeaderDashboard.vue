@@ -4,20 +4,20 @@
       <div class="h-20 max-w-7xl mx-auto px-margin-mobile md:px-margin-tablet lg:px-margin flex items-center justify-between gap-space-md">
         <div class="flex items-center gap-space-lg shrink-0">
           <div class="flex items-center gap-space-sm cursor-pointer" @click="router.push('/')">
-            <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center">
-              <span class="material-symbols-outlined text-primary text-headline-sm">diamond</span>
+            <div class="w-10 h-10 flex-shrink-0">
+              <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="w-full h-full object-contain" />
             </div>
             <div class="flex flex-col">
-              <span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">ELITE NOVA</span>
-              <span class="font-caption text-caption tracking-widest uppercase text-on-surface-variant">Nutrition Group</span>
+              <span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">Elite Nutrition</span>
+              <span class="font-caption text-caption tracking-widest uppercase text-[#86868b] font-bold">Centro de Control</span>
             </div>
           </div>
           <nav class="hidden xl:flex items-center gap-space-lg">
             <router-link to="/" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Dashboard General</router-link>
-            <router-link to="/leader" class="text-primary font-semibold font-label-md text-label-md transition-colors border-b-2 border-primary-container pb-1">Liderazgo de Área</router-link>
-            <router-link to="/teams" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Equipos</router-link>
-            <router-link to="/reports" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Reportes</router-link>
-            <router-link to="/governance" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Gobernanza</router-link>
+            <router-link to="/team" class="text-primary font-semibold font-label-md text-label-md transition-colors border-b-2 border-primary-container pb-1">Liderazgo de Área</router-link>
+            <router-link to="/mapa-cargos" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Equipos</router-link>
+            <router-link to="/kpis" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Reportes</router-link>
+            <router-link to="/roles" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Gobernanza</router-link>
           </nav>
         </div>
         <div class="flex items-center gap-space-md justify-end flex-1 max-w-md">
@@ -28,11 +28,14 @@
           <div class="flex items-center gap-space-sm pl-space-sm shrink-0">
             <div class="flex flex-col text-right hidden lg:flex">
               <span class="font-label-md text-label-md text-on-surface leading-tight">{{ currentUser?.full_name || 'Cargando...' }}</span>
-              <span class="font-caption text-caption text-primary leading-tight font-medium">{{ currentUser?.roles?.name || 'Líder de Área' }}</span>
+              <span class="font-caption text-caption text-primary leading-tight font-medium">{{ currentUser?.is_master_admin ? 'Master Admin / Holding' : (currentUser?.roles?.name || 'Líder de Área') }}</span>
             </div>
-            <div class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold">
+            <button @click="router.push('/workspace')" class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold hover:brightness-110 shadow-sm transition-all" title="Ir a Mi Espacio">
               {{ currentUser?.full_name ? currentUser.full_name.charAt(0) : 'E' }}
-            </div>
+            </button>
+            <button @click="handleSignOut" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-danger hover:bg-error-container/30 transition-all ml-1" title="Cerrar Sesión">
+              <span class="material-symbols-outlined text-[20px]">logout</span>
+            </button>
           </div>
         </div>
       </div>
@@ -49,78 +52,74 @@
       <div v-else class="flex flex-col w-full">
         <div class="w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-tablet lg:px-margin py-space-xl">
           
-          <!-- Hero / Leadership Header Module -->
-          <div class="relative bg-surface-container-lowest rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-space-lg md:p-space-xl mb-space-xl overflow-hidden">
-            <div class="absolute -right-24 -top-24 w-96 h-96 bg-gradient-to-bl from-primary-container/10 via-primary-fixed/5 to-transparent rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg relative z-10">
+          <!-- Header and Bento Summary -->
+          <div class="flex flex-col gap-space-md mb-space-xl">
+            <!-- Header Row -->
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md">
               <div class="flex flex-col max-w-2xl">
                 <div class="inline-flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-surface-container w-fit mb-space-sm">
                   <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
                   <span class="font-caption text-caption tracking-wider text-on-surface-variant uppercase font-semibold">Dirección • {{ leaderArea?.name || 'Área' }}</span>
                 </div>
-                <h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Panel de Liderazgo</h1>
-                <p class="font-body-md text-body-md text-secondary mt-1">Supervisión operativa y rendimiento de equipo consolidado.</p>
+                <h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Centro de Control</h1>
+                <p class="font-body-md text-body-md text-secondary mt-1">Supervisión táctica y rendimiento del equipo.</p>
               </div>
               
-              <div class="flex items-center gap-space-sm self-start lg:self-center shrink-0">
-                <button class="group inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm" type="button">
+              <div class="flex items-center gap-space-sm self-start lg:self-end shrink-0">
+                <button @click="router.push('/workspace')" class="group inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-lowest border border-surface-container-high hover:border-outline-variant text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm" type="button">
                   <span class="material-symbols-outlined text-primary text-[18px] transition-transform group-hover:scale-110">monitoring</span>
                   <span>Ver Mis KPIs</span>
                 </button>
                 <button @click="openTaskModal(null)" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md transition-all duration-200 shadow-[0_2px_10px_rgba(176,141,87,0.25)] active:scale-[0.98]">
                   <span class="material-symbols-outlined text-[18px]">add_task</span>
-                  <span>Asignar Tarea</span>
+                  <span>Asignar Tarea General</span>
                 </button>
               </div>
             </div>
 
-            <!-- Quick Executive Summary Ribbon -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md mt-space-lg pt-space-md border-t border-surface-container-high/60">
-              <div class="flex items-center gap-space-md p-space-sm rounded-xl bg-surface-container-low/50">
-                <div class="w-10 h-10 rounded-xl bg-surface-container-lowest flex items-center justify-center text-primary shadow-sm">
-                  <span class="material-symbols-outlined">group</span>
+            <!-- Bento Summary Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-space-md mt-space-sm">
+              <div class="bg-surface-container-lowest rounded-2xl p-space-md border border-surface-container-high shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-caption text-caption uppercase text-secondary font-semibold tracking-wider">Fuerza Operativa</span>
+                  <span class="material-symbols-outlined text-primary/70">group</span>
                 </div>
-                <div>
-                  <span class="font-caption text-caption text-secondary uppercase tracking-wider block">Fuerza Operativa</span>
-                  <span class="font-headline-sm text-headline-sm text-on-surface font-semibold">{{ teamMembers.length }} Colaboradores</span>
+                <span class="font-headline-md text-headline-md font-semibold text-on-surface">{{ teamMembers.length }}</span>
+              </div>
+              
+              <div class="bg-surface-container-lowest rounded-2xl p-space-md border border-surface-container-high shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-caption text-caption uppercase text-secondary font-semibold tracking-wider">KPI Promedio</span>
+                  <span class="material-symbols-outlined text-[#2e7d32]/70">pie_chart</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                  <span class="font-headline-md text-headline-md font-semibold text-[#2e7d32]">{{ averageKpi }}%</span>
                 </div>
               </div>
-              <div class="flex items-center gap-space-md p-space-sm rounded-xl bg-surface-container-low/50">
-                <div class="w-10 h-10 rounded-xl bg-surface-container-lowest flex items-center justify-center text-primary shadow-sm">
-                  <span class="material-symbols-outlined">pie_chart</span>
+
+              <div class="bg-surface-container-lowest rounded-2xl p-space-md border border-surface-container-high shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-caption text-caption uppercase text-secondary font-semibold tracking-wider">T. Promedio</span>
+                  <span class="material-symbols-outlined text-primary/70">timer</span>
                 </div>
-                <div>
-                  <span class="font-caption text-caption text-secondary uppercase tracking-wider block">KPI Promedio del Equipo</span>
-                  <div class="flex items-center gap-2">
-                    <span class="font-headline-sm text-headline-sm text-on-surface font-semibold">{{ averageKpi }}%</span>
-                  </div>
-                </div>
+                <span class="font-headline-md text-headline-md font-semibold text-on-surface">{{ averageTaskTimeHours }}h</span>
               </div>
-              <div class="flex items-center gap-space-md p-space-sm rounded-xl bg-surface-container-low/50">
-                <div class="w-10 h-10 rounded-xl bg-surface-container-lowest flex items-center justify-center text-primary shadow-sm">
-                  <span class="material-symbols-outlined">timer</span>
+
+              <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col justify-between" :class="totalOverdue > 0 ? 'border border-danger/30 bg-error-container/20' : 'border border-surface-container-high'">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-caption text-caption uppercase font-semibold tracking-wider" :class="totalOverdue > 0 ? 'text-danger' : 'text-secondary'">Alertas (Vencidas)</span>
+                  <span class="material-symbols-outlined" :class="totalOverdue > 0 ? 'text-danger/70' : 'text-secondary'">warning</span>
                 </div>
-                <div>
-                  <span class="font-caption text-caption text-secondary uppercase tracking-wider block">Tiempo Promedio (Tareas)</span>
-                  <div class="flex items-center gap-2">
-                    <span class="font-headline-sm text-headline-sm text-on-surface font-semibold">{{ averageTaskTimeHours }}h</span>
-                  </div>
-                </div>
+                <span class="font-headline-md text-headline-md font-semibold" :class="totalOverdue > 0 ? 'text-danger' : 'text-on-surface'">{{ totalOverdue }} Tareas</span>
               </div>
             </div>
           </div>
 
           <!-- Section Bar: Title & Search/Filter Strip -->
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-            <div class="flex items-center gap-space-sm">
-              <h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Mi Equipo</h2>
-              <span class="font-label-md text-label-md px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-medium">(Área: {{ leaderArea?.name }})</span>
-            </div>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Directorio del Equipo</h2>
             
-            <!-- Controls Group -->
             <div class="flex flex-wrap items-center gap-space-sm">
-              <!-- Filtro de Tiempo -->
               <div class="flex items-center bg-surface-container-lowest rounded-xl p-1 shadow-sm border border-surface-container-high">
                 <button v-for="period in ['Diario', 'Semanal', 'Mensual', 'Trimestral', 'Semestral', 'Anual']" :key="period"
                         @click="selectedPeriod = period"
@@ -135,151 +134,114 @@
           <!-- Compact Executive Master-Detail Split Layout -->
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
             
-            <!-- Left Master List (65% width / 8 cols) -->
-            <div class="lg:col-span-8 flex flex-col gap-space-md">
+            <!-- Left Master List (Compact Directory) -->
+            <div class="lg:col-span-8 flex flex-col gap-space-xs">
               <div v-if="loading" class="text-center py-10 text-secondary">Cargando equipo...</div>
               <div v-else-if="filteredTeam.length === 0" class="text-center py-10 text-secondary">No hay colaboradores que coincidan con la búsqueda.</div>
               
               <div v-for="member in filteredTeam" :key="member.id" 
                    @click="selectMember(member)"
-                   :class="['bg-surface-container-lowest rounded-2xl p-space-md border transition-all duration-200 group cursor-pointer shadow-[0_2px_12px_rgba(0,0,0,0.02)]', 
-                            selectedMember?.id === member.id ? 'border-primary-container shadow-[0_4px_20px_rgba(0,0,0,0.04)] ring-1 ring-primary-container' : 'border-surface-container-high hover:border-outline-variant hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)]']">
+                   :class="['flex items-center justify-between p-space-sm rounded-xl transition-all duration-200 cursor-pointer border', 
+                            selectedMember?.id === member.id ? 'bg-surface-container-lowest border-primary-container shadow-sm ring-1 ring-primary-container' : 'bg-surface border-transparent hover:bg-surface-container-lowest hover:border-surface-container-high hover:shadow-sm']">
                 
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
-                  <div class="flex items-center gap-3">
-                    <div class="relative shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-surface-container-high text-primary font-bold text-xl shadow-sm ring-2 ring-primary/10">
-                      {{ member.full_name.charAt(0) }}
-                      <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full ring-2 ring-surface-container-lowest"></span>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="flex items-center gap-2">
-                        <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate leading-tight group-hover:text-primary transition-colors">{{ member.full_name }}</h3>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#e8f5e9] text-[#2e7d32] font-label-sm text-label-sm font-semibold">
-                          <span class="material-symbols-outlined text-[12px]">trending_up</span>
-                          {{ member.latest_score }}%
-                        </span>
-                      </div>
-                      <span class="font-caption text-caption text-secondary block mt-0.5">{{ member.roles?.name || 'Sin cargo' }}</span>
-                    </div>
+                <div class="flex items-center gap-space-md">
+                  <div class="relative shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-surface-container-high text-primary font-bold shadow-sm">
+                    {{ member.full_name.charAt(0) }}
+                    <span v-if="member.overdue_tasks_count > 0" class="absolute -top-1 -right-1 w-3 h-3 bg-danger rounded-full ring-2 ring-surface-container-lowest"></span>
+                    <span v-else class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-surface-container-lowest"></span>
                   </div>
-                  
-                  <div class="flex items-center gap-space-md sm:justify-end text-right">
-                    <div class="flex flex-col">
-                      <span class="font-caption text-caption text-secondary">T. Promedio</span>
-                      <span class="font-label-md text-label-md font-semibold text-on-surface">{{ member.avg_time_hours }}h</span>
-                    </div>
-                    <div class="h-8 w-px bg-surface-container-high hidden sm:block"></div>
-                    <div class="flex flex-col">
-                      <span class="font-caption text-caption text-secondary">Atrasadas</span>
-                      <span :class="['font-label-md text-label-md font-semibold', member.overdue_tasks_count > 0 ? 'text-danger' : 'text-success']">
-                        {{ member.overdue_tasks_count }} Tareas
-                      </span>
-                    </div>
+                  <div class="flex flex-col">
+                    <h3 class="font-label-lg text-label-lg text-on-surface font-semibold leading-tight">{{ member.full_name }}</h3>
+                    <span class="font-caption text-caption text-secondary">{{ member.roles?.name || 'Sin cargo' }}</span>
                   </div>
                 </div>
-
-                <!-- Operational progress and action bar -->
-                <div class="mt-space-md pt-space-sm border-t border-surface-container flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
-                  <div class="flex-1 max-w-sm">
-                    <div class="flex items-center justify-between font-caption text-caption mb-1">
-                      <span class="text-secondary font-medium">Progreso de Tareas (Periodo: {{ selectedPeriod }})</span>
-                      <span class="text-on-surface font-semibold">
-                        Pendientes: <span class="text-amber-700 font-bold">{{ member.pending_tasks_count }}</span> • 
-                        Completadas: {{ member.completed_tasks_count }}
-                      </span>
-                    </div>
-                    <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden flex">
-                      <div class="h-full bg-emerald-500" :style="`width: ${member.completion_rate}%;`"></div>
-                      <div class="h-full bg-amber-400" :style="`width: ${member.pending_rate}%;`"></div>
-                      <div class="h-full bg-danger" :style="`width: ${member.overdue_rate}%;`"></div>
-                    </div>
+                
+                <div class="flex items-center gap-space-lg text-right">
+                  <div class="hidden sm:flex flex-col text-left w-24">
+                    <span class="font-caption text-caption text-secondary">Estado ({{ selectedPeriod }})</span>
+                    <span class="font-label-sm text-label-sm" :class="member.overdue_tasks_count > 0 ? 'text-danger font-semibold' : 'text-success'">
+                      {{ member.pending_tasks_count }} Pend.
+                    </span>
                   </div>
-                  <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    <button @click.stop="auditWorkspace(member.id)" class="py-1.5 px-space-md rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all duration-200">Auditar</button>
-                    <button @click.stop="openTaskModal(member)" class="py-1.5 px-space-md rounded-lg bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md inline-flex items-center gap-1 shadow-sm transition-all duration-200">
-                      <span class="material-symbols-outlined text-[14px]">add</span>
-                      <span>Asignar</span>
-                    </button>
+                  <div class="w-16 flex justify-end">
+                    <span class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-[#e8f5e9] text-[#2e7d32] font-label-sm text-label-sm font-semibold border border-[#c8e6c9]">
+                      {{ member.latest_score }}%
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Right Rail Inspector (35% width / 4 cols) -->
+            <!-- Right Rail Inspector (Detail View) -->
             <div class="lg:col-span-4 flex flex-col gap-space-md sticky top-24">
-              
-              <!-- Selected Executive Dossier Inspector Card -->
-              <div v-if="selectedMember" class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-surface-container-high relative overflow-hidden">
-                <div class="flex items-center justify-between pb-3 border-b border-surface-container mb-space-md">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-primary"></span>
-                    <span class="font-caption text-caption uppercase tracking-wider text-secondary font-semibold">Expediente Seleccionado</span>
-                  </div>
-                  <span class="font-caption text-caption px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{{ selectedPeriod }}</span>
-                </div>
-                
-                <div class="flex items-center gap-3 mb-space-md">
-                  <div class="w-14 h-14 rounded-xl bg-surface-container-high text-primary flex items-center justify-center font-bold text-2xl shadow-sm ring-2 ring-primary-container/30">
+              <div v-if="selectedMember" class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-md border border-surface-container-high relative overflow-hidden flex flex-col">
+                <!-- Inspector Header -->
+                <div class="flex items-start gap-space-sm mb-space-md pb-space-md border-b border-surface-container-high">
+                  <div class="w-16 h-16 rounded-2xl bg-surface-container-high text-primary flex items-center justify-center font-bold text-3xl shadow-sm ring-4 ring-primary/5">
                     {{ selectedMember.full_name.charAt(0) }}
                   </div>
-                  <div>
-                    <h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug">{{ selectedMember.full_name }}</h4>
-                    <span class="font-caption text-caption text-secondary">{{ selectedMember.roles?.name }}</span>
-                    <div class="mt-1 flex items-center gap-2">
-                      <span class="px-2 py-0.5 rounded-full bg-[#e8f5e9] text-[#2e7d32] font-label-sm text-label-sm font-semibold">KPI: {{ selectedMember.latest_score }}%</span>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate">{{ selectedMember.full_name }}</h4>
+                    <span class="font-caption text-caption text-secondary block mb-1 truncate">{{ selectedMember.roles?.name }}</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-low font-caption text-caption text-on-surface-variant border border-surface-container">
+                      <span class="w-1.5 h-1.5 rounded-full" :class="selectedMember.overdue_tasks_count > 0 ? 'bg-danger' : 'bg-success'"></span>
+                      {{ selectedMember.overdue_tasks_count > 0 ? 'Requiere Atención' : 'Operativo' }}
+                    </span>
+                  </div>
+                </div>
+                
+                <!-- Performance Stats -->
+                <div class="flex flex-col gap-space-sm mb-space-lg">
+                  <div class="flex items-center justify-between">
+                    <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Métricas • {{ selectedPeriod }}</span>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-space-sm">
+                    <div class="bg-surface-container-low rounded-xl p-space-sm border border-surface-container">
+                      <span class="font-caption text-caption text-secondary block">Eficiencia</span>
+                      <span class="font-headline-sm text-headline-sm font-semibold text-[#2e7d32]">{{ selectedMember.completion_rate }}%</span>
+                    </div>
+                    <div class="bg-surface-container-low rounded-xl p-space-sm border border-surface-container">
+                      <span class="font-caption text-caption text-secondary block">T. Promedio</span>
+                      <span class="font-headline-sm text-headline-sm font-semibold text-on-surface">{{ selectedMember.avg_time_hours }}h</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Task Breakdown -->
+                  <div class="bg-surface-container-low rounded-xl p-space-sm border border-surface-container mt-1">
+                    <div class="flex items-center justify-between font-caption text-caption mb-1.5">
+                      <span class="text-secondary">Desglose de Tareas</span>
+                      <span class="font-semibold">{{ selectedMember.total_tasks }} Totales</span>
+                    </div>
+                    <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden flex mb-2">
+                      <div class="h-full bg-emerald-500" :style="`width: ${selectedMember.completion_rate}%;`"></div>
+                      <div class="h-full bg-amber-400" :style="`width: ${selectedMember.pending_rate}%;`"></div>
+                      <div class="h-full bg-danger" :style="`width: ${selectedMember.overdue_rate}%;`"></div>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                      <span class="text-emerald-700 font-medium">{{ selectedMember.completed_tasks_count }} Listas</span>
+                      <span class="text-amber-700 font-medium">{{ selectedMember.pending_tasks_count }} Pend.</span>
+                      <span class="text-danger font-medium">{{ selectedMember.overdue_tasks_count }} Venc.</span>
                     </div>
                   </div>
                 </div>
                 
-                <div class="space-y-2.5 p-space-sm rounded-xl bg-surface-container-low/60 mb-space-md">
-                  <div class="flex items-center justify-between font-caption text-caption">
-                    <span class="text-secondary">Tiempo Prom. Ejecución</span>
-                    <span class="font-label-md text-label-md font-semibold text-primary">{{ selectedMember.avg_time_hours }} Horas</span>
-                  </div>
-                  <div class="flex items-center justify-between font-caption text-caption">
-                    <span class="text-secondary">Estado de Tareas</span>
-                    <span class="font-label-md text-label-md font-semibold text-on-surface">
-                      Completadas: <span class="text-success">{{ selectedMember.completed_tasks_count }}</span> • 
-                      Vencidas: <span class="text-danger">{{ selectedMember.overdue_tasks_count }}</span>
-                    </span>
-                  </div>
-                  <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden flex">
-                    <div class="h-full bg-emerald-500" :style="`width: ${selectedMember.completion_rate}%;`"></div>
-                    <div class="h-full bg-amber-400" :style="`width: ${selectedMember.pending_rate}%;`"></div>
-                    <div class="h-full bg-danger" :style="`width: ${selectedMember.overdue_rate}%;`"></div>
-                  </div>
-                  <span class="font-caption text-caption text-secondary block text-right">{{ selectedMember.completion_rate }}% efectividad</span>
-                </div>
-                
-                <div class="flex flex-col gap-2 pt-space-xs">
-                  <button @click="openTaskModal(selectedMember)" class="w-full py-2.5 px-space-md rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md inline-flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(176,141,87,0.25)] transition-all">
-                    <span class="material-symbols-outlined text-[16px]">add_task</span>
-                    <span>Asignar Tarea</span>
+                <!-- Action Buttons -->
+                <div class="flex flex-col gap-space-sm mt-auto pt-space-md border-t border-surface-container-high">
+                  <button @click="openTaskModal(selectedMember)" class="w-full py-2.5 px-space-md rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md inline-flex items-center justify-center gap-2 shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[18px]">assignment_add</span>
+                    <span>Asignar Tarea Específica</span>
                   </button>
-                  <button @click="auditWorkspace(selectedMember.id)" class="w-full py-2.5 px-space-md rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md text-center transition-all">
-                    Auditar Espacio
+                  <button @click="auditWorkspace(selectedMember.id)" class="w-full py-2.5 px-space-md rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container-high text-on-surface font-label-md text-label-md text-center transition-all inline-flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">find_in_page</span>
+                    <span>Auditar Espacio</span>
                   </button>
                 </div>
               </div>
-
-              <!-- Tactical Leadership Summary Card -->
-              <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-surface-container-high">
-                <div class="flex items-center justify-between mb-space-sm">
-                  <span class="font-caption text-caption uppercase tracking-wider text-secondary font-semibold">Resumen del Periodo</span>
-                  <span class="material-symbols-outlined text-primary text-body-md">analytics</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-center">
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/50">
-                    <span class="font-headline-sm text-headline-sm font-semibold text-danger block">{{ totalOverdue }}</span>
-                    <span class="font-caption text-caption text-secondary">Tareas Vencidas</span>
-                  </div>
-                  <div class="p-2.5 rounded-xl bg-surface-container-low/50">
-                    <span class="font-headline-sm text-headline-sm font-semibold text-[#2e7d32] block">{{ averageKpi }}%</span>
-                    <span class="font-caption text-caption text-secondary">KPI Equipo</span>
-                  </div>
-                </div>
+              <div v-else class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-surface-container-high flex flex-col items-center justify-center text-center min-h-[300px]">
+                <span class="material-symbols-outlined text-5xl text-surface-container-high mb-2">person_search</span>
+                <p class="font-body-md text-body-md text-secondary">Selecciona un colaborador del directorio para ver sus detalles y métricas.</p>
               </div>
-
             </div>
           </div>
         </div>
@@ -314,6 +276,15 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-1">
+              <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Frecuencia / Tipo <span class="text-danger">*</span></label>
+              <select v-model="newTask.task_type" required class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                <option value="daily">Diaria</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensual</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1">
               <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Prioridad</label>
               <select v-model="newTask.priority" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                 <option value="low">Baja</option>
@@ -321,11 +292,11 @@
                 <option value="high">Alta</option>
               </select>
             </div>
+          </div>
             
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Fecha Límite (Due Date) <span class="text-danger">*</span></label>
-              <input v-model="newTask.due_date" required type="date" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
-            </div>
+          <div class="flex flex-col gap-1 mt-4">
+            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Fecha Límite (Due Date) <span class="text-danger">*</span></label>
+            <input v-model="newTask.due_date" required type="date" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
           </div>
 
           <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-surface-container">
@@ -338,6 +309,13 @@
         </form>
       </div>
     </div>
+    <!-- Toast Notification -->
+    <transition enter-active-class="transition duration-300 ease-out" enter-from-class="transform translate-y-2 opacity-0" enter-to-class="transform translate-y-0 opacity-100" leave-active-class="transition duration-200 ease-in" leave-from-class="transform translate-y-0 opacity-100" leave-to-class="transform translate-y-2 opacity-0">
+      <div v-if="showSuccessToast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] bg-[#2e7d32] text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 font-label-md text-label-md">
+        <span class="material-symbols-outlined">check_circle</span>
+        <span>¡Tarea asignada con éxito!</span>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -346,8 +324,14 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { supabase } from '@/api/supabase';
 import { useRouter } from 'vue-router';
 import { getLatestRoleKpiScore } from '@/api/kpi';
+import { signOut } from '@/api/auth';
 
 const router = useRouter();
+
+const handleSignOut = async () => {
+  await signOut();
+  router.push('/login');
+};
 
 const currentUser = ref(null);
 const isLeader = ref(false);
@@ -364,10 +348,12 @@ const selectedMember = ref(null);
 const showTaskModal = ref(false);
 const taskTargetMember = ref(null);
 const isSaving = ref(false);
+const showSuccessToast = ref(false);
 const newTask = ref({
   title: '',
   description: '',
   priority: 'medium',
+  task_type: 'daily',
   due_date: '',
   assigned_to: ''
 });
@@ -550,6 +536,7 @@ const openTaskModal = (member = null) => {
     title: '',
     description: '',
     priority: 'medium',
+    task_type: 'daily',
     due_date: new Date().toISOString().split('T')[0],
     assigned_to: member ? member.id : ''
   };
@@ -571,6 +558,7 @@ const submitTask = async () => {
       title: newTask.value.title,
       description: newTask.value.description,
       priority: newTask.value.priority,
+      task_type: newTask.value.task_type,
       due_date: newTask.value.due_date,
       assigned_to: newTask.value.assigned_to,
       assigned_by: session.session.user.id,
@@ -580,6 +568,8 @@ const submitTask = async () => {
     await supabase.from('tasks').insert(payload);
     
     closeTaskModal();
+    showSuccessToast.value = true;
+    setTimeout(() => { showSuccessToast.value = false; }, 3000);
     await fetchData(); // Refresh all data to compute new metrics
   } catch (error) {
     console.error("Error asignando tarea:", error);

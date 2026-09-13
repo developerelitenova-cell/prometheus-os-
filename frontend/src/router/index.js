@@ -86,6 +86,12 @@ const routes = [
     props: true
   },
   {
+    path: '/master',
+    name: 'MasterDashboard',
+    component: () => import('../views/MasterDashboard.vue'),
+    meta: { masterAdminOnly: true }
+  },
+  {
     path: '/oracle',
     name: 'Oracle',
     component: () => import('../views/OracleView.vue'),
