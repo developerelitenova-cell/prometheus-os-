@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-full relative" style="min-height: 200px;">
-    <TresCanvas clear-color="transparent" alpha>
+    <TresCanvas clear-color="transparent" :alpha="true">
       <TresPerspectiveCamera :position="[0, 1.2, 3.5]" :look-at="[0, 1, 0]" />
       
       <!-- Luces para resaltar el acabado metálico/plástico -->
