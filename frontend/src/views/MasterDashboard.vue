@@ -4,8 +4,8 @@
       <div class="h-20 max-w-7xl mx-auto px-margin-mobile md:px-margin-tablet lg:px-margin flex items-center justify-between gap-space-md">
         <div class="flex items-center gap-space-lg shrink-0">
           <div class="flex items-center gap-space-sm cursor-pointer" @click="router.push('/')">
-            <div class="w-10 h-10 flex-shrink-0">
-              <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="w-full h-full object-contain" />
+            <div class="h-14 w-auto flex-shrink-0">
+              <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="h-full w-auto object-contain" />
             </div>
             <div class="flex flex-col">
               <span class="font-headline-sm text-headline-sm tracking-tight text-on-surface leading-tight">Elite Nutrition</span>

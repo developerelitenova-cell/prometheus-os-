@@ -4,8 +4,8 @@
       <div class="h-20 max-w-7xl mx-auto px-margin-mobile md:px-margin-tablet lg:px-margin flex items-center justify-between gap-space-md">
         <div class="flex items-center gap-space-lg shrink-0">
           <div class="flex items-center gap-space-sm cursor-pointer" @click="router.push('/')">
-            <div class="w-10 h-10 flex-shrink-0">
-              <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="w-full h-full object-contain" />
+            <div class="h-14 w-auto flex-shrink-0">
+              <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="h-full w-auto object-contain" />
             </div>
             <div class="flex flex-col">
               <span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">Elite Nutrition</span>
@@ -16,8 +16,8 @@
             <router-link to="/" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Dashboard General</router-link>
             <router-link to="/team" class="text-primary font-semibold font-label-md text-label-md transition-colors border-b-2 border-primary-container pb-1">Liderazgo de Área</router-link>
             <router-link to="/mapa-cargos" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Equipos</router-link>
-            <router-link to="/kpis" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Reportes</router-link>
-            <router-link to="/roles" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Gobernanza</router-link>
+            <router-link to="/performance" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Reportes</router-link>
+            <router-link to="/roles" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Gestión de Roles y Permisos</router-link>
           </nav>
         </div>
         <div class="flex items-center gap-space-md justify-end flex-1 max-w-md">
@@ -236,6 +236,14 @@
                     <span class="material-symbols-outlined text-[18px]">find_in_page</span>
                     <span>Auditar Espacio</span>
                   </button>
+                  <div v-if="currentUser?.is_master_admin" class="flex gap-2 w-full pt-1">
+                    <button @click="editProfileName(selectedMember)" class="flex-1 py-2 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-high text-on-surface-variant text-label-sm font-semibold transition-all flex items-center justify-center gap-1" title="Editar Nombre del Empleado">
+                      <span class="material-symbols-outlined text-[16px]">edit</span> Editar Perfil
+                    </button>
+                    <button @click="manageLegal(selectedMember)" class="flex-1 py-2 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-high text-on-surface-variant text-label-sm font-semibold transition-all flex items-center justify-center gap-1" title="Gestionar Firmas y Contratos">
+                      <span class="material-symbols-outlined text-[16px]">gavel</span> Legal / Contratos
+                    </button>
+                  </div>
                 </div>
               </div>
               <div v-else class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-surface-container-high flex flex-col items-center justify-center text-center min-h-[300px]">
@@ -316,6 +324,44 @@
         <span>¡Tarea asignada con éxito!</span>
       </div>
     </transition>
+
+    <!-- Modals for Legal and Profile Edit -->
+    <div v-if="showEditNameModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-surface-container-lowest w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+        <h3 class="text-xl font-bold text-on-surface mb-4">Editar Nombre de Empleado</h3>
+        <input type="text" v-model="editNameInput" class="w-full bg-surface-container-low border border-surface-container rounded-xl p-3 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container mb-4" />
+        <div class="flex gap-3">
+          <button @click="showEditNameModal = false" class="flex-1 py-2 rounded-xl border border-surface-container text-on-surface-variant font-semibold">Cancelar</button>
+          <button @click="saveProfileName" class="flex-1 py-2 rounded-xl bg-primary text-white font-semibold shadow-md">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showLegalModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-surface-container-lowest w-full max-w-lg rounded-3xl p-6 shadow-2xl relative">
+        <button @click="showLegalModal = false" class="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined">close</span></button>
+        <h3 class="text-xl font-bold text-on-surface mb-2">Legal y Contratación</h3>
+        <p class="text-secondary font-body-sm text-body-sm mb-6">Gestionar documentos legales para <strong>{{ selectedMember?.full_name }}</strong></p>
+        
+        <div class="space-y-4">
+          <div class="p-4 bg-surface-container-low rounded-xl border border-surface-container flex justify-between items-center">
+            <div>
+              <p class="font-label-md text-on-surface font-bold">Firma Digital</p>
+              <p class="font-caption text-secondary">No se ha registrado firma.</p>
+            </div>
+            <button class="px-3 py-1.5 bg-surface-container border border-surface-container-high rounded-lg text-primary text-xs font-semibold">Subir Firma</button>
+          </div>
+          <div class="p-4 bg-surface-container-low rounded-xl border border-surface-container flex justify-between items-center">
+            <div>
+              <p class="font-label-md text-on-surface font-bold">Contrato Laboral</p>
+              <p class="font-caption text-secondary">A la espera de plantilla RRHH.</p>
+            </div>
+            <button class="px-3 py-1.5 bg-surface-container border border-surface-container-high rounded-lg text-primary text-xs font-semibold">Generar Contrato</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -343,6 +389,31 @@ const loading = ref(true);
 const searchQuery = ref('');
 const selectedPeriod = ref('Mensual'); // Default
 const selectedMember = ref(null);
+
+const showEditNameModal = ref(false);
+const editNameInput = ref('');
+const currentEditingMember = ref(null);
+
+const showLegalModal = ref(false);
+
+const editProfileName = (member) => {
+  currentEditingMember.value = member;
+  editNameInput.value = member.full_name;
+  showEditNameModal.value = true;
+};
+
+const saveProfileName = async () => {
+  if (currentEditingMember.value && editNameInput.value) {
+    currentEditingMember.value.full_name = editNameInput.value;
+    // Logic to save to Supabase would go here
+    showEditNameModal.value = false;
+  }
+};
+
+const manageLegal = (member) => {
+  selectedMember.value = member;
+  showLegalModal.value = true;
+};
 
 // Modal state
 const showTaskModal = ref(false);

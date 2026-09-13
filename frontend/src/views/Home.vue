@@ -8,8 +8,8 @@
     <header class="relative z-50 w-full border-b border-black/5 bg-white/80 backdrop-blur-md sticky top-0">
       <div class="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 flex-shrink-0">
-            <img src="@/assets/elite-nova-logo.png" alt="Elite Nova Group" class="w-full h-full object-contain" />
+          <div class="h-14 w-auto flex-shrink-0">
+            <img src="@/assets/elite-nova-logo.png" alt="Elite Nova Group" class="h-full w-auto object-contain" />
           </div>
           <div>
             <h1 class="text-xl font-bold tracking-tight text-[#1d1d1f] leading-none">Elite Nutrition</h1>
@@ -19,7 +19,7 @@
 
         <nav class="hidden md:flex items-center gap-8">
           <router-link to="/workspace" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Portal Corporativo</router-link>
-          <router-link to="/mapa-cargos" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Compliance</router-link>
+          <router-link to="/mapa-cargos" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Estructura Corporativa</router-link>
           <router-link to="/team" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Directorio</router-link>
           <router-link v-if="isMasterUser" to="/master" class="text-sm font-bold text-[#8a6d3d] hover:text-[#d4b06a] transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">admin_panel_settings</span> Auditoría Master</router-link>
         </nav>

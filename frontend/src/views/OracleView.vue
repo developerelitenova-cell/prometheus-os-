@@ -6,6 +6,9 @@
         <!-- Sub-Header Status Ribbon -->
         <div class="w-full bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.02)] mb-space-md rounded-xl p-space-sm px-space-md flex flex-wrap items-center justify-between gap-space-sm">
           <div class="flex items-center gap-space-sm text-on-surface-variant">
+            <button @click="router.back()" class="mr-1 p-1.5 rounded-lg hover:bg-surface-container transition-colors flex items-center justify-center text-on-surface-variant hover:text-on-surface" title="Volver al Workspace">
+              <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            </button>
             <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface-container text-primary">
               <span class="material-symbols-outlined text-[18px]">account_tree</span>
             </span>
@@ -289,6 +292,7 @@
                           <th class="py-3 px-4 font-semibold text-center">Manual</th>
                           <th class="py-3 px-4 font-semibold text-center">KPI</th>
                           <th class="py-3 px-4 font-semibold text-center">Memoria IA</th>
+                          <th class="py-3 px-4 font-semibold text-center">Documentos</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-surface-container">
@@ -309,6 +313,11 @@
                             </span>
                             <span v-else class="material-symbols-outlined text-[18px] text-error">cancel</span>
                           </td>
+                          <td class="py-3 px-4 text-center">
+                            <button @click="openDocsModal(role)" class="text-xs font-semibold text-primary underline hover:text-[#d4b06a] transition-colors">
+                              Ver Archivos
+                            </button>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -321,14 +330,33 @@
         </div>
       </div>
     </main>
+
+    <!-- Docs Modal -->
+    <div v-if="showDocsModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-surface-container-lowest w-full max-w-2xl rounded-3xl p-8 shadow-2xl relative">
+        <button @click="showDocsModal = false" class="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+        <h3 class="text-xl font-bold text-on-surface mb-2">Documentación del Cargo</h3>
+        <p class="text-secondary font-body-sm text-body-sm mb-6">Archivos cargados en la base de conocimiento para <strong>{{ selectedRole?.name }}</strong>.</p>
+        
+        <div class="flex flex-col gap-3 min-h-[150px] justify-center items-center bg-surface-container-low rounded-xl border border-surface-container p-6">
+          <span class="material-symbols-outlined text-4xl text-secondary">folder_open</span>
+          <span class="text-secondary font-body-sm">Funcionalidad en desarrollo. Aquí se listarán los PDFs, manuales y contratos asociados.</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, nextTick, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../api/supabase';
+
+const router = useRouter();
 
 const currentQuery = ref('');
 const loading = ref(false);
@@ -338,6 +366,14 @@ const tab = ref('chat');
 const panorama = ref([]);
 const panoramaLoading = ref(false);
 let panoramaLoaded = false;
+
+const showDocsModal = ref(false);
+const selectedRole = ref(null);
+
+const openDocsModal = (role) => {
+  selectedRole.value = role;
+  showDocsModal.value = true;
+};
 
 const messages = ref([
   {
