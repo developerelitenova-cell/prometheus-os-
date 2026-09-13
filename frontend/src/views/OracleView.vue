@@ -403,6 +403,11 @@
         </div>
       </div>
     </div>
+
+    <!-- 3D Avatar Floating -->
+    <div v-if="tab === 'chat'" class="fixed bottom-32 right-12 w-48 h-48 md:w-64 md:h-64 z-[90] pointer-events-none drop-shadow-2xl">
+      <OracleAvatar :is-thinking="loading" :is-talking="false" />
+    </div>
   </div>
 </template>
 
@@ -412,6 +417,7 @@ import { useRouter } from 'vue-router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../api/supabase';
+import OracleAvatar from '../components/OracleAvatar.vue';
 
 const router = useRouter();
 
