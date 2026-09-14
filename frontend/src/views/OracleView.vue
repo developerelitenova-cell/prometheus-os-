@@ -404,9 +404,22 @@
       </div>
     </div>
 
-    <!-- 3D Avatar Floating -->
-    <div v-if="tab === 'chat'" class="fixed bottom-32 right-12 w-48 h-48 md:w-64 md:h-64 z-[90] pointer-events-none drop-shadow-2xl">
-      <OracleAvatar :is-thinking="loading" :is-talking="false" />
+    <!-- 3D Avatar Floating (Sketchfab Embed) -->
+    <div v-if="tab === 'chat'" class="fixed bottom-32 right-12 w-64 h-64 md:w-80 md:h-80 z-[90] drop-shadow-2xl rounded-full overflow-hidden border-4 border-surface-container-low shadow-[0_8px_32px_rgba(0,0,0,0.15)] bg-surface-container-lowest">
+      <iframe 
+        title="Robot Playground" 
+        frameborder="0" 
+        allowfullscreen 
+        mozallowfullscreen="true" 
+        webkitallowfullscreen="true" 
+        allow="autoplay; fullscreen; xr-spatial-tracking" 
+        xr-spatial-tracking 
+        execution-while-out-of-viewport 
+        execution-while-not-rendered 
+        web-share 
+        src="https://sketchfab.com/models/59fc99d8dcb146f3a6c16dbbcc4680da/embed?autostart=1&transparent=1&ui_infos=0&ui_stop=0&ui_watermark=0&ui_hint=0"
+        class="w-full h-full object-cover scale-[1.3] pointer-events-auto"
+      ></iframe>
     </div>
   </div>
 </template>
@@ -417,7 +430,6 @@ import { useRouter } from 'vue-router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../api/supabase';
-import OracleAvatar from '../components/OracleAvatar.vue';
 
 const router = useRouter();
 
