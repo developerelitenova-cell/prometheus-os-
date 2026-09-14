@@ -127,111 +127,145 @@
           <!-- Grid bento de 4 módulos de la imagen -->
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             
-            <!-- Card 1: Portal Corporativo -->
-            <router-link to="/workspace" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
+            <!-- Card 1: ERP & Presupuestos -->
+            <a href="#" @click.prevent="showComingSoonModal = true" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full cursor-pointer">
               <div class="flex items-center justify-between mb-6 relative z-10">
                 <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[#1d1d1f] group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">person</span>
+                  <span class="material-symbols-outlined">account_balance_wallet</span>
                 </div>
-                <span class="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#8a6d3d] uppercase tracking-widest shadow-sm">Workspace</span>
+                <span class="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#8a6d3d] uppercase tracking-widest shadow-sm">CAPEX / OPEX</span>
               </div>
-              <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 relative z-10">Portal Corporativo</h3>
+              <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 relative z-10">ERP & Presupuestos Consolidados</h3>
               <p class="text-sm text-[#1d1d1f]/60 leading-relaxed mb-8 flex-1 relative z-10">
-                Espacio de trabajo personalizado. Gestión de tareas, manuales operativos y revisión de rendimiento.
+                Gestión de flujos financieros, centros de costos y aprobación de órdenes de compra corporativas.
               </p>
               
               <div class="bg-white rounded-xl p-4 mb-6 shadow-sm border border-black/5 relative z-10">
+                <div class="flex justify-between items-end mb-2">
+                  <span class="text-xs font-semibold text-[#1d1d1f]/60">Ejecución Presupuestaria</span>
+                  <span class="text-lg font-bold text-[#1d1d1f]">84.2%</span>
+                </div>
+                <div class="w-full h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden mb-2">
+                  <div class="h-full bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d]" style="width: 84.2%"></div>
+                </div>
                 <div class="flex items-center gap-1.5">
                   <span class="material-symbols-outlined text-[14px] text-green-600">check_circle</span>
-                  <span class="text-[11px] font-semibold text-[#1d1d1f]">Sistema Activo para Empleados</span>
+                  <span class="text-[11px] font-semibold text-[#1d1d1f]">Flujo Auditado: 32 Centros OK</span>
                 </div>
               </div>
 
               <div class="flex items-center text-sm font-semibold text-[#8a6d3d] group-hover:text-[#1d1d1f] transition-colors mt-auto relative z-10">
-                Acceder a Mi Espacio
+                Gestionar presupuestos
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </router-link>
+            </a>
 
-            <!-- Card 2: Estructura Corporativa -->
-            <router-link to="/mapa-cargos" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
+            <!-- Card 2: Legal Tech -->
+            <a href="#" @click.prevent="showComingSoonModal = true" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full cursor-pointer">
               <div class="flex items-center justify-between mb-6 relative z-10">
                 <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[#1d1d1f] group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">account_tree</span>
+                  <span class="material-symbols-outlined">gavel</span>
                 </div>
-                <span class="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#8a6d3d] uppercase tracking-widest shadow-sm">Organigrama</span>
+                <span class="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#8a6d3d] uppercase tracking-widest shadow-sm">Legal Tech</span>
               </div>
-              <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 relative z-10">Estructura Corporativa</h3>
+              <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 relative z-10">Gestión Contractual y Legal</h3>
               <p class="text-sm text-[#1d1d1f]/60 leading-relaxed mb-8 flex-1 relative z-10">
-                Mapeo interactivo de todas las áreas, jerarquías y ecosistema de talento del holding.
+                Repositorio de contratos comerciales, firmas notariales digitales y normativas mercantiles vigentes.
               </p>
               
               <div class="bg-white rounded-xl p-4 mb-6 shadow-sm border border-black/5 relative z-10 space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-semibold text-[#1d1d1f]/60">Contratos Firmados</span>
+                  <span class="text-lg font-bold text-[#1d1d1f]">1,420</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[16px] text-[#8a6d3d]">lock</span>
+                  <span class="text-[11px] font-semibold text-[#1d1d1f]">100% Cifrado Notarial Digital</span>
+                </div>
                 <div class="flex items-center gap-2 border-t border-black/5 pt-2">
-                  <span class="w-2 h-2 rounded-full bg-[#8a6d3d]"></span>
-                  <span class="text-[11px] font-semibold text-[#1d1d1f]/70">Nodos de información sincronizados</span>
+                  <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                  <span class="text-[11px] font-semibold text-[#1d1d1f]/70">En revisión legal: 14 acuerdos</span>
                 </div>
               </div>
 
               <div class="flex items-center text-sm font-semibold text-[#8a6d3d] group-hover:text-[#1d1d1f] transition-colors mt-auto relative z-10">
-                Ver arquitectura
+                Revisar contratos
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </router-link>
+            </a>
 
-            <!-- Card 3: Auditoría Master -->
-            <router-link to="/master" class="group block bg-gradient-to-br from-[#1d1d1f] to-[#2d2d2f] rounded-[2rem] p-8 border border-black/10 transition-all duration-300 hover:shadow-2xl hover:shadow-[#1d1d1f]/20 relative overflow-hidden flex flex-col h-full text-white">
+            <!-- Card 3: Monitoreo de Filiales -->
+            <a href="#" @click.prevent="showComingSoonModal = true" class="group block bg-gradient-to-br from-[#1d1d1f] to-[#2d2d2f] rounded-[2rem] p-8 border border-black/10 transition-all duration-300 hover:shadow-2xl hover:shadow-[#1d1d1f]/20 relative overflow-hidden flex flex-col h-full text-white cursor-pointer">
               <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDIiLz4KPC9zdmc+')] opacity-20"></div>
               
               <div class="flex items-center justify-between mb-6 relative z-10">
                 <div class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 text-white">
-                  <span class="material-symbols-outlined">admin_panel_settings</span>
+                  <span class="material-symbols-outlined">domain</span>
                 </div>
-                <span class="px-3 py-1 rounded-full bg-[#8a6d3d] text-[10px] font-bold text-white uppercase tracking-widest">God Mode</span>
+                <span class="px-3 py-1 rounded-full bg-[#8a6d3d] text-[10px] font-bold text-white uppercase tracking-widest">14 Marcas</span>
               </div>
-              <h3 class="text-xl font-bold text-white mb-3 relative z-10">Auditoría Master</h3>
+              <h3 class="text-xl font-bold text-white mb-3 relative z-10">Monitoreo de Filiales y Marcas</h3>
               <p class="text-sm text-white/60 leading-relaxed mb-8 flex-1 relative z-10">
-                Centro de mando y control para la junta directiva. Supervisión en tiempo real de operaciones y métricas críticas.
+                Supervisión en tiempo real de las líneas de producto, inventario central y distribución comercial.
               </p>
               
               <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/10 relative z-10 space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-semibold text-white/60">Unidades Comercializadas</span>
+                  <span class="text-lg font-bold text-white">4.8M <span class="text-xs font-normal text-white/40">/ mes</span></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-semibold text-white/60">Líneas Activas</span>
+                  <span class="text-sm font-bold text-[#d4b06a]">88 SKUs masivos</span>
+                </div>
                 <div class="flex items-center gap-2 border-t border-white/10 pt-2">
-                  <span class="material-symbols-outlined text-[14px] text-green-400">verified</span>
-                  <span class="text-[11px] font-semibold text-white/80">Acceso VIP (Sólo C-Level)</span>
+                  <span class="material-symbols-outlined text-[14px] text-green-400">trending_up</span>
+                  <span class="text-[11px] font-semibold text-white/80">Eficiencia Logística: 97.6% On-Time</span>
                 </div>
               </div>
 
               <div class="flex items-center text-sm font-semibold text-white group-hover:text-[#d4b06a] transition-colors mt-auto relative z-10">
-                Ingresar al Master
+                Explorar filiales
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </router-link>
+            </a>
 
-            <!-- Card 4: Oráculo IA -->
-            <router-link to="/oracle" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full">
+            <!-- Card 4: Auditoría Interna y Directorio -->
+            <a href="#" @click.prevent="showComingSoonModal = true" class="group block bg-[#f5f5f7] hover:bg-white rounded-[2rem] p-8 border border-transparent hover:border-[#8a6d3d]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#8a6d3d]/5 relative overflow-hidden flex flex-col h-full cursor-pointer">
               <div class="flex items-center justify-between mb-6 relative z-10">
-                <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[#8a6d3d] group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors">
-                  <span class="material-symbols-outlined">auto_awesome</span>
+                <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[#1d1d1f] group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">account_balance</span>
                 </div>
-                <span class="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#8a6d3d] uppercase tracking-widest shadow-sm">Inteligencia</span>
+                <span class="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#8a6d3d] uppercase tracking-widest shadow-sm">Governance</span>
               </div>
-              <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 relative z-10">El Oráculo IA</h3>
+              <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 relative z-10">Auditoría Interna y Directorio</h3>
               <p class="text-sm text-[#1d1d1f]/60 leading-relaxed mb-8 flex-1 relative z-10">
-                Cerebro cognitivo del ecosistema. Chatbot inteligente entrenado con toda la telemetría corporativa y documental.
+                Minutas de juntas directivas, matriz de riesgos corporativos y delegación de responsabilidades.
               </p>
               
               <div class="bg-white rounded-xl p-4 mb-6 shadow-sm border border-black/5 relative z-10 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px] text-green-600">verified</span>
+                    <span class="text-xs font-semibold text-[#1d1d1f]">Sesión Ordinaria #48</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-white bg-[#1d1d1f] px-2 py-0.5 rounded">Aprobada</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[16px] text-[#8a6d3d]">groups</span>
+                  <span class="text-[11px] font-semibold text-[#1d1d1f]/80">Quorum Directivo: 100% Asistencia</span>
+                </div>
                 <div class="flex items-center gap-2 border-t border-black/5 pt-2">
-                  <span class="material-symbols-outlined text-[16px] text-[#8a6d3d]">psychology</span>
-                  <span class="text-xs font-semibold text-[#1d1d1f]">Memoria Institucional Integrada</span>
+                  <span class="material-symbols-outlined text-[14px] text-blue-600">security</span>
+                  <span class="text-[11px] font-semibold text-[#1d1d1f]">Matriz Riesgos: Nivel Bajo</span>
                 </div>
               </div>
 
               <div class="flex items-center text-sm font-semibold text-[#8a6d3d] group-hover:text-[#1d1d1f] transition-colors mt-auto relative z-10">
-                Consultar Oráculo
+                Acceder a juntas
                 <span class="material-symbols-outlined ml-1 text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </div>
-            </router-link>
+            </a>
 
           </div>
         </div>
@@ -297,6 +331,7 @@ const router = useRouter()
 const isLoggedIn = ref(false)
 const isControlUser = computed(() => isMasterAdmin() || isManager())
 const isMasterUser = computed(() => isMasterAdmin())
+const showComingSoonModal = ref(false)
 
 const statRoles = ref(0) // Total cargos
 const statMappedRoles = ref(0) // Cargos que están en role_workflows

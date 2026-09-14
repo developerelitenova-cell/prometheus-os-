@@ -254,10 +254,11 @@
 
             <div class="flex flex-col gap-1">
               <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Prioridad</label>
-              <select v-model="newTask.priority" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+              <select v-model="newTask.priority" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none" :class="newTask.priority === 'urgent' ? 'border-danger text-danger font-bold' : ''">
                 <option value="low">Baja</option>
                 <option value="medium">Media</option>
                 <option value="high">Alta</option>
+                <option value="urgent" class="text-danger font-bold">Urgente (Inmediata)</option>
               </select>
             </div>
           </div>

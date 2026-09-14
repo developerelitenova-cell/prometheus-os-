@@ -159,8 +159,11 @@
                   <h4 :class="['text-[14px] font-medium line-clamp-1', task.status === 'completed' ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</h4>
                   <p class="text-[13px] text-[#86868b] mt-1 line-clamp-2">{{ task.description }}</p>
                   <div class="flex items-center gap-3 mt-2">
-                    <span v-if="task.priority === 'high'" class="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-[11px] font-bold tracking-wide">
-                      Alta Prioridad
+                    <span v-if="task.priority === 'high' || task.priority === 'urgent'" :class="[
+                      'px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide shadow-sm',
+                      task.priority === 'urgent' ? 'bg-red-600 text-white animate-pulse' : 'bg-red-50 text-red-700'
+                    ]">
+                      {{ task.priority === 'urgent' ? '¡URGENTE (INMEDIATO)!' : 'Alta Prioridad' }}
                     </span>
                     <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium">
                       <span class="material-symbols-outlined text-[14px]">timer</span>
@@ -187,6 +190,12 @@
                 <div class="flex-1 min-w-0">
                   <h4 :class="['text-[14px] font-medium line-clamp-1', task.status === 'completed' ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</h4>
                   <div class="flex items-center gap-3 mt-2">
+                    <span v-if="task.priority === 'high' || task.priority === 'urgent'" :class="[
+                      'px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide shadow-sm',
+                      task.priority === 'urgent' ? 'bg-red-600 text-white animate-pulse' : 'bg-red-50 text-red-700'
+                    ]">
+                      {{ task.priority === 'urgent' ? '¡URGENTE (INMEDIATO)!' : 'Alta Prioridad' }}
+                    </span>
                     <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium bg-[#f5f5f7] px-2 py-0.5 rounded-md">
                       <span class="material-symbols-outlined text-[14px]">autorenew</span>
                       Recurrente
