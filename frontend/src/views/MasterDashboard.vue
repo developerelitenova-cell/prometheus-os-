@@ -277,38 +277,108 @@
       </div>
     </main>
 
-    <!-- Modal Documentación -->
+    <!-- Modal Información del Nodo -->
     <div v-if="showDocsModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#1d1d1f]/60 backdrop-blur-sm p-4">
-      <div class="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+      <div class="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
         <div class="p-6 border-b border-[#e5e5ea] flex justify-between items-center bg-[#fbfbfd]">
           <div>
             <h3 class="text-xl font-bold text-[#1d1d1f] flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary">folder_open</span>
-              Documentación: {{ activeDocRole?.name }}
+              <span class="material-symbols-outlined text-primary">hub</span>
+              Información del Nodo: {{ activeDocRole?.name }}
             </h3>
-            <p class="text-sm text-secondary mt-1">Base de conocimiento adjunta a este nodo.</p>
+            <p class="text-sm text-secondary mt-1">Conocimiento inyectado y cartografía operativa.</p>
           </div>
           <button @click="closeDocsModal" class="p-2 text-secondary hover:text-[#1d1d1f] hover:bg-gray-100 rounded-full transition-colors">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div class="p-6 overflow-y-auto flex-1">
-          <div v-if="loadingDocs" class="flex justify-center py-10">
-             <span class="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+        
+        <div class="p-0 overflow-y-auto flex-1 flex flex-col">
+          <div v-if="loadingDocs" class="flex justify-center py-20">
+             <span class="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
           </div>
-          <ul v-else-if="roleDocs.length > 0" class="divide-y divide-[#e5e5ea]">
-            <li v-for="doc in roleDocs" :key="doc.id" class="py-4 flex justify-between items-center group">
-              <div>
-                <span class="font-bold text-[#1d1d1f] block">{{ doc.title }}</span>
-                <span class="text-xs text-secondary">{{ doc.document_type || 'Documento' }} • Actualizado: {{ new Date(doc.updated_at).toLocaleDateString() }}</span>
+          
+          <div v-else class="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-[#e5e5ea] h-full">
+            
+            <!-- Columna Izquierda: Cartografía Operativa (IA) -->
+            <div class="flex-1 p-6 bg-white overflow-y-auto">
+              <h4 class="font-bold text-[#1d1d1f] mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#8a6d3d]">memory</span>
+                Cartografía del Flujo (IA)
+              </h4>
+              
+              <div v-if="roleWorkflow" class="space-y-6">
+                <!-- Tareas -->
+                <div v-if="roleWorkflow.tasks?.length">
+                  <h5 class="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Tareas Principales</h5>
+                  <ul class="space-y-2">
+                    <li v-for="(task, idx) in roleWorkflow.tasks" :key="'t'+idx" class="text-sm text-[#1d1d1f] bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span class="font-bold text-[#8a6d3d] mr-1">{{ idx + 1 }}.</span> {{ task }}
+                    </li>
+                  </ul>
+                </div>
+                
+                <!-- KPIs & Outputs -->
+                <div class="grid grid-cols-2 gap-4">
+                  <div v-if="roleWorkflow.kpis?.length">
+                    <h5 class="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Métricas (KPIs)</h5>
+                    <ul class="list-disc pl-4 space-y-1">
+                      <li v-for="(kpi, idx) in roleWorkflow.kpis" :key="'k'+idx" class="text-sm text-[#1d1d1f]">{{ kpi }}</li>
+                    </ul>
+                  </div>
+                  <div v-if="roleWorkflow.outputs?.length">
+                    <h5 class="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Entregables</h5>
+                    <ul class="list-disc pl-4 space-y-1">
+                      <li v-for="(out, idx) in roleWorkflow.outputs" :key="'o'+idx" class="text-sm text-[#1d1d1f]">{{ out }}</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Bottlenecks -->
+                <div v-if="roleWorkflow.bottlenecks?.length" class="bg-amber-50 p-4 rounded-xl border border-amber-100">
+                  <h5 class="text-xs font-bold text-amber-800 uppercase tracking-widest mb-2 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">warning</span> Riesgos y Cuellos de Botella
+                  </h5>
+                  <ul class="list-disc pl-4 space-y-1 text-sm text-amber-900">
+                    <li v-for="(bn, idx) in roleWorkflow.bottlenecks" :key="'b'+idx">{{ bn }}</li>
+                  </ul>
+                </div>
               </div>
-              <a v-if="doc.file_url" :href="doc.file_url" target="_blank" class="px-3 py-1.5 text-xs font-bold bg-surface-container-low text-[#1d1d1f] hover:bg-[#e5e5ea] rounded-lg transition-colors">Ver Archivo</a>
-            </li>
-          </ul>
-          <div v-else class="py-12 text-center text-secondary flex flex-col items-center">
-            <span class="material-symbols-outlined text-4xl mb-3 opacity-50">description</span>
-            <p>No hay documentos ni manuales cargados en este nodo.</p>
-            <p class="text-xs mt-2">Puedes indicarle al Oráculo que inyecte conocimiento para este cargo.</p>
+              
+              <div v-else class="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                <span class="material-symbols-outlined text-3xl text-secondary opacity-50 mb-2">account_tree</span>
+                <p class="text-sm text-secondary font-medium">Este cargo aún no ha sido estructurado.</p>
+                <router-link :to="`/mapper/${activeDocRole?.id}`" class="text-xs font-bold text-[#b08d57] hover:underline mt-2 inline-block">Iniciar Mapeo con IA</router-link>
+              </div>
+            </div>
+
+            <!-- Columna Derecha: Base de Conocimiento Documental -->
+            <div class="w-full md:w-80 p-6 bg-[#fbfbfd] overflow-y-auto shrink-0">
+              <h4 class="font-bold text-[#1d1d1f] mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">topic</span>
+                Manuales Adjuntos
+              </h4>
+              
+              <ul v-if="roleDocs.length > 0" class="space-y-3">
+                <li v-for="doc in roleDocs" :key="doc.id" class="p-3 bg-white border border-[#e5e5ea] rounded-xl hover:border-primary/30 transition-colors group">
+                  <div class="flex justify-between items-start gap-2">
+                    <div>
+                      <span class="font-bold text-[#1d1d1f] text-sm block leading-tight mb-1">{{ doc.title }}</span>
+                      <span class="text-[10px] text-secondary uppercase font-bold">{{ doc.document_type || 'Documento' }}</span>
+                    </div>
+                    <a v-if="doc.file_url" :href="doc.file_url" target="_blank" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 hover:bg-blue-100 transition-colors" title="Abrir PDF">
+                      <span class="material-symbols-outlined text-[16px]">visibility</span>
+                    </a>
+                  </div>
+                </li>
+              </ul>
+              
+              <div v-else class="text-center py-8">
+                <span class="material-symbols-outlined text-3xl text-secondary opacity-30 mb-2">description</span>
+                <p class="text-xs text-secondary">No hay PDFs ni manuales inyectados en este nodo.</p>
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>
@@ -349,6 +419,7 @@ const mappedRolesSet = ref(new Set());
 const showDocsModal = ref(false);
 const activeDocRole = ref(null);
 const roleDocs = ref([]);
+const roleWorkflow = ref(null);
 const loadingDocs = ref(false);
 
 const openDocsModal = async (role) => {
@@ -356,10 +427,20 @@ const openDocsModal = async (role) => {
   showDocsModal.value = true;
   loadingDocs.value = true;
   roleDocs.value = [];
+  roleWorkflow.value = null;
+
   try {
-    const { data, error } = await supabase.from('knowledge_base').select('*').eq('role_id', role.id).order('updated_at', { ascending: false });
-    if (!error && data) {
-      roleDocs.value = data;
+    const [docsRes, workflowRes] = await Promise.all([
+      supabase.from('knowledge_base').select('*').eq('role_id', role.id).order('updated_at', { ascending: false }),
+      supabase.from('role_workflows').select('*').eq('role_id', role.id).maybeSingle()
+    ]);
+
+    if (!docsRes.error && docsRes.data) {
+      roleDocs.value = docsRes.data;
+    }
+    
+    if (!workflowRes.error && workflowRes.data) {
+      roleWorkflow.value = workflowRes.data;
     }
   } catch (err) {
     console.error(err);
