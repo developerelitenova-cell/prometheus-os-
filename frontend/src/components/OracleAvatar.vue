@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { TresCanvas, useRenderLoop } from '@tresjs/core'
+import { TresCanvas, useLoop } from '@tresjs/core'
 import { OrbitControls, GLTFModel } from '@tresjs/cientos'
 import { shallowRef, watch } from 'vue'
 import * as THREE from 'three'
@@ -45,8 +45,8 @@ const onModelLoad = (model) => {
   }
 }
 
-const { onLoop } = useRenderLoop()
-onLoop(({ delta }) => {
+const { onBeforeRender } = useLoop()
+onBeforeRender(({ delta }) => {
   if (mixer.value) {
     mixer.value.update(delta)
   }
