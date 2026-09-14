@@ -220,8 +220,99 @@
           </div>
         </div>
 
+        <!-- Directorio de Nodos y Auditoría (Tabla Restaurada) -->
+        <div class="mt-space-xl bg-white rounded-3xl border border-[#e5e5ea] shadow-sm overflow-hidden mb-12">
+          <div class="p-6 border-b border-[#e5e5ea] flex justify-between items-center bg-[#fbfbfd]">
+            <div>
+              <h3 class="text-xl font-bold text-[#1d1d1f]">Directorio de Nodos Operativos</h3>
+              <p class="text-sm text-secondary mt-1">Auditoría global de cargos, estado de mapeo y base de conocimiento.</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-[#e5e5ea] bg-gray-50 text-xs uppercase tracking-widest text-secondary">
+                  <th class="p-4 font-bold">Cargo / Nodo</th>
+                  <th class="p-4 font-bold">Área (Nivel)</th>
+                  <th class="p-4 font-bold">Estado Mapeo</th>
+                  <th class="p-4 font-bold text-right">Acciones (Auditoría)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#e5e5ea]">
+                <tr v-for="role in allRoles" :key="role.id" class="hover:bg-gray-50 transition-colors">
+                  <td class="p-4">
+                    <span class="font-bold text-[#1d1d1f] block">{{ role.name }}</span>
+                    <span class="text-xs text-secondary font-mono">ID: EN-{{ role.id.substring(0,4).toUpperCase() }}</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low text-[#1d1d1f] text-xs font-semibold">
+                      {{ role.areas?.name || 'General' }} (Nivel {{ role.access_level }})
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <span v-if="mappedRolesSet.has(role.id)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-200">
+                      <span class="material-symbols-outlined text-[14px]">check_circle</span> Mapeado
+                    </span>
+                    <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                      <span class="material-symbols-outlined text-[14px]">warning</span> Sin Mapear
+                    </span>
+                  </td>
+                  <td class="p-4 text-right space-x-2">
+                    <button @click="openDocsModal(role)" class="inline-flex items-center justify-center p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors shadow-sm" title="Ver Documentación del Nodo">
+                      <span class="material-symbols-outlined text-[18px]">folder_open</span>
+                    </button>
+                    <router-link :to="`/mapper/${role.id}`" class="inline-flex items-center justify-center p-2 rounded-xl bg-[#1d1d1f] text-[#d4b06a] hover:scale-105 transition-all shadow-sm" title="Estructurar Cadena (Mapear)">
+                      <span class="material-symbols-outlined text-[18px]">account_tree</span>
+                    </router-link>
+                  </td>
+                </tr>
+                <tr v-if="allRoles.length === 0">
+                  <td colspan="4" class="p-8 text-center text-secondary">No hay roles registrados en el sistema.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </main>
+
+    <!-- Modal Documentación -->
+    <div v-if="showDocsModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#1d1d1f]/60 backdrop-blur-sm p-4">
+      <div class="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+        <div class="p-6 border-b border-[#e5e5ea] flex justify-between items-center bg-[#fbfbfd]">
+          <div>
+            <h3 class="text-xl font-bold text-[#1d1d1f] flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">folder_open</span>
+              Documentación: {{ activeDocRole?.name }}
+            </h3>
+            <p class="text-sm text-secondary mt-1">Base de conocimiento adjunta a este nodo.</p>
+          </div>
+          <button @click="closeDocsModal" class="p-2 text-secondary hover:text-[#1d1d1f] hover:bg-gray-100 rounded-full transition-colors">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="p-6 overflow-y-auto flex-1">
+          <div v-if="loadingDocs" class="flex justify-center py-10">
+             <span class="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+          </div>
+          <ul v-else-if="roleDocs.length > 0" class="divide-y divide-[#e5e5ea]">
+            <li v-for="doc in roleDocs" :key="doc.id" class="py-4 flex justify-between items-center group">
+              <div>
+                <span class="font-bold text-[#1d1d1f] block">{{ doc.title }}</span>
+                <span class="text-xs text-secondary">{{ doc.document_type || 'Documento' }} • Actualizado: {{ new Date(doc.updated_at).toLocaleDateString() }}</span>
+              </div>
+              <a v-if="doc.file_url" :href="doc.file_url" target="_blank" class="px-3 py-1.5 text-xs font-bold bg-surface-container-low text-[#1d1d1f] hover:bg-[#e5e5ea] rounded-lg transition-colors">Ver Archivo</a>
+            </li>
+          </ul>
+          <div v-else class="py-12 text-center text-secondary flex flex-col items-center">
+            <span class="material-symbols-outlined text-4xl mb-3 opacity-50">description</span>
+            <p>No hay documentos ni manuales cargados en este nodo.</p>
+            <p class="text-xs mt-2">Puedes indicarle al Oráculo que inyecte conocimiento para este cargo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -252,6 +343,34 @@ const auditSteps = ref([
   { completed: false, title: 'Monitorear Riesgos de Compliance', desc: 'Revisar matriz de perfiles para detectar accesos no autorizados.', action: 'Ver Gobernanza', link: '/roles' },
   { completed: false, title: 'Sincronizar Inteligencia Corporativa', desc: 'El oráculo ha detectado 3 desviaciones en manuales operativos.', action: 'Hablar con Oráculo', link: '/oracle' }
 ]);
+
+const allRoles = ref([]);
+const mappedRolesSet = ref(new Set());
+const showDocsModal = ref(false);
+const activeDocRole = ref(null);
+const roleDocs = ref([]);
+const loadingDocs = ref(false);
+
+const openDocsModal = async (role) => {
+  activeDocRole.value = role;
+  showDocsModal.value = true;
+  loadingDocs.value = true;
+  roleDocs.value = [];
+  try {
+    const { data, error } = await supabase.from('knowledge_base').select('*').eq('role_id', role.id).order('updated_at', { ascending: false });
+    if (!error && data) {
+      roleDocs.value = data;
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    loadingDocs.value = false;
+  }
+};
+const closeDocsModal = () => {
+  showDocsModal.value = false;
+  activeDocRole.value = null;
+};
 
 const auditProgress = computed(() => {
   const completed = auditSteps.value.filter(s => s.completed).length;
@@ -287,6 +406,16 @@ const fetchMasterData = async () => {
       
       metrics.value.totalProfiles = profilesCount || 0;
       metrics.value.totalOverdue = overdueCount || 0;
+
+      // Fetch roles
+      const { data: rolesData } = await supabase.from('roles').select('*, areas(name)').order('name');
+      if (rolesData) allRoles.value = rolesData;
+
+      // Fetch mapped roles
+      const { data: mappedData } = await supabase.from('role_workflows').select('role_id');
+      if (mappedData) {
+        mappedRolesSet.value = new Set(mappedData.map(w => w.role_id));
+      }
     }
   } catch (error) {
     console.error('Error fetching master data:', error);
