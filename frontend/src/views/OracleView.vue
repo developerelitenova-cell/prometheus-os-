@@ -428,7 +428,7 @@ const dbStatus = ref(true);
 const tab = ref('chat');
 const panorama = ref([]);
 const panoramaLoading = ref(false);
-let panoramaLoaded = false;
+const panoramaLoaded = ref(false);
 
 const showDocsModal = ref(false);
 const selectedRole = ref(null);
@@ -478,7 +478,7 @@ const fullyCoveredRoles = computed(() =>
 );
 
 const loadPanorama = async () => {
-  if (panoramaLoaded) return;
+  if (panoramaLoaded.value) return;
   panoramaLoading.value = true;
   try {
     const [areasRes, rolesRes, workflowsRes, manualsRes, templatesRes, memoryRes] = await Promise.all([
@@ -528,7 +528,7 @@ const loadPanorama = async () => {
       .sort((a, b) => b.coveragePct - a.coveragePct); // Sort by lowest coverage first
 
     panorama.value = areas;
-    panoramaLoaded = true;
+    panoramaLoaded.value = true;
   } catch (e) {
     console.error('Error cargando el panorama de conocimiento:', e);
   } finally {
@@ -591,7 +591,14 @@ const sendQuery = async () => {
 
 const formatMessage = (text) => {
   if (!text) return '';
-  return marked(text);
+  try {
+    const rawHtml = marked(text);
+    const purify = DOMPurify.sanitize ? DOMPurify : (DOMPurify.default || {});
+    return purify.sanitize ? purify.sanitize(rawHtml) : rawHtml;
+  } catch (err) {
+    console.error("Markdown parse error:", err);
+    return text;
+  }
 };
 </script>
 
