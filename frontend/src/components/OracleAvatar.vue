@@ -18,9 +18,10 @@
 </template>
 
 <script setup>
-import { TresCanvas } from '@tresjs/core'
+import { TresCanvas, useRenderLoop } from '@tresjs/core'
 import { OrbitControls, GLTFModel } from '@tresjs/cientos'
-import { ref, watch, shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
+import * as THREE from 'three'
 
 const props = defineProps({
   isThinking: Boolean,
@@ -28,10 +29,41 @@ const props = defineProps({
 })
 
 const modelRef = shallowRef(null)
+const mixer = shallowRef(null)
+const currentAction = shallowRef(null)
 
 const onModelLoad = (model) => {
   modelRef.value = model
-  console.log("Model loaded successfully!", model)
-  // Nota: una vez que sepamos el nombre de las animaciones, implementaremos useAnimations
+  
+  if (model.animations && model.animations.length > 0) {
+    mixer.value = new THREE.AnimationMixer(model.scene || model)
+    currentAction.value = mixer.value.clipAction(model.animations[0])
+    currentAction.value.play()
+    
+    // Set initial speed based on props
+    currentAction.value.timeScale = props.isThinking ? 2.5 : 1.0
+  }
 }
+
+const { onLoop } = useRenderLoop()
+onLoop(({ delta }) => {
+  if (mixer.value) {
+    mixer.value.update(delta)
+  }
+})
+
+// Watchers para reaccionar al estado del Oráculo
+watch(() => props.isThinking, (newVal) => {
+  if (currentAction.value) {
+    // Si está pensando, aceleramos la animación para que parezca que procesa
+    currentAction.value.timeScale = newVal ? 2.5 : 1.0
+  }
+})
+
+watch(() => props.isTalking, (newVal) => {
+  if (currentAction.value && !props.isThinking) {
+    // Si habla (y no está pensando), velocidad media
+    currentAction.value.timeScale = newVal ? 1.5 : 1.0
+  }
+})
 </script>
