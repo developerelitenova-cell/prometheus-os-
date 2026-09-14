@@ -496,7 +496,7 @@ const loadPanorama = async () => {
     const [areasRes, rolesRes, workflowsRes, manualsRes, templatesRes, memoryRes] = await Promise.all([
       supabase.from('areas').select('id,name').order('name'),
       supabase.from('roles').select('id,name,area_id'),
-      supabase.from('role_workflows').select('role_id'),
+      supabase.from('role_workflows').select('role_id, kpis'),
       supabase.from('manuals').select('role_id'),
       supabase.from('kpi_role_templates').select('role_id').not('role_id', 'is', null),
       supabase.from('corporate_memory').select('metadata')
@@ -505,6 +505,13 @@ const loadPanorama = async () => {
     const mappedRoleIds = new Set((workflowsRes.data || []).map(w => w.role_id));
     const manualRoleIds = new Set((manualsRes.data || []).map(m => m.role_id));
     const kpiLinkedRoleIds = new Set((templatesRes.data || []).map(t => t.role_id));
+    
+    // Check if mapping also contains KPIs
+    (workflowsRes.data || []).forEach(w => {
+      if (w.kpis && Array.isArray(w.kpis) && w.kpis.length > 0) {
+        kpiLinkedRoleIds.add(w.role_id);
+      }
+    });
 
     const memoryCountByRole = {};
     (memoryRes.data || []).forEach(m => {
