@@ -1,35 +1,5 @@
 <template>
   <div class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen pb-20">
-    <header class="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-      <div class="h-20 max-w-7xl mx-auto px-margin-mobile md:px-margin-tablet lg:px-margin flex items-center justify-between gap-space-md">
-        <div class="flex items-center gap-space-lg shrink-0">
-          <div class="flex items-center gap-space-sm cursor-pointer" @click="router.push('/')">
-            <div class="h-14 w-auto flex-shrink-0">
-              <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="h-full w-auto object-contain" />
-            </div>
-            <div class="flex flex-col">
-              <span class="font-headline-sm text-headline-sm tracking-tight text-on-surface leading-tight">Elite Nutrition</span>
-              <span class="font-caption text-caption tracking-widest uppercase text-[#b08d57] font-bold leading-tight">God Mode</span>
-            </div>
-          </div>
-          <nav class="hidden xl:flex items-center gap-space-lg">
-            <router-link to="/" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Inicio</router-link>
-            <router-link to="/master" class="text-primary font-semibold font-label-md text-label-md transition-colors border-b-2 border-primary-container pb-1">Auditoría Global</router-link>
-            <router-link to="/mapa-cargos" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Arquitectura</router-link>
-            <router-link to="/performance" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Rendimiento</router-link>
-          </nav>
-        </div>
-        <div class="flex items-center gap-space-sm justify-end">
-          <div class="flex flex-col text-right hidden sm:flex">
-            <span class="font-label-md text-label-md text-on-surface leading-tight">{{ currentUser?.full_name || 'Admin Master' }}</span>
-            <span class="font-caption text-caption text-[#b08d57] font-bold tracking-widest uppercase">Holding CEO</span>
-          </div>
-          <button @click="router.push('/workspace')" class="w-10 h-10 rounded-full bg-[#1d1d1f] text-[#d4b06a] flex items-center justify-center font-bold hover:scale-105 shadow-md transition-all border border-[#8a6d3d]/30" title="Mi Espacio">
-            {{ currentUser?.full_name ? currentUser.full_name.charAt(0) : 'A' }}
-          </button>
-        </div>
-      </div>
-    </header>
 
     <main class="w-full pt-28">
       <div v-if="loading" class="flex items-center justify-center py-20">

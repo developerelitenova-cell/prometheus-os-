@@ -4,51 +4,6 @@
     <!-- Micro-dots Background Pattern (Subtle) -->
     <div class="absolute inset-0 pointer-events-none opacity-50 z-0 micro-dots"></div>
 
-    <!-- NAVBAR CORPORATIVO -->
-    <header class="relative z-50 w-full border-b border-black/5 bg-white/80 backdrop-blur-md sticky top-0">
-      <div class="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="h-14 w-auto flex-shrink-0">
-            <img src="@/assets/elite-nova-logo.png" alt="Elite Nova Group" class="h-full w-auto object-contain" />
-          </div>
-          <div>
-            <h1 class="text-xl font-bold tracking-tight text-[#1d1d1f] leading-none">Elite Nutrition</h1>
-            <p class="text-[11px] font-semibold text-[#86868b] tracking-widest uppercase mt-1">PROMETHEUS OS</p>
-          </div>
-        </div>
-
-        <nav class="hidden md:flex items-center gap-8">
-          <router-link to="/workspace" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Portal Corporativo</router-link>
-          <router-link to="/mapa-cargos" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Estructura Corporativa</router-link>
-          <router-link to="/team" class="text-sm font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors">Directorio</router-link>
-          <router-link to="/oracle" class="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">auto_awesome</span> Oráculo IA</router-link>
-          <router-link v-if="isMasterUser" to="/master" class="text-sm font-bold text-[#8a6d3d] hover:text-[#d4b06a] transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">admin_panel_settings</span> Auditoría Master</router-link>
-        </nav>
-
-        <div class="flex items-center gap-4">
-          <template v-if="!isLoggedIn">
-            <router-link to="/login" class="text-sm font-medium text-[#1d1d1f] hover:text-[#8a6d3d] transition-colors hidden sm:block">
-              Acceso Restringido
-            </router-link>
-            <router-link to="/login" class="h-10 px-6 rounded-full bg-[#1d1d1f] text-white text-sm font-medium flex items-center gap-2 hover:bg-[#8a6d3d] transition-all shadow-md">
-              <span class="material-symbols-outlined text-[18px]">lock</span>
-              Iniciar Sesión
-            </router-link>
-          </template>
-          <template v-else>
-            <router-link v-if="isControlUser" to="/team" class="text-sm font-medium text-[#1d1d1f] hover:text-[#8a6d3d] transition-colors hidden sm:block">
-              Centro de Control
-            </router-link>
-            <router-link to="/workspace" class="h-10 px-6 rounded-full bg-[#1d1d1f] text-white text-sm font-medium flex items-center gap-2 hover:bg-[#8a6d3d] transition-all shadow-md">
-              Mi Espacio Elite
-            </router-link>
-            <button @click="handleSignOut" class="h-10 px-4 rounded-full bg-red-50 text-red-600 text-sm font-medium flex items-center gap-2 hover:bg-red-100 transition-all ml-2" title="Cerrar sesión">
-              <span class="material-symbols-outlined text-[18px]">logout</span>
-            </button>
-          </template>
-        </div>
-      </div>
-    </header>
 
     <main class="flex-1 relative z-10 w-full">
       <!-- HERO SECTION -->

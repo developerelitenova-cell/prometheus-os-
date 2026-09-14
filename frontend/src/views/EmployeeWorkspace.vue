@@ -1,39 +1,6 @@
 
 <template>
   <div class="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans antialiased flex flex-col">
-    <!-- Navbar / Header -->
-    <header class="sticky top-0 z-50 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-[#e5e5ea] px-6 py-4">
-      <div class="max-w-[1600px] mx-auto flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <div class="w-20 h-20 flex items-center justify-center">
-            <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="w-full h-full object-contain" />
-          </div>
-          <div>
-            <h1 class="text-xl font-semibold tracking-tight text-[#1d1d1f] leading-tight">Elite Nutrition</h1>
-            <p class="text-sm text-[#86868b] font-medium leading-none mt-1">PROMETHEUS OS</p>
-          </div>
-          <div v-if="isAuditMode" class="ml-4 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-bold border border-red-200 flex items-center gap-2">
-            <span class="material-symbols-outlined text-[14px]">visibility</span>
-            MODO AUDITORÍA
-            <button @click="exitAuditMode" class="ml-2 underline hover:text-red-900 cursor-pointer">Salir</button>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 bg-white border border-[#e5e5ea] rounded-full px-4 py-1.5 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-[#34c759] shadow-[0_0_8px_rgba(52,199,89,0.4)]"></span>
-            <span class="text-[13px] font-medium text-[#1d1d1f]">Sistema Activo</span>
-          </div>
-          
-          <button @click="router.push('/')" class="p-2 text-[#86868b] hover:text-[#1d1d1f] transition-colors rounded-full hover:bg-[#e5e5ea]/50">
-            <span class="material-symbols-outlined">home</span>
-          </button>
-          <button @click="handleSignOut" class="p-2 text-[#86868b] hover:text-[#ff3b30] transition-colors rounded-full hover:bg-[#ffebee]">
-            <span class="material-symbols-outlined">logout</span>
-          </button>
-        </div>
-      </div>
-    </header>
 
     <!-- Main Content Grid -->
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">

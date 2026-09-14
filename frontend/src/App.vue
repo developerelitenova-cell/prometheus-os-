@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <GlobalNavbar v-if="showNavbar" />
     <!-- Router View con Animación de Transición -->
     <router-view v-slot="{ Component }">
       <transition name="fade-up" mode="out-in">
@@ -22,11 +23,15 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import GlobalNavbar from '@/components/GlobalNavbar.vue';
 import MandatoryEventModal from '@/components/MandatoryEventModal.vue';
 
 const route = useRoute();
 const NO_BRAND_MARK_ROUTES = ['/', '/login', '/welcome', '/pending-approval'];
+const NO_NAVBAR_ROUTES = ['/login', '/welcome', '/pending-approval'];
+
 const showBrandMark = computed(() => !NO_BRAND_MARK_ROUTES.includes(route.path));
+const showNavbar = computed(() => !NO_NAVBAR_ROUTES.includes(route.path));
 </script>
 
 <style>

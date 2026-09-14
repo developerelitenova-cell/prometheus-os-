@@ -1,45 +1,5 @@
 <template>
   <div class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-    <header class="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-      <div class="h-20 max-w-7xl mx-auto px-margin-mobile md:px-margin-tablet lg:px-margin flex items-center justify-between gap-space-md">
-        <div class="flex items-center gap-space-lg shrink-0">
-          <div class="flex items-center gap-space-sm cursor-pointer" @click="router.push('/')">
-            <div class="h-14 w-auto flex-shrink-0">
-              <img src="@/assets/elite-nova-logo.png" alt="Elite Nutrition Logo" class="h-full w-auto object-contain" />
-            </div>
-            <div class="flex flex-col">
-              <span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">Elite Nutrition</span>
-              <span class="font-caption text-caption tracking-widest uppercase text-[#86868b] font-bold">Centro de Control</span>
-            </div>
-          </div>
-          <nav class="hidden xl:flex items-center gap-space-lg">
-            <router-link to="/" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Dashboard General</router-link>
-            <router-link to="/team" class="text-primary font-semibold font-label-md text-label-md transition-colors border-b-2 border-primary-container pb-1">Liderazgo de Área</router-link>
-            <router-link to="/mapa-cargos" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Equipos</router-link>
-            <router-link to="/performance" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Reportes</router-link>
-            <router-link to="/roles" class="text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Gestión de Roles y Permisos</router-link>
-          </nav>
-        </div>
-        <div class="flex items-center gap-space-md justify-end flex-1 max-w-md">
-          <div class="relative w-full max-w-xs hidden sm:block">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-label-md">search</span>
-            <input v-model="searchQuery" class="w-full pl-9 pr-space-md py-space-xs rounded-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container transition-all" placeholder="Buscar colaboradores..." type="text"/>
-          </div>
-          <div class="flex items-center gap-space-sm pl-space-sm shrink-0">
-            <div class="flex flex-col text-right hidden lg:flex">
-              <span class="font-label-md text-label-md text-on-surface leading-tight">{{ currentUser?.full_name || 'Cargando...' }}</span>
-              <span class="font-caption text-caption text-primary leading-tight font-medium">{{ currentUser?.is_master_admin ? 'Master Admin / Holding' : (currentUser?.roles?.name || 'Líder de Área') }}</span>
-            </div>
-            <button @click="router.push('/workspace')" class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold hover:brightness-110 shadow-sm transition-all" title="Ir a Mi Espacio">
-              {{ currentUser?.full_name ? currentUser.full_name.charAt(0) : 'E' }}
-            </button>
-            <button @click="handleSignOut" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-danger hover:bg-error-container/30 transition-all ml-1" title="Cerrar Sesión">
-              <span class="material-symbols-outlined text-[20px]">logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
 
     <main class="w-full pt-20 bg-surface min-h-screen">
       <div v-if="!isLeader && !loading" class="flex flex-col items-center justify-center pt-24">
