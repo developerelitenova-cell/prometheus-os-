@@ -4,20 +4,11 @@
     <div class="login-card glass-panel">
       <img src="../assets/elite-nova-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
       <h1 class="sr-only">PROMETHEUS OS</h1>
-      <p class="subtitle">{{ isLogin ? 'Ingresa con tu cuenta corporativa' : 'Crea tu cuenta corporativa' }}</p>
-
-      <div class="tabs" v-if="showRegisterTab">
-        <button :class="{ active: isLogin }" @click="isLogin = true">Ingresar</button>
-        <button :class="{ active: !isLogin }" @click="isLogin = false">Registrarse</button>
-      </div>
+      <p class="subtitle">Ingresa con tu cuenta corporativa</p>
 
       <form class="login-form" @submit.prevent="handleSubmit">
-        <label v-if="!isLogin">
-          Nombre Completo
-          <input v-model="fullName" type="text" required placeholder="Tu Nombre" />
-        </label>
         <label>
-          Correo
+          Correo Corporativo
           <input v-model="email" type="email" required autocomplete="username" placeholder="tu.correo@elitenutrition.com" />
         </label>
         <label>
@@ -28,8 +19,13 @@
         <p v-if="errorMsg" class="error-text">{{ errorMsg }}</p>
 
         <button type="submit" class="btn-primary" :disabled="loading">
-          {{ loading ? 'Procesando...' : (isLogin ? 'Ingresar' : 'Registrarse') }}
+          {{ loading ? 'Ingresando...' : 'Iniciar Sesión' }}
         </button>
+
+        <div class="corporate-notice">
+          <span class="material-symbols-outlined notice-icon">admin_panel_settings</span>
+          <span>Las cuentas de acceso son asignadas exclusivamente por Recursos Humanos o la Administración.</span>
+        </div>
       </form>
     </div>
 
@@ -43,37 +39,27 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { signIn, signUp, signOut, loadCurrentProfile } from '../api/auth';
+import { signIn, loadCurrentProfile } from '../api/auth';
 import TechNodesBackground from '../components/TechNodesBackground.vue';
 
 const router = useRouter();
 const route = useRoute();
 
-const isLogin = ref(true);
-const fullName = ref('');
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMsg = ref('');
-const showRegisterTab = ref(false);
 
 const PENDING_STATUS_MESSAGES = {
-  pending: 'Tu cuenta está pendiente de aprobación por un administrador.',
-  rejected: 'Tu solicitud de acceso fue rechazada. Contactá a un administrador si creés que es un error.',
-  suspended: 'Tu cuenta está suspendida. Contactá a un administrador.'
+  pending: 'Tu cuenta está en proceso de activación por un administrador.',
+  rejected: 'Tu acceso fue revocado o rechazado. Contactá a un administrador.',
+  suspended: 'Tu cuenta corporativa está suspendida. Contactá a Recursos Humanos.'
 };
 
 onMounted(() => {
   const status = route.query.pending;
   if (typeof status === 'string' && PENDING_STATUS_MESSAGES[status]) {
     errorMsg.value = PENDING_STATUS_MESSAGES[status];
-  }
-
-  // Solo mostrar la pestaña de registro si viene de un enlace de invitación (redirect al mapper)
-  const redirect = route.query.redirect || '';
-  if (redirect.startsWith('/mapper/')) {
-    showRegisterTab.value = true;
-    isLogin.value = false;
   }
 });
 
@@ -82,55 +68,38 @@ const handleSubmit = async () => {
   loading.value = true;
   
   try {
-    if (isLogin.value) {
-      const res = await signIn(email.value.trim(), password.value);
-      if (!res.success) {
-        errorMsg.value = res.error === 'Invalid login credentials'
-          ? 'Correo o contraseña incorrectos.'
-          : res.error;
-        return;
-      }
-      
-      const profile = await loadCurrentProfile();
-      if (profile && profile.approval_status === 'pending') {
-        errorMsg.value = 'Tu cuenta está pendiente de aprobación por un administrador.';
-        return;
-      }
-      
-      const redirect = route.query.redirect;
-      
-      // Enrutamiento directo al portal siempre
-      if (typeof redirect === 'string' && redirect) {
-        router.replace(redirect);
-      } else {
-        if (profile.is_master_admin) {
-          router.replace('/');
-        } else if (profile.roles && profile.roles.access_level === 1) {
-          router.replace('/team');
-        } else {
-          router.replace('/workspace');
-        }
-      }
-    } else {
-      // Registro
-      const redirect = route.query.redirect || '';
-      let roleId = null;
-      if (redirect.startsWith('/mapper/')) {
-        roleId = redirect.replace('/mapper/', '');
-      }
-      
-      const res = await signUp(email.value.trim(), password.value, fullName.value.trim(), roleId);
-      if (!res.success) {
-        errorMsg.value = res.error;
-        return;
-      }
-
-      // La cuenta queda 'pending' hasta que un líder la apruebe -- no tiene
-      // sentido dejarla logueada en ese estado, así que cerramos la sesión
-      // y la mandamos a la pantalla de espera en vez de al login normal.
-      await signOut();
-      router.replace('/pending-approval');
+    const res = await signIn(email.value.trim(), password.value);
+    if (!res.success) {
+      errorMsg.value = res.error === 'Invalid login credentials'
+        ? 'Correo o contraseña incorrectos.'
+        : res.error;
       return;
+    }
+    
+    const profile = await loadCurrentProfile();
+    if (profile && profile.approval_status === 'pending') {
+      errorMsg.value = 'Tu cuenta está en proceso de activación por Recursos Humanos.';
+      return;
+    }
+
+    if (profile && profile.approval_status === 'suspended') {
+      errorMsg.value = 'Tu cuenta corporativa está suspendida. Contactá a Recursos Humanos.';
+      return;
+    }
+    
+    const redirect = route.query.redirect;
+    
+    // Enrutamiento directo al portal correspondiente
+    if (typeof redirect === 'string' && redirect && !redirect.startsWith('/mapper/')) {
+      router.replace(redirect);
+    } else {
+      if (profile.is_master_admin) {
+        router.replace('/');
+      } else if (profile.roles && profile.roles.access_level === 1) {
+        router.replace('/team');
+      } else {
+        router.replace('/workspace');
+      }
     }
   } finally {
     loading.value = false;
@@ -235,33 +204,25 @@ const handleSubmit = async () => {
   font-size: 0.85rem;
 }
 
-.tabs {
-  display: flex;
-  margin-bottom: 20px;
+.corporate-notice {
+  margin-top: 16px;
+  padding: 12px 14px;
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 4px;
-}
-
-.tabs button {
-  flex: 1;
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
   color: var(--text-secondary);
-  transition: all 0.2s;
+  line-height: 1.4;
+  text-align: left;
 }
 
-.tabs button.active {
-  background: var(--bg-tertiary);
-  color: var(--ink);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+.corporate-notice .notice-icon {
+  font-size: 20px;
+  color: var(--gold, #d97706);
+  flex-shrink: 0;
 }
 
 .btn-primary {
@@ -315,5 +276,18 @@ const handleSubmit = async () => {
 
 .developed-by img:hover {
   opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .login-card {
+    padding: 32px 20px;
+  }
+  .developed-by {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    margin-top: 40px;
+    align-items: center;
+  }
 }
 </style>

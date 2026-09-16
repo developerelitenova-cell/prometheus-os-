@@ -114,8 +114,7 @@ const routes = [
   {
     path: '/workspace',
     name: 'EmployeeWorkspace',
-    component: () => import('../views/EmployeeWorkspace.vue'),
-    meta: { requiresMappingComplete: true }
+    component: () => import('../views/EmployeeWorkspace.vue')
   },
   {
     path: '/roles',
@@ -138,6 +137,13 @@ const routes = [
     name: 'LeaderDashboard',
     component: () => import('../views/LeaderDashboard.vue'),
     meta: { managerOnly: true }
+  },
+  {
+    path: '/rrhh',
+    alias: ['/cuentas', '/usuarios'],
+    name: 'HRDashboard',
+    component: () => import('../views/HRDashboard.vue'),
+    meta: { leaderOnly: true }
   },
   {
     path: '/planner',
@@ -223,12 +229,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.mapperRoute && !profile.is_master_admin) {
-    if (profile.mapping_completed) return { path: '/workspace' }
     if (profile.role_id !== to.params.role_id) return { path: '/workspace' }
-  }
-
-  if (to.meta.requiresMappingComplete && !profile.is_master_admin && !profile.mapping_completed) {
-    return profile.role_id ? { path: `/mapper/${profile.role_id}` } : { path: '/login' }
   }
 
   return true

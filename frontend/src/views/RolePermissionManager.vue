@@ -91,15 +91,46 @@
             </label>
           </div>
 
+          <!-- SECCIÓN: Delegación de Contraseñas (Auditoría / Master) -->
+          <div class="delegation-container">
+            <div class="section-title-row">
+              <div>
+                <h4>Gestión y Asignación de Contraseñas</h4>
+                <p class="help-text">Autoriza a las personas con este cargo a proveer contraseñas, crear y administrar cuentas corporativas.</p>
+              </div>
+              <span v-if="selectedRoleIsAuditor" class="badge-auditor">Habilitado por defecto en Auditoría</span>
+            </div>
+
+            <div class="delegation-card" :class="{ active: pendingCanManagePasswords, disabled: !canDelegate || selectedRoleIsAuditor }">
+              <label class="toggle-container">
+                <input 
+                  type="checkbox" 
+                  v-model="pendingCanManagePasswords" 
+                  :disabled="!canDelegate || selectedRoleIsAuditor"
+                />
+                <span class="toggle-slider"></span>
+                <div class="toggle-labels">
+                  <strong>Habilitar Tarea: Asignar y Brindar Contraseñas</strong>
+                  <span class="text-xs text-secondary block mt-0.5">
+                    {{ pendingCanManagePasswords ? 'Este rol tiene autorización para crear usuarios, asignar y restablecer contraseñas corporativas.' : 'Este rol no tiene autorización para brindar contraseñas.' }}
+                  </span>
+                  <span v-if="!canDelegate" class="text-xs text-amber-600 block mt-1 font-medium">
+                    * Solo la Gerente de Auditoría o el Administrador Master pueden asignar o revocar esta tarea.
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <div class="save-level-row">
             <button
               class="btn-save-level"
               @click="saveRoleLevel"
-              :disabled="savingLevel || pendingLevel === selectedRole.access_level"
+              :disabled="savingLevel || (pendingLevel === selectedRole.access_level && pendingCanManagePasswords === initialCanManagePasswords)"
             >
               {{ savingLevel ? 'Guardando...' : 'Guardar Cambios de Permisos' }}
             </button>
-            <span v-if="pendingLevel !== selectedRole.access_level && !savingLevel" class="unsaved-hint">Tenés cambios sin guardar</span>
+            <span v-if="(pendingLevel !== selectedRole.access_level || pendingCanManagePasswords !== initialCanManagePasswords) && !savingLevel" class="unsaved-hint">Tenés cambios sin guardar</span>
             <span v-if="saveLevelMessage" class="save-success">
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
               {{ saveLevelMessage }}
@@ -292,6 +323,33 @@ const newRole = ref({ name: '', area_id: null, access_level: 3, objective: '' })
 
 const currentProfile = ref(null);
 const isMaster = computed(() => !!currentProfile.value?.is_master_admin);
+const isAuditorManager = computed(() => {
+  const rName = currentProfile.value?.roles?.name?.toLowerCase() || '';
+  return rName.includes('auditor');
+});
+const canDelegate = computed(() => isMaster.value || isAuditorManager.value);
+
+const delegatedRoleIds = ref([]);
+const pendingCanManagePasswords = ref(false);
+const initialCanManagePasswords = ref(false);
+
+const selectedRoleIsAuditor = computed(() => {
+  const rName = selectedRole.value?.name?.toLowerCase() || '';
+  return rName.includes('auditor');
+});
+
+const fetchDelegatedRoles = async () => {
+  try {
+    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+    const res = await fetch(`${apiUrl}/api/v1/admin/password-delegated-roles`);
+    if (res.ok) {
+      const data = await res.json();
+      delegatedRoleIds.value = data.delegated_role_ids || [];
+    }
+  } catch (e) {
+    console.error('Error fetching delegated roles:', e);
+  }
+};
 
 const fetchCurrentProfile = async () => {
   const { data: session } = await supabase.auth.getSession();
@@ -299,7 +357,7 @@ const fetchCurrentProfile = async () => {
   if (!userId) return;
   const { data } = await supabase
     .from('profiles')
-    .select('is_master_admin')
+    .select('is_master_admin, roles(name)')
     .eq('id', userId)
     .single();
   currentProfile.value = data || null;
@@ -366,6 +424,11 @@ const fetchData = async () => {
 const selectRole = async (role) => {
   selectedRole.value = role;
   pendingLevel.value = role.access_level;
+  
+  const isDelegated = delegatedRoleIds.value.includes(role.id) || (role.name?.toLowerCase() || '').includes('auditor');
+  pendingCanManagePasswords.value = isDelegated;
+  initialCanManagePasswords.value = isDelegated;
+
   saveLevelMessage.value = '';
   saveLevelError.value = '';
   // Fetch members
@@ -373,11 +436,6 @@ const selectRole = async (role) => {
   roleMembers.value = members || [];
 };
 
-// El nivel elegido en los radio-cards es un borrador (pendingLevel) hasta que
-// se confirma con el botón: así el cambio no se da por guardado si la
-// escritura en Supabase falla en silencio (ver fix_roles_areas_write_rls_migration.sql
-// -- roles/areas tenían RLS activado sin políticas de UPDATE/INSERT, así que
-// el cambio "se veía" en la UI pero nunca llegaba a la base de datos).
 const pendingLevel = ref(null);
 const savingLevel = ref(false);
 const saveLevelMessage = ref('');
@@ -389,17 +447,43 @@ const saveRoleLevel = async () => {
   saveLevelMessage.value = '';
   saveLevelError.value = '';
   try {
-    const { data, error } = await supabase
-      .from('roles')
-      .update({ access_level: pendingLevel.value })
-      .eq('id', selectedRole.value.id)
-      .select('id, access_level');
-    if (error) throw error;
-    if (!data || data.length === 0) {
-      throw new Error('Supabase no reportó ningún error, pero no se actualizó ninguna fila. Probablemente falten permisos (RLS) para editar cargos -- pedile a un desarrollador que corra fix_roles_areas_write_rls_migration.sql.');
+    // 1. Guardar nivel de acceso si cambió
+    if (pendingLevel.value !== selectedRole.value.access_level) {
+      const { data, error } = await supabase
+        .from('roles')
+        .update({ access_level: pendingLevel.value })
+        .eq('id', selectedRole.value.id)
+        .select('id, access_level');
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Supabase no reportó ningún error, pero no se actualizó ninguna fila. Probablemente falten permisos (RLS) para editar cargos -- pedile a un desarrollador que corra fix_roles_areas_write_rls_migration.sql.');
+      }
+      selectedRole.value.access_level = pendingLevel.value;
     }
-    selectedRole.value.access_level = pendingLevel.value;
-    saveLevelMessage.value = 'Nivel de acceso actualizado correctamente.';
+
+    // 2. Guardar delegación de contraseñas si cambió
+    if (pendingCanManagePasswords.value !== initialCanManagePasswords.value && canDelegate.value) {
+      const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+      const res = await fetch(`${apiUrl}/api/v1/admin/roles/${selectedRole.value.id}/password-permission`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ can_manage_passwords: pendingCanManagePasswords.value })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || 'Error al guardar permiso de contraseñas');
+      }
+      initialCanManagePasswords.value = pendingCanManagePasswords.value;
+      if (pendingCanManagePasswords.value) {
+        if (!delegatedRoleIds.value.includes(selectedRole.value.id)) {
+          delegatedRoleIds.value.push(selectedRole.value.id);
+        }
+      } else {
+        delegatedRoleIds.value = delegatedRoleIds.value.filter(id => id !== selectedRole.value.id);
+      }
+    }
+
+    saveLevelMessage.value = 'Permisos actualizados correctamente.';
     setTimeout(() => { saveLevelMessage.value = ''; }, 4000);
   } catch (e) {
     saveLevelError.value = 'No se pudo guardar: ' + e.message;
@@ -587,6 +671,7 @@ const submitCreateRole = async () => {
 onMounted(() => {
   fetchCurrentProfile();
   fetchData();
+  fetchDelegatedRoles();
 });
 </script>
 
@@ -1152,4 +1237,130 @@ onMounted(() => {
 .card-content-small strong {
   font-size: 0.85rem;
 }
+
+.delegation-container {
+  margin: 24px 0;
+  padding: 16px;
+  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px);
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.section-title-row h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.badge-auditor {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.delegation-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  padding: 14px;
+  background: var(--surface);
+  transition: all 0.2s;
+}
+
+.delegation-card.active {
+  border-color: var(--gold);
+  background: rgba(176, 141, 87, 0.04);
+}
+
+.delegation-card.disabled {
+  opacity: 0.85;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-container input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: #d1d5db;
+  border-radius: 24px;
+  transition: .3s;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-container input:checked + .toggle-slider {
+  background-color: #10b981;
+}
+
+.toggle-container input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.toggle-container input:disabled + .toggle-slider {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.toggle-labels strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
 </style>
+
+/* --- Responsive Global --- */
+@media (max-width: 1024px) {
+  .layout-grid {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .permissions-matrix {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .permissions-matrix, .permissions-grid-small {
+    grid-template-columns: 1fr;
+  }
+}

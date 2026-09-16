@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 import os
@@ -36,6 +37,9 @@ if anthropic_api_key:
 else:
     anthropic = None
 
+orchestrator.initialize_clients(supabase, anthropic, claude_model)
+kpi_evaluator.initialize_clients(supabase, anthropic, claude_model)
+
 app = FastAPI(title="Gemelo Digital Corporativo - Elite Nutrition", version="2.0")
 
 # Configurar CORS (Seguridad para Vercel)
@@ -49,6 +53,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 # Configurar Rate Limiting (SlowAPI)
 limiter = Limiter(key_func=get_remote_address)
@@ -82,6 +87,20 @@ def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
             detail=f"Autenticación fallida: {str(e)}",
         )
 
+def require_admin_or_manager(user):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+    res = supabase.table("profiles").select("is_master_admin, roles(access_level)").eq("id", user.id).single().execute()
+    if not res.data:
+        raise HTTPException(status_code=403, detail="Perfil no encontrado")
+    
+    is_master = res.data.get("is_master_admin")
+    roles = res.data.get("roles")
+    access_level = roles.get("access_level") if roles else None
+    
+    if not is_master and access_level not in [1, 2]:
+        raise HTTPException(status_code=403, detail="Esta acción requiere permisos administrativos (Leader o Master Admin)")
+
 @app.get("/")
 def read_root():
     return {"message": "Gemelo Digital Corporativo (Fase 2) - Backend Inicializado"}
@@ -109,14 +128,45 @@ class CreateEmployeeRequest(BaseModel):
     role_id: Optional[str] = None
     is_master_admin: bool = False
 
+class UpdateEmployeeRequest(BaseModel):
+    full_name: Optional[str] = None
+    role_id: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    approval_status: Optional[str] = None
+    is_master_admin: Optional[bool] = None
+
+@app.get("/api/v1/admin/employees")
+def list_employees(user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+    try:
+        profiles_res = supabase.table("profiles").select("*, roles(id, name, access_level, area_id, areas(id, name))").order("full_name").execute()
+        profiles = profiles_res.data or []
+
+        try:
+            auth_users_res = supabase.auth.admin.list_users()
+            email_map = {u.id: u.email for u in auth_users_res}
+        except Exception:
+            email_map = {}
+
+        for p in profiles:
+            p["email"] = email_map.get(p["id"], "")
+
+        return {"employees": profiles}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.post("/api/v1/admin/create-employee")
-def create_employee(req: CreateEmployeeRequest):
+def create_employee(req: CreateEmployeeRequest, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend (falta SUPABASE_SERVICE_ROLE_KEY)")
 
     try:
         auth_res = supabase.auth.admin.create_user({
-            "email": req.email,
+            "email": req.email.strip(),
             "password": req.password,
             "email_confirm": True
         })
@@ -127,13 +177,11 @@ def create_employee(req: CreateEmployeeRequest):
     try:
         profile_payload = {
             "id": user_id,
-            "full_name": req.full_name,
-            "role_id": req.role_id,
+            "full_name": req.full_name.strip(),
+            "role_id": req.role_id if req.role_id != "" else None,
             "is_master_admin": req.is_master_admin,
             "mapping_completed": False,
-            # Cuentas creadas por un admin quedan aprobadas de entrada -- la cola
-            # de aprobacion (approval_status default 'pending') es solo para el
-            # auto-registro publico (signUp) en LoginView.vue.
+            # Cuentas creadas por un admin quedan aprobadas de entrada
             "approval_status": "approved"
         }
         supabase.table("profiles").insert(profile_payload).execute()
@@ -147,8 +195,48 @@ def create_employee(req: CreateEmployeeRequest):
 
     return {"status": "created", "user_id": user_id}
 
+@app.put("/api/v1/admin/employee/{user_id}")
+def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+
+    # 1. Actualizar credenciales en Supabase Auth si se suministraron
+    auth_updates = {}
+    if req.email and req.email.strip():
+        auth_updates["email"] = req.email.strip()
+        auth_updates["email_confirm"] = True
+    if req.password and req.password.strip():
+        auth_updates["password"] = req.password.strip()
+
+    if auth_updates:
+        try:
+            supabase.auth.admin.update_user_by_id(user_id, auth_updates)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error actualizando credenciales en Auth: {str(e)}")
+
+    # 2. Actualizar registro en profiles
+    profile_updates = {}
+    if req.full_name is not None:
+        profile_updates["full_name"] = req.full_name.strip()
+    if req.role_id is not None:
+        profile_updates["role_id"] = req.role_id if req.role_id != "" else None
+    if req.approval_status is not None:
+        profile_updates["approval_status"] = req.approval_status
+    if req.is_master_admin is not None:
+        profile_updates["is_master_admin"] = req.is_master_admin
+
+    if profile_updates:
+        try:
+            supabase.table("profiles").update(profile_updates).eq("id", user_id).execute()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error actualizando perfil: {str(e)}")
+
+    return {"status": "updated", "user_id": user_id}
+
 @app.delete("/api/v1/admin/employee/{user_id}")
-def delete_employee(user_id: str):
+def delete_employee(user_id: str, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
     try:
@@ -157,6 +245,129 @@ def delete_employee(user_id: str):
         return {"status": "deleted"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# --- Módulo de Delegación de Contraseñas y Accesos ---
+class RolePasswordPermissionRequest(BaseModel):
+    can_manage_passwords: bool
+
+@app.get("/api/v1/admin/password-delegated-roles")
+def get_password_delegated_roles(user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+
+    # 1. Intentar consultar la columna can_manage_passwords en roles
+    try:
+        res = supabase.table("roles").select("id, name, can_manage_passwords").execute()
+        delegated = [r["id"] for r in (res.data or []) if r.get("can_manage_passwords") or "auditor" in (r.get("name") or "").lower()]
+        return {"delegated_role_ids": delegated}
+    except Exception:
+        pass
+
+    # 2. Fallback: consultar corporate_memory
+    try:
+        res = supabase.table("corporate_memory").select("metadata").eq("content", "password_delegated_roles").execute()
+        if res.data and len(res.data) > 0:
+            delegated = res.data[0].get("metadata", {}).get("role_ids", [])
+            return {"delegated_role_ids": delegated}
+    except Exception:
+        pass
+
+    # 3. Fallback por defecto: roles de Auditoría
+    try:
+        res = supabase.table("roles").select("id, name").execute()
+        delegated = [r["id"] for r in (res.data or []) if "auditor" in (r.get("name") or "").lower()]
+        return {"delegated_role_ids": delegated}
+    except Exception:
+        return {"delegated_role_ids": []}
+
+@app.post("/api/v1/admin/roles/{role_id}/password-permission")
+def set_role_password_permission(role_id: str, req: RolePasswordPermissionRequest, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+
+    updated_in_roles = False
+    try:
+        supabase.table("roles").update({"can_manage_passwords": req.can_manage_passwords}).eq("id", role_id).execute()
+        updated_in_roles = True
+    except Exception:
+        pass
+
+    try:
+        res = supabase.table("corporate_memory").select("id, metadata").eq("content", "password_delegated_roles").execute()
+        existing_ids = []
+        record_id = None
+        if res.data and len(res.data) > 0:
+            record_id = res.data[0]["id"]
+            existing_ids = res.data[0].get("metadata", {}).get("role_ids", []) or []
+
+        if req.can_manage_passwords:
+            if role_id not in existing_ids:
+                existing_ids.append(role_id)
+        else:
+            existing_ids = [rid for rid in existing_ids if rid != role_id]
+
+        payload = {"source": "system_permissions", "role_ids": existing_ids}
+        if record_id:
+            supabase.table("corporate_memory").update({"metadata": payload}).eq("id", record_id).execute()
+        else:
+            supabase.table("corporate_memory").insert({
+                "content": "password_delegated_roles",
+                "metadata": payload
+            }).execute()
+
+        return {"status": "success", "role_id": role_id, "can_manage_passwords": req.can_manage_passwords}
+    except Exception as e:
+        if updated_in_roles:
+            return {"status": "success", "role_id": role_id, "can_manage_passwords": req.can_manage_passwords}
+        raise HTTPException(status_code=400, detail=f"Error al guardar permisos: {str(e)}")
+
+# --- Módulo de Verificación de Identidad (Foto de Perfil) ---
+class VerificationPhotoRequest(BaseModel):
+    user_id: str
+    photo: str
+
+@app.post("/api/v1/user/verification-photo")
+def save_verification_photo(req: VerificationPhotoRequest, user=Depends(verify_jwt)):
+    if user.id != req.user_id:
+        require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+
+    # 1. Intentar actualizar en la tabla profiles
+    try:
+        supabase.table("profiles").update({
+            "verification_photo": req.photo,
+            "avatar_url": req.photo,
+            "welcome_seen": True
+        }).eq("id", req.user_id).execute()
+    except Exception:
+        try:
+            supabase.table("profiles").update({"welcome_seen": True}).eq("id", req.user_id).execute()
+        except Exception:
+            pass
+
+    # 2. Guardar en corporate_memory para respaldo
+    try:
+        existing = supabase.table("corporate_memory").select("id").eq("content", f"verification_photo:{req.user_id}").execute()
+        payload = {
+            "type": "verification_photo",
+            "user_id": req.user_id,
+            "photo": req.photo
+        }
+        if existing.data and len(existing.data) > 0:
+            rec_id = existing.data[0]["id"]
+            supabase.table("corporate_memory").update({"metadata": payload}).eq("id", rec_id).execute()
+        else:
+            supabase.table("corporate_memory").insert({
+                "content": f"verification_photo:{req.user_id}",
+                "metadata": payload
+            }).execute()
+    except Exception:
+        pass
+
+    return {"status": "success", "user_id": req.user_id}
 
 # --- Módulo de Administración: Áreas y Cargos (borrado) ---
 # Requiere JWT válido + is_master_admin=true en el perfil -- borrar un área o
@@ -230,16 +441,28 @@ def evaluate_role(role_id: str):
 class ChatQuery(BaseModel):
     role_id: str
     query: str
+    user_id: Optional[str] = None # Para cargar la memoria específica
+    history: Optional[List[Dict]] = None # Historial de chat
 
 @app.post("/api/v1/chat")
 @limiter.limit("10/minute")
 def chat_with_agent(request: Request, chat_query: ChatQuery, user=Depends(verify_jwt)):
-    if chat_query.role_id not in orchestrator.active_agents:
-        # Instanciar el agente si no existe (Normalmente leyendo la DB)
-        orchestrator.spawn_agent({"role": chat_query.role_id, "access_level": 3, "area": "Desconocida", "name": "Usuario"})
+    # Usamos el id del token JWT para mayor seguridad
+    user_id = user.id if user else chat_query.user_id
+    agent_key = f"{user_id}_{chat_query.role_id}"
     
-    agent = orchestrator.active_agents[chat_query.role_id]
-    response = agent.chat(chat_query.query)
+    if agent_key not in orchestrator.active_agents:
+        # Instanciar el agente leyendo la DB
+        orchestrator.spawn_agent({
+            "role": chat_query.role_id, 
+            "access_level": 3, 
+            "area": "Desconocida", 
+            "name": "Usuario",
+            "user_id": user_id
+        })
+    
+    agent = orchestrator.active_agents[agent_key]
+    response = agent.chat(chat_query.query, conversation_history=chat_query.history)
     return {"reply": response}
 
 # --- Generación Automática de KPIs ---

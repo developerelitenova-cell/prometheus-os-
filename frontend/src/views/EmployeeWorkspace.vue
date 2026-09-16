@@ -3,7 +3,26 @@
   <div class="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans antialiased flex flex-col">
 
     <!-- Main Content Grid -->
-    <main class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 py-5 sm:px-6 sm:py-8">
+      
+      <!-- Carrusel de Noticias Corporativas -->
+      <div v-if="activeNews.length > 0" class="mb-6 bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden relative group">
+        <div class="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10 pointer-events-none"></div>
+        <img :src="activeNews[currentNewsIndex].image_url" class="w-full h-36 sm:h-48 object-cover object-center transition-opacity duration-500">
+        <div class="absolute bottom-0 left-0 p-4 sm:p-6 z-20 w-full bg-gradient-to-t from-black/80 to-transparent">
+          <span class="bg-primary text-white text-xs font-bold px-2 py-1 rounded mb-2 inline-block">NOTICIAS ELITE</span>
+          <h2 class="text-white text-lg sm:text-2xl font-bold">{{ activeNews[currentNewsIndex].title }}</h2>
+        </div>
+        
+        <!-- Controles del Carrusel -->
+        <button v-if="activeNews.length > 1" @click="prevNews" class="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button v-if="activeNews.length > 1" @click="nextNews" class="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
         <!-- LEFT COLUMN (3 cols): Perfil, KPI, Academia, Docs -->
@@ -13,8 +32,12 @@
           <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6 relative overflow-hidden group">
             <div class="absolute inset-0 bg-gradient-to-br from-[#b08d57]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div class="relative z-10 flex items-center gap-4">
-              <div class="w-14 h-14 rounded-full bg-[#1d1d1f] flex items-center justify-center text-white text-xl font-medium shadow-md">
-                {{ getInitials(currentProfile?.full_name) }}
+              <div class="w-14 h-14 rounded-full overflow-hidden bg-[#1d1d1f] flex items-center justify-center text-white text-xl font-medium shadow-md border-2 border-[#b08d57]/30 shrink-0">
+                <img v-if="currentProfile?.verification_photo || currentProfile?.avatar_url" 
+                     :src="currentProfile.verification_photo || currentProfile.avatar_url" 
+                     alt="Foto de Perfil" 
+                     class="w-full h-full object-cover" />
+                <span v-else>{{ getInitials(currentProfile?.full_name) }}</span>
               </div>
               <div>
                 <h2 class="text-xl font-semibold tracking-tight text-[#1d1d1f]">{{ currentProfile?.full_name || 'Cargando...' }}</h2>
@@ -101,119 +124,200 @@
           </div>
         </div>
 
-        <!-- CENTER COLUMN (6 cols): Tareas y Alertas -->
-        <div class="lg:col-span-6 space-y-6">
-          
-          <!-- Alertas de Productividad (IA) -->
+        <!-- CENTER COLUMN (6 cols): Las 3 Capas de Gestión -->
+        <div class="lg:col-span-6 space-y-5">
+
+          <!-- Alerta de tareas atrasadas -->
           <div v-if="overdueTasks.length > 0" class="bg-[#ffebee] border border-[#ffcdd2] rounded-2xl p-4 flex items-start gap-3 shadow-sm">
             <span class="material-symbols-outlined text-[#c62828] mt-0.5">warning</span>
             <div>
-              <h4 class="text-[#c62828] font-bold text-[14px]">Alerta de Seguimiento (IA)</h4>
+              <h4 class="text-[#c62828] font-bold text-[14px]">Alerta de Seguimiento</h4>
               <p class="text-[#b71c1c] text-[13px] mt-1 leading-snug">
-                Tienes {{ overdueTasks.length }} tareas atrasadas del día anterior sin resolver. Esto impacta negativamente tu KPI de productividad. Ciérralas lo antes posible.
+                Tienes <strong>{{ overdueTasks.length }}</strong> tareas vencidas que impactan tu KPI. Ciérralas lo antes posible.
               </p>
             </div>
           </div>
 
-          <!-- Tareas Atrasadas -->
-          <div v-if="overdueTasks.length > 0" class="bg-white rounded-2xl border border-[#ffcdd2] shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#ffebee] bg-[#fff5f5]">
-              <h3 class="text-[16px] font-semibold text-[#c62828] flex items-center gap-2">
-                <span class="material-symbols-outlined text-[18px]">history</span>
-                Pendientes Atrasados
-              </h3>
+          <!-- ═══════════════════════════════════════════════════
+               SECCIÓN 1 — GESTIÓN DIARIA
+               Tareas recurrentes y obligatorias del cargo
+          ═══════════════════════════════════════════════════ -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
+            <!-- Header -->
+            <div class="px-5 py-3.5 border-b border-[#e5e5ea] bg-[#f0fdf4] flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#34c759] text-[20px]">checklist</span>
+                <div>
+                  <h3 class="text-[15px] font-bold text-[#1d1d1f] leading-none">Gestión Diaria</h3>
+                  <p class="text-[11px] text-[#86868b] mt-0.5">Obligatorio · Recurrente del cargo</p>
+                </div>
+              </div>
+              <!-- Tab selector Diario/Semanal/Mensual -->
+              <div class="flex items-center bg-white border border-[#e5e5ea] rounded-lg p-0.5 gap-0.5">
+                <button v-for="t in [{k:'daily',l:'Diario'},{k:'weekly',l:'Semanal'},{k:'monthly',l:'Mensual'}]" :key="t.k"
+                  @click="dmTab = t.k"
+                  :class="['px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all',
+                    dmTab === t.k ? 'bg-[#34c759] text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f]']"
+                >{{ t.l }}</button>
+              </div>
             </div>
-            <ul class="divide-y divide-[#e5e5ea]">
-              <li v-for="task in overdueTasks" :key="task.id" class="p-4 hover:bg-[#f5f5f7]/50 transition-colors flex items-start gap-4">
-                <input type="checkbox" @click="toggleTaskStatus(task)" class="w-5 h-5 mt-0.5 rounded-md border-[#d1d1d6] text-[#c62828] focus:ring-[#c62828] cursor-pointer" />
+            <!-- Task list -->
+            <ul class="divide-y divide-[#f5f5f7]">
+              <li v-for="task in activeDmTaskList" :key="task.id"
+                  class="px-5 py-3 hover:bg-[#f5f5f7]/60 transition-colors flex items-start gap-3.5">
+                <button @click="toggleDmTask(task)"
+                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                    task.completed ? 'bg-[#34c759] border-[#34c759]' : 'border-[#d1d1d6] hover:border-[#34c759]']">
+                  <span v-if="task.completed" class="material-symbols-outlined text-white text-[13px]">check</span>
+                </button>
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-[14px] font-medium text-[#1d1d1f] line-clamp-1">{{ task.title }}</h4>
-                  <p class="text-[13px] text-[#86868b] mt-1 line-clamp-2">{{ task.description }}</p>
-                  <div class="flex items-center gap-3 mt-2">
-                    <span class="px-2 py-0.5 rounded-md bg-[#ffebee] text-[#c62828] text-[11px] font-bold tracking-wide">
-                      Venció: {{ new Date(task.due_date).toLocaleDateString() }}
+                  <p :class="['text-[13px] font-medium leading-snug', task.completed ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[10px] text-[#86868b] flex items-center gap-1 bg-[#f5f5f7] px-1.5 py-0.5 rounded">
+                      <span class="material-symbols-outlined text-[11px]">autorenew</span> Recurrente
                     </span>
-                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium">
-                      <span class="material-symbols-outlined text-[14px]">timer</span>
-                      Tiempo prom: 45 min
-                    </span>
+                    <span v-if="task.priority === 'high' || task.priority === 'urgent'"
+                      :class="['text-[10px] font-bold px-1.5 py-0.5 rounded',
+                        task.priority === 'urgent' ? 'bg-red-600 text-white animate-pulse' : 'bg-red-50 text-red-700']"
+                    >{{ task.priority === 'urgent' ? '¡URGENTE!' : 'Alta' }}</span>
                   </div>
                 </div>
+              </li>
+              <li v-if="activeDmTaskList.length === 0" class="px-5 py-6 text-center text-[13px] text-[#86868b] italic">
+                No hay gestiones {{ dmTab === 'daily' ? 'diarias' : dmTab === 'weekly' ? 'semanales' : 'mensuales' }} registradas.
               </li>
             </ul>
           </div>
 
-          <!-- Programados del Gerente -->
+          <!-- ═══════════════════════════════════════════════════
+               SECCIÓN 2 — PENDIENTES DEL DÍA
+               Asignadas por líderes (ad-hoc) + Programados que vencen HOY
+          ═══════════════════════════════════════════════════ -->
           <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-center">
-              <h3 class="text-[16px] font-semibold text-[#1d1d1f] flex items-center gap-2">
-                <span class="material-symbols-outlined text-[18px] text-[#b08d57]">event_note</span>
-                Programados del Día
-              </h3>
-              <span class="text-[12px] font-medium text-[#86868b] bg-[#f5f5f7] px-2 py-1 rounded-md">Asignados por Liderazgo</span>
+            <!-- Header -->
+            <div class="px-5 py-3.5 border-b border-[#e5e5ea] bg-[#fff8f0] flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#b08d57] text-[20px]">assignment_late</span>
+                <div>
+                  <h3 class="text-[15px] font-bold text-[#1d1d1f] leading-none">Pendientes del Día</h3>
+                  <p class="text-[11px] text-[#86868b] mt-0.5">Asignados por liderazgo · Ejecución inmediata</p>
+                </div>
+              </div>
+              <span v-if="pendingDayTasks.length > 0"
+                class="text-[11px] font-bold bg-[#b08d57] text-white px-2 py-0.5 rounded-full">
+                {{ pendingDayTasks.filter(t => t.status !== 'completed').length }} pendientes
+              </span>
             </div>
-            <ul class="divide-y divide-[#e5e5ea]">
-              <li v-for="task in scheduledTasks" :key="task.id" class="p-4 hover:bg-[#f5f5f7]/50 transition-colors flex items-start gap-4">
-                <input type="checkbox" @click="toggleTaskStatus(task)" :checked="task.status === 'completed'" class="w-5 h-5 mt-0.5 rounded-md border-[#d1d1d6] text-[#b08d57] focus:ring-[#b08d57] cursor-pointer" />
+            <!-- Atrasadas primero -->
+            <div v-if="overdueTasks.length > 0" class="border-b border-[#ffcdd2] bg-[#fff5f5]">
+              <div class="px-5 py-1.5 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#c62828]"></span>
+                <span class="text-[10px] font-bold text-[#c62828] uppercase tracking-wide">Vencidas</span>
+              </div>
+              <ul class="divide-y divide-[#ffebee]">
+                <li v-for="task in overdueTasks" :key="'od-'+task.id"
+                    class="px-5 py-3 flex items-start gap-3.5">
+                  <button @click="toggleTaskStatus(task)"
+                    :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      task.status === 'completed' ? 'bg-[#c62828] border-[#c62828]' : 'border-[#c62828] hover:bg-[#ffebee]']">
+                    <span v-if="task.status === 'completed'" class="material-symbols-outlined text-white text-[13px]">check</span>
+                  </button>
+                  <div class="flex-1 min-w-0">
+                    <p :class="['text-[13px] font-medium', task.status === 'completed' ? 'line-through text-[#86868b]' : 'text-[#1d1d1f]']">{{ task.title }}</p>
+                    <span class="text-[10px] bg-[#ffebee] text-[#c62828] font-bold px-1.5 py-0.5 rounded mt-1 inline-block">
+                      Venció: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}
+                    </span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <!-- Pendientes de hoy (tasks + programados que activan hoy) -->
+            <ul class="divide-y divide-[#f5f5f7]">
+              <li v-for="task in todayPendingTasks" :key="task._key || task.id"
+                  class="px-5 py-3 hover:bg-[#f5f5f7]/60 transition-colors flex items-start gap-3.5">
+                <button @click="task._isScheduled ? toggleScheduledTask(task) : toggleTaskStatus(task)"
+                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                    task.status === 'completed' || task.completed ? 'bg-[#b08d57] border-[#b08d57]' : 'border-[#d1d1d6] hover:border-[#b08d57]']">
+                  <span v-if="task.status === 'completed' || task.completed" class="material-symbols-outlined text-white text-[13px]">check</span>
+                </button>
                 <div class="flex-1 min-w-0">
-                  <h4 :class="['text-[14px] font-medium line-clamp-1', task.status === 'completed' ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</h4>
-                  <p class="text-[13px] text-[#86868b] mt-1 line-clamp-2">{{ task.description }}</p>
-                  <div class="flex items-center gap-3 mt-2">
-                    <span v-if="task.priority === 'high' || task.priority === 'urgent'" :class="[
-                      'px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide shadow-sm',
-                      task.priority === 'urgent' ? 'bg-red-600 text-white animate-pulse' : 'bg-red-50 text-red-700'
-                    ]">
-                      {{ task.priority === 'urgent' ? '¡URGENTE (INMEDIATO)!' : 'Alta Prioridad' }}
+                  <p :class="['text-[13px] font-medium leading-snug',
+                    task.status === 'completed' || task.completed ? 'line-through text-[#86868b]' : 'text-[#1d1d1f]']"
+                  >{{ task.title }}</p>
+                  <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                    <!-- Badge programado -->
+                    <span v-if="task._isScheduled"
+                      class="text-[10px] font-bold bg-[#e8f0fe] text-[#0071e3] px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[11px]">calendar_today</span> Entrega Programada
                     </span>
-                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium">
-                      <span class="material-symbols-outlined text-[14px]">timer</span>
-                      Tiempo prom: 30 min
-                    </span>
+                    <!-- Prioridad -->
+                    <span v-if="task.priority === 'urgent'"
+                      class="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded animate-pulse">¡URGENTE!</span>
+                    <span v-else-if="task.priority === 'high'"
+                      class="text-[10px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Alta Prioridad</span>
+                    <span v-if="task.description" class="text-[11px] text-[#86868b] truncate">{{ task.description }}</span>
                   </div>
                 </div>
               </li>
-              <li v-if="!scheduledTasks.length" class="p-6 text-center text-[13px] text-[#86868b]">No hay tareas programadas para hoy.</li>
+              <li v-if="todayPendingTasks.length === 0 && overdueTasks.length === 0"
+                  class="px-5 py-6 text-center text-[13px] text-[#86868b] italic">
+                🎉 Sin pendientes asignados para hoy.
+              </li>
             </ul>
           </div>
 
-          <!-- Gestión Diaria -->
+          <!-- ═══════════════════════════════════════════════════
+               SECCIÓN 3 — PROGRAMADOS
+               Órdenes de entrega por calendario (próximas)
+          ═══════════════════════════════════════════════════ -->
           <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-[#e5e5ea]">
-              <h3 class="text-[16px] font-semibold text-[#1d1d1f] flex items-center gap-2">
-                <span class="material-symbols-outlined text-[18px] text-[#34c759]">checklist</span>
-                Gestiones Diarias
-              </h3>
+            <!-- Header -->
+            <div class="px-5 py-3.5 border-b border-[#e5e5ea] bg-[#f0f4ff] flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#0071e3] text-[20px]">event_repeat</span>
+                <div>
+                  <h3 class="text-[15px] font-bold text-[#1d1d1f] leading-none">Programados</h3>
+                  <p class="text-[11px] text-[#86868b] mt-0.5">Entregas calendarizadas · Generadas por orden</p>
+                </div>
+              </div>
+              <span class="text-[11px] font-semibold text-[#0071e3] bg-[#e8f0fe] px-2 py-0.5 rounded-full">
+                {{ upcomingScheduled.length }} próximos
+              </span>
             </div>
-            <ul class="divide-y divide-[#e5e5ea]">
-              <li v-for="task in activeDailyTasks" :key="task.id" class="p-4 hover:bg-[#f5f5f7]/50 transition-colors flex items-start gap-4">
-                <input type="checkbox" @click="toggleDmTaskStatus(task)" :checked="task.status === 'completed'" class="w-5 h-5 mt-0.5 rounded-md border-[#d1d1d6] text-[#34c759] focus:ring-[#34c759] cursor-pointer" />
+            <ul class="divide-y divide-[#f5f5f7]">
+              <li v-for="sd in upcomingScheduled" :key="'sd-'+sd.id"
+                  class="px-5 py-3 hover:bg-[#f5f5f7]/60 transition-colors flex items-start gap-3.5">
+                <!-- Countdown badge -->
+                <div :class="['flex flex-col items-center justify-center w-10 h-10 rounded-xl shrink-0 text-center',
+                  sd._daysUntil === 0 ? 'bg-[#b08d57] text-white' :
+                  sd._daysUntil <= 3 ? 'bg-red-50 text-red-700' : 'bg-[#e8f0fe] text-[#0071e3]']">
+                  <span class="text-[14px] font-bold leading-none">{{ sd._daysUntil === 0 ? '¡Hoy!' : sd._daysUntil }}</span>
+                  <span v-if="sd._daysUntil > 0" class="text-[9px] leading-none mt-0.5">días</span>
+                </div>
                 <div class="flex-1 min-w-0">
-                  <h4 :class="['text-[14px] font-medium line-clamp-1', task.status === 'completed' ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</h4>
-                  <div class="flex items-center gap-3 mt-2">
-                    <span v-if="task.priority === 'high' || task.priority === 'urgent'" :class="[
-                      'px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide shadow-sm',
-                      task.priority === 'urgent' ? 'bg-red-600 text-white animate-pulse' : 'bg-red-50 text-red-700'
-                    ]">
-                      {{ task.priority === 'urgent' ? '¡URGENTE (INMEDIATO)!' : 'Alta Prioridad' }}
+                  <p class="text-[13px] font-medium text-[#1d1d1f] leading-snug">{{ sd.title }}</p>
+                  <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                    <span class="text-[10px] text-[#86868b] bg-[#f5f5f7] px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[11px]">calendar_month</span>
+                      {{ scheduledRecurrenceLabel(sd) }}
                     </span>
-                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium bg-[#f5f5f7] px-2 py-0.5 rounded-md">
-                      <span class="material-symbols-outlined text-[14px]">autorenew</span>
-                      Recurrente
-                    </span>
-                    <span class="text-[11px] text-[#86868b] flex items-center gap-1 font-medium">
-                      <span class="material-symbols-outlined text-[14px]">timer</span>
-                      Tiempo prom: 15 min
-                    </span>
+                    <span v-if="sd.priority === 'urgent'" class="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded">Urgente</span>
+                    <span v-else-if="sd.priority === 'high'" class="text-[10px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Alta</span>
                   </div>
+                  <p v-if="sd.description" class="text-[11px] text-[#86868b] mt-1 line-clamp-1">{{ sd.description }}</p>
                 </div>
               </li>
-              <li v-if="!dailyTasks.length" class="p-6 text-center text-[13px] text-[#86868b]">No hay gestiones diarias.</li>
+              <li v-if="upcomingScheduled.length === 0"
+                  class="px-5 py-6 text-center text-[13px] text-[#86868b] italic">
+                No hay entregas programadas próximas para tu cargo.
+              </li>
             </ul>
           </div>
+
         </div>
 
-        <!-- RIGHT COLUMN (3 cols): Agente Prometheus (Chat) -->
-        <div class="lg:col-span-3 h-[calc(100vh-120px)] sticky top-[90px] flex flex-col bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
+        <!-- RIGHT COLUMN (3 cols): Asistente IA Prometheus -->
+        <div class="lg:col-span-3 h-[550px] lg:h-[calc(100vh-120px)] static lg:sticky lg:top-[90px] flex flex-col bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
           <div class="px-5 py-4 border-b border-[#e5e5ea] bg-[#f5f5f7]/50 flex justify-between items-center">
             <div>
               <h3 class="text-[15px] font-semibold text-[#1d1d1f] flex items-center gap-2">
@@ -239,9 +343,15 @@
             <div v-for="(msg, index) in messages" :key="index" 
                  :class="['flex gap-3 max-w-[90%]', msg.sender === 'user' ? 'ml-auto flex-row-reverse' : '']">
               
-              <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm', 
+              <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm overflow-hidden', 
                             msg.sender === 'user' ? 'bg-[#1d1d1f] text-white' : 'bg-gradient-to-br from-[#b08d57] to-[#80663f] text-white']">
-                {{ msg.sender === 'user' ? getInitials(currentProfile?.full_name) : 'AI' }}
+                <template v-if="msg.sender === 'user'">
+                  <img v-if="currentProfile?.verification_photo || currentProfile?.avatar_url" 
+                       :src="currentProfile.verification_photo || currentProfile.avatar_url" 
+                       class="w-full h-full object-cover" />
+                  <span v-else>{{ getInitials(currentProfile?.full_name) }}</span>
+                </template>
+                <template v-else>AI</template>
               </div>
               
               <div :class="['p-3 rounded-2xl text-[13px] leading-relaxed shadow-sm', 
@@ -278,7 +388,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../api/supabase';
 import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../api/auth';
@@ -287,44 +397,58 @@ import DOMPurify from 'dompurify';
 import { getPeriodKey } from '../utils/taskPeriods';
 import { getRoleKpiDetail } from '../api/kpi';
 
-// --- Inyección del Motor Matemático de Tiempo ---
+// ── Motor de Tiempo ──────────────────────────────────────────
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+// Tareas atrasadas: vencidas SIN completar (de `tasks` ad-hoc)
 const overdueTasks = computed(() => {
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const all = [...(dailyTasks.value||[]), ...(weeklyTasks.value||[]), ...(monthlyTasks.value||[])];
+  const all = [...(dailyTasks.value || []), ...(weeklyTasks.value || []), ...(monthlyTasks.value || [])];
   return all.filter(t => t.status !== 'completed' && t.due_date && new Date(t.due_date) < today);
 });
 
-const scheduledTasks = computed(() => {
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const all = [...(dailyTasks.value||[]), ...(weeklyTasks.value||[]), ...(monthlyTasks.value||[])];
-  return all.filter(t => t.status !== 'completed' && (!t.due_date || new Date(t.due_date) >= today));
+// Pendientes de HOY: tasks asignadas con due_date >= hoy + programados que activan hoy
+const todayPendingTasks = computed(() => {
+  const all = [...(dailyTasks.value || []), ...(weeklyTasks.value || []), ...(monthlyTasks.value || [])];
+  const adHoc = all.filter(t => t.status !== 'completed' && (!t.due_date || new Date(t.due_date) >= today));
+  // Programados que activan HOY (se inyectan como pendientes)
+  const fromScheduled = scheduledDeliveries.value
+    .filter(sd => sd._triggersToday && !sd.completed)
+    .map(sd => ({ ...sd, _isScheduled: true, _key: 'sd-' + sd.id }));
+  return [...fromScheduled, ...adHoc];
 });
 
+// Para el área de "pendientes del día" (unión visual)
+const pendingDayTasks = computed(() => todayPendingTasks.value);
+
+// Gestión Diaria activa (para KPI)
 const activeDailyTasks = computed(() => {
-  return [...(dmDailyTasks.value||[]), ...(dmWeeklyTasks.value||[]), ...(dmMonthlyTasks.value||[])];
+  return [...(dmDailyTasks.value || []), ...(dmWeeklyTasks.value || []), ...(dmMonthlyTasks.value || [])];
 });
 
+// Programados próximos (no activan hoy, para mostrar como "próximamente")
+const upcomingScheduled = computed(() => {
+  return scheduledDeliveries.value
+    .filter(sd => !sd._triggersToday)
+    .sort((a, b) => a._daysUntil - b._daysUntil)
+    .slice(0, 10);
+});
+
+// KPI calculation — incluye las 3 capas
 const kpiPercentage = computed(() => {
-  // Motor Matemático de Tiempos
-  // Asignamos pesos en minutos:
-  // Tarea de cronograma (scheduled/overdue) = 30 min
-  // Gestión diaria (activeDailyTasks) = 15 min
-  
   const allSched = [...(dailyTasks.value||[]), ...(weeklyTasks.value||[]), ...(monthlyTasks.value||[])];
   const allDaily = [...(dmDailyTasks.value||[]), ...(dmWeeklyTasks.value||[]), ...(dmMonthlyTasks.value||[])];
-  
-  const totalAllocatedTime = (allSched.length * 30) + (allDaily.length * 15);
-  
-  if (totalAllocatedTime === 0) return 100; // Día perfecto si no hay asignaciones
-  
-  const completedSched = allSched.filter(t => t.status === 'completed').length;
-  const completedDaily = allDaily.filter(t => t.status === 'completed').length;
-  
-  const totalCompletedTime = (completedSched * 30) + (completedDaily * 15);
-  
-  return Math.round((totalCompletedTime / totalAllocatedTime) * 100);
+  const allProg  = scheduledDeliveries.value.filter(sd => sd._triggersToday);
+
+  const totalTime = (allSched.length * 30) + (allDaily.length * 15) + (allProg.length * 45);
+  if (totalTime === 0) return 100;
+
+  const doneTime =
+    (allSched.filter(t => t.status === 'completed').length * 30) +
+    (allDaily.filter(t => t.completed).length * 15) +
+    (allProg.filter(sd => sd.completed).length * 45);
+
+  return Math.round((doneTime / totalTime) * 100);
 });
 
 const kpiColor = computed(() => {
@@ -399,18 +523,22 @@ const roleContextStr = ref('');
 const kpiDetail = ref({ overallScore: 0, metrics: [] });
 const loadingKpiDetail = ref(false);
 
-// Cronograma Programacional (tareas asignadas por el líder, tabla `tasks`)
+// Cronograma Programacional (tareas ad-hoc de `tasks`)
 const dailyTasks = ref([]);
 const weeklyTasks = ref([]);
 const monthlyTasks = ref([]);
 
-// Gestión Diaria (memoria del cargo, role_task_templates + task_completions)
+// Gestión Diaria (memoria del cargo, role_task_templates)
 const dmDailyTasks = ref([]);
 const dmWeeklyTasks = ref([]);
 const dmMonthlyTasks = ref([]);
 
-// Plantillas
+// Programados (scheduled_deliveries)
+const scheduledDeliveries = ref([]);
+
+// Plantillas y Noticias
 const templates = ref([]);
+const activeNews = ref([]);
 
 // Chat
 const messages = ref([]);
@@ -647,6 +775,30 @@ const markAllRead = async () => {
   }
 };
 
+const currentNewsIndex = ref(0);
+let newsInterval = null;
+
+const fetchNews = async () => {
+  const now = new Date().toISOString();
+  const { data } = await supabase.from('corporate_news')
+    .select('*')
+    .lte('start_date', now)
+    .or(`end_date.gte.${now},end_date.is.null`);
+  activeNews.value = data || [];
+  
+  if (activeNews.value.length > 1) {
+    if (newsInterval) clearInterval(newsInterval);
+    newsInterval = setInterval(() => { nextNews(); }, 7000);
+  }
+};
+
+const nextNews = () => { currentNewsIndex.value = (currentNewsIndex.value + 1) % activeNews.value.length; };
+const prevNews = () => { currentNewsIndex.value = currentNewsIndex.value === 0 ? activeNews.value.length - 1 : currentNewsIndex.value - 1; };
+
+onUnmounted(() => {
+  if (newsInterval) clearInterval(newsInterval);
+});
+
 const initWorkspace = async () => {
   loadingProfile.value = true;
   try {
@@ -679,12 +831,14 @@ const initWorkspace = async () => {
     if (currentRole.value) {
       await fetchRoleData(currentRole.value.id);
       await fetchDailyManagement(currentRole.value.id, currentProfile.value.id);
+      await fetchScheduledDeliveries(currentRole.value, currentProfile.value);
       if (isManagerRole.value) {
         await fetchKpiDetail(currentRole.value.id);
       }
     }
     await fetchChecklists(currentProfile.value.id);
     await fetchNotifications(currentProfile.value.id, currentRole.value);
+    await fetchNews();
   } finally {
     loadingProfile.value = false;
   }
@@ -763,6 +917,134 @@ const fetchDailyManagement = async (roleId, profileId) => {
     console.error('Error fetching Gestión Diaria:', e);
   }
 };
+
+// ─── Programados: lógica de fetching y cálculo ─────────────────────────────
+
+// Calcula el period_key según tipo de recurrencia
+const getScheduledPeriodKey = (sd) => {
+  const now = new Date();
+  if (sd.recurrence_type === 'monthly_day') {
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  if (sd.recurrence_type === 'weekly_day') {
+    // ISO week number
+    const jan1 = new Date(now.getFullYear(), 0, 1);
+    const week = Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+    return `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
+  }
+  // once
+  return sd.due_date || now.toISOString().split('T')[0];
+};
+
+// Días hasta el próximo disparo
+const daysUntilNextTrigger = (sd) => {
+  const now = new Date();
+  const todayD = now.getDate();
+  const todayDow = now.getDay(); // 0=Sun
+
+  if (sd.recurrence_type === 'monthly_day') {
+    const target = sd.recurrence_value;
+    if (todayD === target) return 0;
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return todayD < target
+      ? target - todayD
+      : daysInMonth - todayD + target;
+  }
+  if (sd.recurrence_type === 'weekly_day') {
+    const target = sd.recurrence_value;
+    if (todayDow === target) return 0;
+    const diff = (target - todayDow + 7) % 7;
+    return diff === 0 ? 7 : diff;
+  }
+  if (sd.recurrence_type === 'once' && sd.due_date) {
+    const due = new Date(sd.due_date);
+    due.setHours(0, 0, 0, 0);
+    const diff = Math.round((due - today) / 86400000);
+    return Math.max(0, diff);
+  }
+  return 999;
+};
+
+const fetchScheduledDeliveries = async (role, profile) => {
+  try {
+    // Traer todos los programados activos
+    const { data: all, error } = await supabase
+      .from('scheduled_deliveries')
+      .select('*')
+      .eq('active', true);
+    if (error) throw error;
+
+    // Filtrar los que aplican a este usuario
+    const applicable = (all || []).filter(sd => {
+      if (sd.target_type === 'all') return true;
+      if (sd.target_type === 'profile' && sd.target_profile_ids?.includes(profile.id)) return true;
+      if (sd.target_type === 'role' && sd.target_role_ids?.includes(role.id)) return true;
+      if (sd.target_type === 'level' && role.access_level === sd.target_level) return true;
+      if (sd.target_type === 'area' && role.area_id === sd.target_area_id) return true;
+      return false;
+    });
+
+    // Traer completados de este usuario para calcular estado
+    const deliveryIds = applicable.map(sd => sd.id);
+    let completedKeys = new Set();
+    if (deliveryIds.length > 0) {
+      const { data: comps } = await supabase
+        .from('scheduled_delivery_completions')
+        .select('delivery_id, period_key')
+        .eq('profile_id', profile.id)
+        .in('delivery_id', deliveryIds);
+      completedKeys = new Set((comps || []).map(c => `${c.delivery_id}::${c.period_key}`));
+    }
+
+    // Enriquecer con estado y días restantes
+    scheduledDeliveries.value = applicable.map(sd => {
+      const days = daysUntilNextTrigger(sd);
+      const periodKey = getScheduledPeriodKey(sd);
+      return {
+        ...sd,
+        _daysUntil: days,
+        _triggersToday: days === 0,
+        _periodKey: periodKey,
+        completed: completedKeys.has(`${sd.id}::${periodKey}`)
+      };
+    });
+  } catch (e) {
+    console.error('Error fetching scheduled deliveries:', e);
+  }
+};
+
+const toggleScheduledTask = async (sd) => {
+  const wasCompleted = sd.completed;
+  sd.completed = !wasCompleted; // Optimistic
+  try {
+    if (wasCompleted) {
+      await supabase
+        .from('scheduled_delivery_completions')
+        .delete()
+        .eq('delivery_id', sd.id)
+        .eq('profile_id', currentProfile.value.id)
+        .eq('period_key', sd._periodKey);
+    } else {
+      await supabase.from('scheduled_delivery_completions').insert({
+        delivery_id: sd.id,
+        profile_id: currentProfile.value.id,
+        period_key: sd._periodKey
+      });
+    }
+  } catch (e) {
+    sd.completed = wasCompleted; // Revertir
+    console.error('Error toggling scheduled delivery:', e);
+  }
+};
+
+const scheduledRecurrenceLabel = (sd) => {
+  if (sd.recurrence_type === 'monthly_day') return `Día ${sd.recurrence_value} de cada mes`;
+  const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  if (sd.recurrence_type === 'weekly_day') return `Cada ${days[sd.recurrence_value] || '?'}`;
+  if (sd.due_date) return `Una vez: ${new Date(sd.due_date).toLocaleDateString('es-CO')}`;
+  return 'Programado';
+};
+
 
 const toggleDmTask = async (task) => {
   const wasCompleted = task.completed;

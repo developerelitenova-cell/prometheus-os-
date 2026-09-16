@@ -41,7 +41,7 @@
         <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start pb-space-xl">
           
           <!-- LEFT SIDEBAR: Historial & Sesiones (Col span 3.5 ~ 4) -->
-          <aside class="lg:col-span-4 xl:col-span-3 flex flex-col gap-space-md bg-surface-container-lowest rounded-2xl p-space-md shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-full lg:max-h-[820px]">
+          <aside class="lg:col-span-4 xl:col-span-3 order-2 lg:order-1 flex flex-col gap-space-md bg-surface-container-lowest rounded-2xl p-space-md shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-full min-h-[400px] lg:max-h-[820px]">
             <!-- Search & New Session -->
             <div class="flex flex-col gap-space-sm">
               <button @click="messages = [{role: 'ai', text: 'Nueva sesión iniciada. ¿En qué puedo asistirte hoy?'}]" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all group shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
@@ -110,7 +110,7 @@
           </aside>
 
           <!-- MAIN CHAT AREA (Col span 8.5 ~ 9) -->
-          <section v-if="tab === 'chat'" class="lg:col-span-8 xl:col-span-9 flex flex-col bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-[820px] relative overflow-hidden">
+          <section v-if="tab === 'chat'" class="lg:col-span-8 xl:col-span-9 order-1 lg:order-2 flex flex-col bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-[620px] lg:h-[820px] relative overflow-hidden">
             <!-- Top Action Bar inside Chat Window -->
             <div class="px-space-lg py-space-md bg-surface-container-lowest flex flex-wrap items-center justify-between gap-space-sm shadow-[0_1px_4px_rgba(0,0,0,0.02)] z-10 shrink-0">
               <div class="flex items-center gap-space-md">
@@ -242,9 +242,20 @@
 
           <!-- PANORAMA VIEW (Alternative Tab) -->
           <section v-else class="lg:col-span-8 xl:col-span-9 flex flex-col bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] h-[820px] p-8 overflow-y-auto">
-            <div class="mb-6">
-              <h2 class="font-headline-md text-headline-md font-semibold text-on-surface">Panorama de Conocimiento (Gobernanza)</h2>
-              <p class="text-secondary font-body-sm text-body-sm mt-2">Visibilidad de cobertura del Oráculo sobre los Nodos Corporativos.</p>
+            <div class="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h2 class="font-headline-md text-headline-md font-semibold text-on-surface">Panorama de Conocimiento (Gobernanza)</h2>
+                <p class="text-secondary font-body-sm text-body-sm mt-2">Visibilidad de cobertura del Oráculo sobre los Nodos Corporativos.</p>
+              </div>
+              <button
+                @click="loadPanorama(true)"
+                :disabled="panoramaLoading"
+                class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container text-on-surface font-label-sm text-label-sm hover:bg-surface-container-high transition-all disabled:opacity-50 shrink-0"
+                title="Refrescar datos desde la base de datos"
+              >
+                <span class="material-symbols-outlined text-[17px]" :class="{ 'animate-spin': panoramaLoading }">sync</span>
+                {{ panoramaLoading ? 'Actualizando...' : 'Refrescar' }}
+              </button>
             </div>
 
             <div v-if="panoramaLoading" class="w-full flex justify-center py-20 text-secondary">
@@ -480,7 +491,7 @@ const messages = ref([
 const toggleTab = () => {
   tab.value = tab.value === 'chat' ? 'panorama' : 'chat';
   if (tab.value === 'panorama') {
-    loadPanorama();
+    loadPanorama(true);
   }
 };
 
@@ -489,34 +500,48 @@ const fullyCoveredRoles = computed(() =>
   panorama.value.reduce((sum, a) => sum + a.roles.filter(r => r.hasMapping && r.hasManual && r.hasKpi && r.memoryCount > 0).length, 0)
 );
 
-const loadPanorama = async () => {
-  if (panoramaLoaded.value) return;
+// force=true siempre recarga desde la BD; force=false solo carga si aún no hay datos
+const loadPanorama = async (force = false) => {
+  if (!force && panoramaLoaded.value) return;
   panoramaLoading.value = true;
   try {
-    const [areasRes, rolesRes, workflowsRes, manualsRes, templatesRes, memoryRes] = await Promise.all([
+    // Fetch all data sources in parallel — always fresh from DB
+    const [areasRes, rolesRes, workflowsRes, manualsRes, kpiTemplatesRes, kpiAssignmentsRes, memoryRes, taskTemplatesRes] = await Promise.all([
       supabase.from('areas').select('id,name').order('name'),
       supabase.from('roles').select('id,name,area_id'),
       supabase.from('role_workflows').select('role_id, kpis'),
       supabase.from('manuals').select('role_id'),
       supabase.from('kpi_role_templates').select('role_id').not('role_id', 'is', null),
-      supabase.from('corporate_memory').select('metadata')
+      // kpi_assignments is an alternative table some setups use
+      supabase.from('kpi_assignments').select('role_id').not('role_id', 'is', null).then(r => r).catch(() => ({ data: [] })),
+      supabase.from('corporate_memory').select('metadata'),
+      // role_task_templates counts as "Memoria IA" if present
+      supabase.from('role_task_templates').select('role_id').eq('active', true)
     ]);
 
     const mappedRoleIds = new Set((workflowsRes.data || []).map(w => w.role_id));
     const manualRoleIds = new Set((manualsRes.data || []).map(m => m.role_id));
-    const kpiLinkedRoleIds = new Set((templatesRes.data || []).map(t => t.role_id));
-    
-    // Check if mapping also contains KPIs
+
+    // KPI coverage: check kpi_role_templates, kpi_assignments, AND kpis field in role_workflows
+    const kpiLinkedRoleIds = new Set([
+      ...(kpiTemplatesRes.data || []).map(t => t.role_id),
+      ...(kpiAssignmentsRes.data || []).map(t => t.role_id),
+    ]);
     (workflowsRes.data || []).forEach(w => {
       if (w.kpis && Array.isArray(w.kpis) && w.kpis.length > 0) {
         kpiLinkedRoleIds.add(w.role_id);
       }
     });
 
+    // Memory count: corporate_memory table keyed by metadata.role_id
     const memoryCountByRole = {};
     (memoryRes.data || []).forEach(m => {
       const roleId = m.metadata?.role_id;
       if (roleId) memoryCountByRole[roleId] = (memoryCountByRole[roleId] || 0) + 1;
+    });
+    // Also count active role_task_templates as memory
+    (taskTemplatesRes.data || []).forEach(t => {
+      if (t.role_id) memoryCountByRole[t.role_id] = (memoryCountByRole[t.role_id] || 0) + 1;
     });
 
     const roles = rolesRes.data || [];
@@ -533,7 +558,7 @@ const loadPanorama = async () => {
         }))
         .sort((a, b) => a.name.localeCompare(b.name));
 
-      const dimensions = areaRoles.length * 4;
+      const dimensions = areaRoles.length * 4; // 4 dimensiones: mapeo, manual, kpi, memoria
       const covered = areaRoles.reduce((sum, r) =>
         sum + (r.hasMapping ? 1 : 0) + (r.hasManual ? 1 : 0) + (r.hasKpi ? 1 : 0) + (r.memoryCount > 0 ? 1 : 0), 0);
 
@@ -544,7 +569,7 @@ const loadPanorama = async () => {
         coveragePct: dimensions > 0 ? Math.round((covered / dimensions) * 100) : 0
       };
     }).filter(a => a.roles.length > 0)
-      .sort((a, b) => b.coveragePct - a.coveragePct); // Sort by lowest coverage first
+      .sort((a, b) => b.coveragePct - a.coveragePct);
 
     panorama.value = areas;
     panoramaLoaded.value = true;
@@ -556,8 +581,8 @@ const loadPanorama = async () => {
 };
 
 onMounted(() => {
-  // Pre-load panorama in background to have stats ready
-  loadPanorama();
+  // Pre-load en background — sin force para no bloquear el render inicial
+  loadPanorama(false);
 });
 
 const scrollToBottom = () => {

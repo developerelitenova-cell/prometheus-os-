@@ -30,6 +30,10 @@
                   <span class="material-symbols-outlined text-primary text-[18px] transition-transform group-hover:scale-110">monitoring</span>
                   <span>Ver Mis KPIs</span>
                 </button>
+                <button @click="openScheduledModal" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm">
+                  <span class="material-symbols-outlined text-[#0071e3] text-[18px]">event_repeat</span>
+                  <span>Orden Programada</span>
+                </button>
                 <button @click="openTaskModal(null)" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md transition-all duration-200 shadow-[0_2px_10px_rgba(176,141,87,0.25)] active:scale-[0.98]">
                   <span class="material-symbols-outlined text-[18px]">add_task</span>
                   <span>Asignar Tarea General</span>
@@ -71,6 +75,26 @@
                   <span class="material-symbols-outlined" :class="totalOverdue > 0 ? 'text-danger/70' : 'text-secondary'">warning</span>
                 </div>
                 <span class="font-headline-md text-headline-md font-semibold" :class="totalOverdue > 0 ? 'text-danger' : 'text-on-surface'">{{ totalOverdue }} Tareas</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Proactive Alerts Section -->
+          <div v-if="systemAlerts.length > 0" class="mb-space-xl">
+            <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-space-md flex items-center gap-2">
+              <span class="material-symbols-outlined text-danger">campaign</span>
+              Alertas Proactivas de IA
+            </h2>
+            <div class="flex flex-col gap-3">
+              <div v-for="alert in systemAlerts" :key="alert.id" class="p-space-md rounded-2xl border flex items-start gap-3 shadow-sm" :class="alert.severity === 'critical' ? 'bg-error-container/20 border-danger/30' : 'bg-surface-container-low border-surface-container-high'">
+                <span class="material-symbols-outlined mt-0.5" :class="alert.severity === 'critical' ? 'text-danger' : 'text-warning'">
+                  {{ alert.severity === 'critical' ? 'error' : 'warning' }}
+                </span>
+                <div class="flex flex-col">
+                  <span class="font-label-lg text-label-lg font-semibold" :class="alert.severity === 'critical' ? 'text-danger' : 'text-on-surface'">{{ alert.title }}</span>
+                  <p class="font-body-sm text-body-sm text-secondary whitespace-pre-wrap mt-1">{{ alert.message }}</p>
+                  <span class="font-caption text-caption text-secondary mt-2 opacity-70">{{ new Date(alert.created_at).toLocaleString() }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -216,68 +240,232 @@
       </div>
     </main>
 
-    <!-- Modal Asignar Tarea -->
-    <div v-if="showTaskModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div class="bg-surface-container-lowest rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-        <h2 class="text-2xl font-bold text-on-surface mb-1">Asignar Tarea</h2>
-        <p class="text-secondary text-sm mb-6" v-if="taskTargetMember">Para: {{ taskTargetMember.full_name }}</p>
-        <p class="text-secondary text-sm mb-6" v-else>Asignar tarea general</p>
+    <!-- Modal Asignar Tarea — Versión Detallada -->
+    <div v-if="showTaskModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-surface-container-lowest rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[92vh]">
 
-        <form @submit.prevent="submitTask" class="space-y-4">
-          <div v-if="!taskTargetMember" class="flex flex-col gap-1">
-            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Colaborador <span class="text-danger">*</span></label>
-            <select v-model="newTask.assigned_to" required class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-              <option disabled value="">Seleccionar miembro...</option>
-              <option v-for="m in teamMembers" :key="m.id" :value="m.id">{{ m.full_name }}</option>
-            </select>
+        <!-- Header del modal -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-surface-container shrink-0">
+          <div>
+            <h2 class="text-xl font-bold text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#b08d57]">assignment_add</span>
+              Asignar Pendiente del Día
+            </h2>
+            <p class="text-secondary text-sm mt-0.5">Especifica con precisión qué, cuándo y cómo debe ejecutarse</p>
           </div>
-          
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Título de la Tarea <span class="text-danger">*</span></label>
-            <input v-model="newTask.title" required type="text" placeholder="Ej: Revisión de inventario trimestral" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
-          </div>
+          <button @click="closeTaskModal" class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
 
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Descripción</label>
-            <textarea v-model="newTask.description" rows="2" placeholder="Detalles de la asignación..." class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none"></textarea>
-          </div>
+        <form @submit.prevent="submitTask" class="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Frecuencia / Tipo <span class="text-danger">*</span></label>
-              <select v-model="newTask.task_type" required class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                <option value="daily">Diaria</option>
-                <option value="weekly">Semanal</option>
-                <option value="monthly">Mensual</option>
-              </select>
+          <!-- ── SECCIÓN 1: ¿A QUIÉN? ─────────────────────────────── -->
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-6 h-6 rounded-full bg-[#b08d57] text-white text-[11px] font-bold flex items-center justify-center shrink-0">1</span>
+              <h3 class="font-semibold text-on-surface text-sm uppercase tracking-wider">¿A quién se asigna?</h3>
             </div>
 
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Prioridad</label>
-              <select v-model="newTask.priority" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none" :class="newTask.priority === 'urgent' ? 'border-danger text-danger font-bold' : ''">
-                <option value="low">Baja</option>
-                <option value="medium">Media</option>
-                <option value="high">Alta</option>
-                <option value="urgent" class="text-danger font-bold">Urgente (Inmediata)</option>
-              </select>
+            <!-- Si viene de "Asignar Específica" ya está fijo -->
+            <div v-if="taskTargetMember" class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl border border-surface-container-high">
+              <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-lg shrink-0">
+                {{ taskTargetMember.full_name.charAt(0) }}
+              </div>
+              <div>
+                <p class="font-semibold text-on-surface text-sm">{{ taskTargetMember.full_name }}</p>
+                <p class="text-xs text-secondary">{{ taskTargetMember.roles?.name }}</p>
+              </div>
+              <span class="ml-auto text-[11px] font-bold bg-[#b08d57]/10 text-[#b08d57] px-2 py-0.5 rounded-full border border-[#b08d57]/30">Asignado</span>
+            </div>
+
+            <!-- Selección múltiple si es General -->
+            <div v-else class="space-y-2">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Seleccionar colaborador(es) <span class="text-danger">*</span></label>
+              <div class="max-h-36 overflow-y-auto space-y-1 border border-surface-container-high rounded-xl p-2 bg-surface-container-low">
+                <label v-for="m in teamMembers" :key="m.id"
+                  class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-surface-container transition-colors"
+                  :class="newTask.assigned_to_list?.includes(m.id) ? 'bg-[#b08d57]/5 border border-[#b08d57]/20' : ''">
+                  <input type="checkbox" :value="m.id" v-model="newTask.assigned_to_list" class="rounded accent-[#b08d57]" />
+                  <div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-xs font-bold text-on-surface shrink-0">{{ m.full_name.charAt(0) }}</div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-on-surface truncate">{{ m.full_name }}</p>
+                    <p class="text-xs text-secondary truncate">{{ m.roles?.name }}</p>
+                  </div>
+                </label>
+              </div>
+              <p class="text-xs text-secondary">{{ (newTask.assigned_to_list || []).length }} seleccionado(s)</p>
             </div>
           </div>
-            
-          <div class="flex flex-col gap-1 mt-4">
-            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Fecha Límite (Due Date) <span class="text-danger">*</span></label>
-            <input v-model="newTask.due_date" required type="date" class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+
+          <!-- ── SECCIÓN 2: ¿QUÉ? ────────────────────────────────── -->
+          <div class="space-y-3 pt-1 border-t border-surface-container">
+            <div class="flex items-center gap-2 mt-4 mb-2">
+              <span class="w-6 h-6 rounded-full bg-[#b08d57] text-white text-[11px] font-bold flex items-center justify-center shrink-0">2</span>
+              <h3 class="font-semibold text-on-surface text-sm uppercase tracking-wider">¿Qué debe hacer exactamente?</h3>
+            </div>
+
+            <!-- Título -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Título de la tarea <span class="text-danger">*</span></label>
+              <input v-model="newTask.title" required type="text"
+                placeholder="Ej: Llamar a cliente ABC para confirmar pedido #445"
+                class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm" />
+            </div>
+
+            <!-- Instrucciones detalladas -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Instrucciones detalladas <span class="text-danger">*</span></label>
+              <textarea v-model="newTask.description" rows="3" required
+                placeholder="Explica paso a paso lo que debe hacer: con quién hablar, qué revisar, qué sistema usar, qué información obtener..."
+                class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm resize-none"></textarea>
+            </div>
+
+            <!-- Entregable esperado -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Entregable esperado <span class="text-danger">*</span></label>
+              <input v-model="newTask.deliverable" type="text"
+                placeholder="Ej: Foto del inventario contado, Captura del correo enviado, Informe en PDF..."
+                class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm" />
+            </div>
+
+            <!-- Categoría -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Categoría</label>
+              <div class="flex flex-wrap gap-2">
+                <button v-for="cat in taskCategories" :key="cat.k" type="button"
+                  @click="newTask.category = cat.k"
+                  :class="['px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                    newTask.category === cat.k ? 'bg-surface-container-high border-on-surface text-on-surface' : 'bg-surface-container-low border-surface-container-high text-secondary hover:border-on-surface-variant']">
+                  {{ cat.icon }} {{ cat.l }}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-surface-container">
-            <button type="button" @click="closeTaskModal" class="px-6 py-2.5 rounded-xl font-semibold text-secondary hover:bg-surface-container-low transition-colors">Cancelar</button>
-            <button type="submit" :disabled="isSaving" class="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white hover:brightness-105 shadow-md transition-all flex items-center gap-2">
-              <span v-if="isSaving" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-              <span>{{ isSaving ? 'Guardando...' : 'Asignar' }}</span>
-            </button>
+          <!-- ── SECCIÓN 3: ¿CUÁNDO? ─────────────────────────────── -->
+          <div class="space-y-3 pt-1 border-t border-surface-container">
+            <div class="flex items-center gap-2 mt-4 mb-2">
+              <span class="w-6 h-6 rounded-full bg-[#b08d57] text-white text-[11px] font-bold flex items-center justify-center shrink-0">3</span>
+              <h3 class="font-semibold text-on-surface text-sm uppercase tracking-wider">¿Cuándo debe estar lista?</h3>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div class="flex flex-col gap-1 col-span-1">
+                <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Fecha límite <span class="text-danger">*</span></label>
+                <input v-model="newTask.due_date" required type="date"
+                  class="px-3 py-2.5 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none text-sm" />
+              </div>
+              <div class="flex flex-col gap-1 col-span-1">
+                <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Hora límite</label>
+                <input v-model="newTask.due_time" type="time"
+                  class="px-3 py-2.5 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none text-sm" />
+              </div>
+              <div class="flex flex-col gap-1 col-span-1">
+                <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Duración est.</label>
+                <select v-model="newTask.estimated_minutes"
+                  class="px-3 py-2.5 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none text-sm">
+                  <option value="">—</option>
+                  <option value="15">15 min</option>
+                  <option value="30">30 min</option>
+                  <option value="60">1 hora</option>
+                  <option value="120">2 horas</option>
+                  <option value="240">4 horas</option>
+                  <option value="480">Día completo</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Frecuencia -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Tipo de ocurrencia</label>
+              <div class="flex gap-2">
+                <button v-for="t in [{k:'once',l:'Una vez'},{k:'daily',l:'Diaria'},{k:'weekly',l:'Semanal'},{k:'monthly',l:'Mensual'}]"
+                  :key="t.k" type="button"
+                  @click="newTask.task_type = t.k"
+                  :class="['flex-1 py-2 rounded-lg border text-xs font-semibold transition-all',
+                    newTask.task_type === t.k ? 'bg-surface-container-high border-on-surface-variant text-on-surface' : 'bg-surface-container-low border-surface-container-high text-secondary hover:border-on-surface-variant']">
+                  {{ t.l }}
+                </button>
+              </div>
+            </div>
           </div>
+
+          <!-- ── SECCIÓN 4: ¿CON QUÉ NIVEL? ─────────────────────── -->
+          <div class="space-y-3 pt-1 border-t border-surface-container">
+            <div class="flex items-center gap-2 mt-4 mb-2">
+              <span class="w-6 h-6 rounded-full bg-[#b08d57] text-white text-[11px] font-bold flex items-center justify-center shrink-0">4</span>
+              <h3 class="font-semibold text-on-surface text-sm uppercase tracking-wider">Prioridad y nivel de urgencia</h3>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2">
+              <button v-for="p in [
+                {k:'low',    l:'Baja',    sub:'Sin prisa',     cls:'border-surface-container-high text-secondary', activeC:'bg-surface-container-high border-on-surface-variant text-on-surface'},
+                {k:'medium', l:'Media',   sub:'Esta semana',   cls:'border-surface-container-high text-secondary', activeC:'bg-amber-50 border-amber-400 text-amber-700'},
+                {k:'high',   l:'Alta',    sub:'Hoy mismo',     cls:'border-surface-container-high text-secondary', activeC:'bg-red-50 border-red-400 text-red-700'},
+                {k:'urgent', l:'Urgente', sub:'¡Inmediata!',   cls:'border-surface-container-high text-secondary', activeC:'bg-red-600 border-red-600 text-white'},
+              ]" :key="p.k" type="button"
+                @click="newTask.priority = p.k"
+                :class="['py-2.5 rounded-xl border text-center transition-all',
+                  newTask.priority === p.k ? p.activeC : ('bg-surface-container-low ' + p.cls + ' hover:border-on-surface-variant')]">
+                <p class="text-sm font-bold leading-none">{{ p.l }}</p>
+                <p class="text-[10px] mt-0.5 opacity-80">{{ p.sub }}</p>
+              </button>
+            </div>
+
+            <!-- Nota interna para el líder -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Nota interna del líder (no visible para el empleado)</label>
+              <input v-model="newTask.leader_note" type="text"
+                placeholder="Ej: Si no puede hacerlo, que avise antes del mediodía..."
+                class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none text-sm" />
+            </div>
+          </div>
+
+          <!-- ── PREVIEW CARD ─────────────────────────────────────── -->
+          <div v-if="newTask.title" class="pt-1 border-t border-surface-container">
+            <p class="text-xs font-semibold text-secondary uppercase tracking-wide mb-2 mt-4">Vista previa — Así verá el empleado esta tarea:</p>
+            <div class="p-3 bg-white border border-[#e5e5ea] rounded-xl shadow-sm flex items-start gap-3">
+              <div :class="['w-5 h-5 mt-0.5 rounded-full border-2 shrink-0',
+                newTask.priority === 'urgent' ? 'border-red-500' :
+                newTask.priority === 'high'   ? 'border-red-400' :
+                newTask.priority === 'medium' ? 'border-amber-400' : 'border-gray-300']"></div>
+              <div class="flex-1 min-w-0">
+                <p class="text-[13px] font-medium text-[#1d1d1f]">{{ newTask.title }}</p>
+                <p v-if="newTask.description" class="text-[11px] text-[#86868b] mt-0.5 line-clamp-2">{{ newTask.description }}</p>
+                <div class="flex flex-wrap gap-1.5 mt-1.5">
+                  <span v-if="newTask.deliverable" class="text-[10px] bg-[#f5f5f7] text-[#1d1d1f] px-1.5 py-0.5 rounded border border-[#e5e5ea]">
+                    📎 {{ newTask.deliverable }}
+                  </span>
+                  <span v-if="newTask.due_date" class="text-[10px] bg-[#f5f5f7] text-[#86868b] px-1.5 py-0.5 rounded">
+                    📅 {{ new Date(newTask.due_date + 'T00:00:00').toLocaleDateString('es-CO') }}
+                    {{ newTask.due_time ? '· ' + newTask.due_time : '' }}
+                  </span>
+                  <span v-if="newTask.estimated_minutes" class="text-[10px] bg-[#f5f5f7] text-[#86868b] px-1.5 py-0.5 rounded">
+                    ⏱ {{ newTask.estimated_minutes >= 60 ? (newTask.estimated_minutes/60) + 'h' : newTask.estimated_minutes + 'min' }}
+                  </span>
+                  <span v-if="newTask.priority === 'urgent'" class="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded animate-pulse">¡URGENTE!</span>
+                  <span v-else-if="newTask.priority === 'high'" class="text-[10px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Alta Prioridad</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </form>
+
+        <!-- Footer fijo -->
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-surface-container shrink-0">
+          <button type="button" @click="closeTaskModal" class="px-6 py-2.5 rounded-xl font-semibold text-secondary hover:bg-surface-container-low transition-colors">Cancelar</button>
+          <button type="button" @click="submitTask" :disabled="isSaving"
+            class="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white hover:brightness-105 shadow-md transition-all flex items-center gap-2">
+            <span v-if="isSaving" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+            <span>{{ isSaving ? 'Guardando...' : 'Asignar Tarea' }}</span>
+          </button>
+        </div>
+
       </div>
     </div>
+
     <!-- Toast Notification -->
     <transition enter-active-class="transition duration-300 ease-out" enter-from-class="transform translate-y-2 opacity-0" enter-to-class="transform translate-y-0 opacity-100" leave-active-class="transition duration-200 ease-in" leave-from-class="transform translate-y-0 opacity-100" leave-to-class="transform translate-y-2 opacity-0">
       <div v-if="showSuccessToast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] bg-[#2e7d32] text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 font-label-md text-label-md">
@@ -285,6 +473,166 @@
         <span>¡Tarea asignada con éxito!</span>
       </div>
     </transition>
+
+    <!-- Modal: Crear Orden Programada -->
+    <div v-if="showScheduledModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-surface-container-lowest rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-surface-container">
+          <div>
+            <h2 class="text-xl font-bold text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#0071e3]">event_repeat</span>
+              Crear Orden Programada
+            </h2>
+            <p class="text-secondary text-sm mt-0.5">La entrega aparecerá en "Pendientes del Día" cuando llegue su fecha</p>
+          </div>
+          <button @click="showScheduledModal = false" class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          <!-- Título -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Título de la Entrega <span class="text-danger">*</span></label>
+            <input v-model="newScheduled.title" type="text" required
+              placeholder="Ej: Informe PIG mensual, Reporte de ventas..."
+              class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+          </div>
+
+          <!-- Descripción -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Descripción / Instrucciones</label>
+            <textarea v-model="newScheduled.description" rows="2"
+              placeholder="Instrucciones de qué se debe entregar..."
+              class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary focus:ring-1 focus:ring-primary outline-none"></textarea>
+          </div>
+
+          <!-- Recurrencia -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Tipo de Recurrencia <span class="text-danger">*</span></label>
+              <select v-model="newScheduled.recurrence_type"
+                class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none">
+                <option value="monthly_day">Día del mes (Ej: día 7)</option>
+                <option value="weekly_day">Día de la semana (Ej: cada lunes)</option>
+                <option value="once">Una sola vez (fecha específica)</option>
+              </select>
+            </div>
+            <!-- Valor de recurrencia -->
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-semibold text-secondary uppercase tracking-wide">
+                {{ newScheduled.recurrence_type === 'monthly_day' ? 'Día del Mes (1-31)' :
+                   newScheduled.recurrence_type === 'weekly_day' ? 'Día de la Semana' : 'Fecha de Entrega' }}
+                <span class="text-danger">*</span>
+              </label>
+              <!-- Monthly day -->
+              <input v-if="newScheduled.recurrence_type === 'monthly_day'"
+                v-model.number="newScheduled.recurrence_value" type="number" min="1" max="31"
+                placeholder="Ej: 7"
+                class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none" />
+              <!-- Weekly day -->
+              <select v-else-if="newScheduled.recurrence_type === 'weekly_day'"
+                v-model.number="newScheduled.recurrence_value"
+                class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none">
+                <option :value="1">Lunes</option>
+                <option :value="2">Martes</option>
+                <option :value="3">Miércoles</option>
+                <option :value="4">Jueves</option>
+                <option :value="5">Viernes</option>
+                <option :value="6">Sábado</option>
+                <option :value="0">Domingo</option>
+              </select>
+              <!-- Once -->
+              <input v-else v-model="newScheduled.due_date" type="date"
+                class="px-4 py-3 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary outline-none" />
+            </div>
+          </div>
+
+          <!-- Prioridad -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold text-secondary uppercase tracking-wide">Prioridad</label>
+            <div class="flex gap-2">
+              <button v-for="p in [{k:'low',l:'Baja'},{k:'medium',l:'Media'},{k:'high',l:'Alta'},{k:'urgent',l:'Urgente'}]" :key="p.k"
+                @click="newScheduled.priority = p.k"
+                :class="['flex-1 py-2 rounded-lg border text-sm font-semibold transition-all',
+                  newScheduled.priority === p.k
+                    ? (p.k === 'urgent' ? 'bg-red-600 border-red-600 text-white' :
+                       p.k === 'high' ? 'bg-red-50 border-red-400 text-red-700' :
+                       p.k === 'medium' ? 'bg-amber-50 border-amber-400 text-amber-700' :
+                       'bg-surface-container border-primary text-primary')
+                    : 'bg-surface-container-low border-surface-container-high text-secondary hover:border-primary']"
+              >{{ p.l }}</button>
+            </div>
+          </div>
+
+          <!-- TARGETING: A quién aplica -->
+          <div class="border border-surface-container-high rounded-xl p-4 bg-surface-container-low space-y-3">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="material-symbols-outlined text-[18px] text-[#0071e3]">group_work</span>
+              <h4 class="font-semibold text-on-surface text-sm">¿A quién aplica esta orden?</h4>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button v-for="tt in targetTypes" :key="tt.k"
+                @click="newScheduled.target_type = tt.k"
+                :class="['py-2.5 px-3 rounded-xl border text-sm font-semibold text-left transition-all flex items-center gap-2',
+                  newScheduled.target_type === tt.k ? 'bg-[#e8f0fe] border-[#0071e3] text-[#0071e3]' : 'bg-surface-container border-surface-container-high text-secondary hover:border-primary']"
+              >
+                <span class="material-symbols-outlined text-[16px]">{{ tt.icon }}</span>
+                {{ tt.l }}
+              </button>
+            </div>
+
+            <!-- Personas específicas -->
+            <div v-if="newScheduled.target_type === 'profile'" class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Seleccionar Personas</label>
+              <div class="space-y-1 max-h-32 overflow-y-auto">
+                <label v-for="m in allTeamMembers" :key="m.id" class="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-container cursor-pointer">
+                  <input type="checkbox" :value="m.id" v-model="newScheduled.target_profile_ids" class="rounded" />
+                  <span class="text-sm">{{ m.full_name }}</span>
+                  <span class="text-xs text-secondary">{{ m.roles?.name }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Por nivel de acceso -->
+            <div v-if="newScheduled.target_type === 'level'" class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Nivel de Acceso</label>
+              <div class="flex gap-2">
+                <button v-for="lv in [1,2,3]" :key="lv"
+                  @click="newScheduled.target_level = lv"
+                  :class="['flex-1 py-2 rounded-lg border text-sm font-semibold transition-all',
+                    newScheduled.target_level === lv ? 'bg-[#e8f0fe] border-[#0071e3] text-[#0071e3]' : 'bg-surface-container border-surface-container-high text-secondary']"
+                >
+                  Nivel {{ lv }}
+                  <span class="block text-[10px] font-normal">{{ lv === 1 ? 'Gerentes' : lv === 2 ? 'Líderes' : 'Empleados' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Por área -->
+            <div v-if="newScheduled.target_type === 'area'" class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Área</label>
+              <select v-model="newScheduled.target_area_id"
+                class="px-3 py-2 rounded-xl bg-surface-container border border-surface-container-high focus:border-primary outline-none text-sm">
+                <option disabled value="">Seleccionar área...</option>
+                <option v-for="area in allAreas" :key="area.id" :value="area.id">{{ area.name }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-surface-container">
+          <button @click="showScheduledModal = false" class="px-6 py-2.5 rounded-xl font-semibold text-secondary hover:bg-surface-container-low transition-colors">Cancelar</button>
+          <button @click="submitScheduled" :disabled="isSavingScheduled"
+            class="px-6 py-2.5 rounded-xl font-semibold bg-[#0071e3] hover:bg-[#0077ed] text-white shadow-md transition-all flex items-center gap-2">
+            <span v-if="isSavingScheduled" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+            {{ isSavingScheduled ? 'Guardando...' : 'Crear Orden Programada' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Modals for Legal and Profile Edit -->
     <div v-if="showEditNameModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -384,11 +732,108 @@ const showSuccessToast = ref(false);
 const newTask = ref({
   title: '',
   description: '',
+  deliverable: '',
+  category: '',
+  due_time: '',
+  estimated_minutes: '',
+  leader_note: '',
   priority: 'medium',
-  task_type: 'daily',
+  task_type: 'once',
   due_date: '',
-  assigned_to: ''
+  assigned_to: '',
+  assigned_to_list: []
 });
+
+const taskCategories = [
+  { k: 'operativo',     l: 'Operativo',      icon: '🔧' },
+  { k: 'comercial',     l: 'Comercial',      icon: '💼' },
+  { k: 'administrativo',l: 'Administrativo', icon: '📄' },
+  { k: 'logistica',     l: 'Logística',      icon: '📦' },
+  { k: 'cliente',       l: 'Cliente',        icon: '🤝' },
+  { k: 'reporte',       l: 'Reporte',        icon: '📈' },
+  { k: 'urgente',       l: 'Urgente',        icon: '⚡' },
+];
+
+const systemAlerts = ref([]);
+
+// ── Scheduled Deliveries (Programados) ────────────────────────────────────
+const showScheduledModal = ref(false);
+const isSavingScheduled = ref(false);
+const allAreas = ref([]);
+const allTeamMembers = ref([]);
+
+const targetTypes = [
+  { k: 'all',     l: 'Todos',              icon: 'public' },
+  { k: 'level',   l: 'Por Nivel',          icon: 'layers' },
+  { k: 'area',    l: 'Por Área',           icon: 'corporate_fare' },
+  { k: 'profile', l: 'Personas Específicas', icon: 'person_search' },
+];
+
+const newScheduled = ref({
+  title: '',
+  description: '',
+  recurrence_type: 'monthly_day',
+  recurrence_value: null,
+  due_date: '',
+  priority: 'medium',
+  target_type: 'all',
+  target_role_ids: [],
+  target_profile_ids: [],
+  target_level: null,
+  target_area_id: ''
+});
+
+const openScheduledModal = async () => {
+  newScheduled.value = {
+    title: '', description: '',
+    recurrence_type: 'monthly_day', recurrence_value: null, due_date: '',
+    priority: 'medium', target_type: 'all',
+    target_role_ids: [], target_profile_ids: [], target_level: null, target_area_id: ''
+  };
+  showScheduledModal.value = true;
+  // Cargar áreas si no están
+  if (!allAreas.value.length) {
+    const { data } = await supabase.from('areas').select('id,name').order('name');
+    allAreas.value = data || [];
+  }
+  // Usar teamMembers ya cargados
+  allTeamMembers.value = teamMembers.value;
+};
+
+const submitScheduled = async () => {
+  if (!newScheduled.value.title || !newScheduled.value.recurrence_type) return;
+  isSavingScheduled.value = true;
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    const payload = {
+      title: newScheduled.value.title,
+      description: newScheduled.value.description || null,
+      recurrence_type: newScheduled.value.recurrence_type,
+      recurrence_value: newScheduled.value.recurrence_type !== 'once' ? newScheduled.value.recurrence_value : null,
+      due_date: newScheduled.value.recurrence_type === 'once' ? newScheduled.value.due_date : null,
+      priority: newScheduled.value.priority,
+      target_type: newScheduled.value.target_type,
+      target_profile_ids: newScheduled.value.target_type === 'profile' ? newScheduled.value.target_profile_ids : null,
+      target_level: newScheduled.value.target_type === 'level' ? newScheduled.value.target_level : null,
+      target_area_id: newScheduled.value.target_type === 'area' ? newScheduled.value.target_area_id : null,
+      target_role_ids: null,
+      active: true,
+      created_by: session.session.user.id
+    };
+    const { error } = await supabase.from('scheduled_deliveries').insert(payload);
+    if (error) throw error;
+    showScheduledModal.value = false;
+    showSuccessToast.value = true;
+    setTimeout(() => { showSuccessToast.value = false; }, 3000);
+  } catch (e) {
+    console.error('Error creando orden programada:', e);
+    alert('Error al guardar la orden programada.');
+  } finally {
+    isSavingScheduled.value = false;
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────
+
 
 const calculateTimeDifferenceHours = (start, end) => {
   if (!start || !end) return 0;
@@ -428,6 +873,17 @@ const fetchData = async () => {
   const { data: profile } = await supabase.from('profiles').select('*, roles(name, area_id, access_level)').eq('id', userId).single();
   currentUser.value = profile;
   
+  // Fetch system alerts proactively generated by AI for leaders
+  const { data: alertsData } = await supabase
+    .from('system_alerts')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(5);
+  
+  if (alertsData) {
+    systemAlerts.value = alertsData;
+  }
+
   if (profile?.is_master_admin || profile?.roles?.access_level === 1) {
     isLeader.value = true;
     isMaster.value = profile?.is_master_admin;
@@ -567,10 +1023,16 @@ const openTaskModal = (member = null) => {
   newTask.value = {
     title: '',
     description: '',
+    deliverable: '',
+    category: '',
+    due_time: '',
+    estimated_minutes: '',
+    leader_note: '',
     priority: 'medium',
-    task_type: 'daily',
+    task_type: 'once',
     due_date: new Date().toISOString().split('T')[0],
-    assigned_to: member ? member.id : ''
+    assigned_to: member ? member.id : '',
+    assigned_to_list: member ? [member.id] : []
   };
   showTaskModal.value = true;
 };
@@ -580,32 +1042,47 @@ const closeTaskModal = () => {
 };
 
 const submitTask = async () => {
-  if (!newTask.value.assigned_to || !newTask.value.title || !newTask.value.due_date) return;
+  // Validar destinatarios
+  const recipients = taskTargetMember.value
+    ? [taskTargetMember.value.id]
+    : (newTask.value.assigned_to_list || []);
+
+  if (!recipients.length || !newTask.value.title || !newTask.value.due_date) {
+    alert('Completa los campos requeridos: destinatario, título y fecha límite.');
+    return;
+  }
   isSaving.value = true;
 
   try {
     const { data: session } = await supabase.auth.getSession();
     
-    const payload = {
+    // Insertar una tarea por cada destinatario seleccionado
+    const inserts = recipients.map(recipientId => ({
       title: newTask.value.title,
-      description: newTask.value.description,
+      description: newTask.value.description || null,
+      deliverable: newTask.value.deliverable || null,
+      category: newTask.value.category || null,
+      due_time: newTask.value.due_time || null,
+      estimated_minutes: newTask.value.estimated_minutes ? parseInt(newTask.value.estimated_minutes) : null,
+      leader_note: newTask.value.leader_note || null,
       priority: newTask.value.priority,
       task_type: newTask.value.task_type,
       due_date: newTask.value.due_date,
-      assigned_to: newTask.value.assigned_to,
+      assigned_to: recipientId,
       assigned_by: session.session.user.id,
       status: 'pending'
-    };
+    }));
 
-    await supabase.from('tasks').insert(payload);
+    const { error } = await supabase.from('tasks').insert(inserts);
+    if (error) throw error;
     
     closeTaskModal();
     showSuccessToast.value = true;
     setTimeout(() => { showSuccessToast.value = false; }, 3000);
-    await fetchData(); // Refresh all data to compute new metrics
+    await fetchData();
   } catch (error) {
-    console.error("Error asignando tarea:", error);
-    alert("Ocurrió un error al guardar la tarea.");
+    console.error('Error asignando tarea:', error);
+    alert('Ocurrió un error al guardar la tarea.');
   } finally {
     isSaving.value = false;
   }
