@@ -43,7 +43,7 @@
               </div>
             </div>
             <div class="flex items-baseline gap-2">
-              <span class="text-4xl font-bold text-[#1d1d1f]">94.2</span><span class="text-lg font-semibold text-secondary">%</span>
+              <span class="text-4xl font-bold text-[#1d1d1f]">{{ metrics.saludOperativa || '0' }}</span><span class="text-lg font-semibold text-secondary">%</span>
             </div>
             <p class="text-xs font-medium text-green-600 mt-2 flex items-center gap-1">
               <span class="material-symbols-outlined text-[14px]">trending_up</span> +2.4% vs Mes Anterior
@@ -59,9 +59,9 @@
               </div>
             </div>
             <div class="flex items-baseline gap-2">
-              <span class="text-4xl font-bold text-[#1d1d1f]">{{ metrics.totalProfiles }}</span>
+              <span class="text-4xl font-bold text-[#1d1d1f]">{{ metrics.totalRoles }}</span>
             </div>
-            <p class="text-xs font-medium text-secondary mt-2">Colaboradores en la red</p>
+            <p class="text-xs font-medium text-secondary mt-2">Cargos estructurales</p>
           </div>
 
           <!-- Presupuesto / Financiero -->
@@ -212,7 +212,7 @@
                 <tr v-for="role in allRoles" :key="role.id" class="hover:bg-gray-50 transition-colors">
                   <td class="p-4">
                     <span class="font-bold text-[#1d1d1f] block">{{ role.name }}</span>
-                    <span class="text-xs text-secondary font-mono">ID: EN-{{ role.id.substring(0,4).toUpperCase() }}</span>
+                    <span class="text-xs text-secondary font-mono">ID: EN-{{ role.id?.substring(0,4)?.toUpperCase() }}</span>
                   </td>
                   <td class="p-4">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low text-[#1d1d1f] text-xs font-semibold">
@@ -369,6 +369,8 @@ const currentUser = ref(null);
 const metrics = ref({
   totalProfiles: 0,
   totalOverdue: 0,
+  saludOperativa: 0,
+  totalRoles: 0
 });
 
 const activeFlows = ref([
@@ -460,12 +462,31 @@ const fetchMasterData = async () => {
 
       // Fetch roles
       const { data: rolesData } = await supabase.from('roles').select('*, areas(name)').order('name');
-      if (rolesData) allRoles.value = rolesData;
+      
+      let uniqueRoles = [];
+      if (rolesData) {
+        const seenNames = new Set();
+        for (const r of rolesData) {
+          if (!seenNames.has(r.name)) {
+            seenNames.add(r.name);
+            uniqueRoles.push(r);
+          }
+        }
+        allRoles.value = uniqueRoles;
+        metrics.value.totalRoles = uniqueRoles.length;
+      }
 
       // Fetch mapped roles
       const { data: mappedData } = await supabase.from('role_workflows').select('role_id');
       if (mappedData) {
-        mappedRolesSet.value = new Set(mappedData.map(w => w.role_id));
+        // Only count unique mapped roles that are in our uniqueRoles list
+        const validRoleIds = new Set(uniqueRoles.map(r => r.id));
+        const validMappedIds = mappedData.map(w => w.role_id).filter(id => validRoleIds.has(id));
+        mappedRolesSet.value = new Set(validMappedIds);
+        
+        metrics.value.saludOperativa = metrics.value.totalRoles > 0 
+          ? Math.round((mappedRolesSet.value.size / metrics.value.totalRoles) * 100) 
+          : 0;
       }
     }
   } catch (error) {

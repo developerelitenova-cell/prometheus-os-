@@ -109,7 +109,7 @@
                       </div>
                       <div class="flex items-center gap-3 pt-3 bg-surface-container-low/50 -mx-4 -mb-4 px-4 py-2.5 rounded-b-2xl">
                         <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0">
-                          {{ role.name.substring(0, 2).toUpperCase() }}
+                          {{ role.name?.substring(0, 2).toUpperCase() }}
                         </div>
                         <div class="flex flex-col min-w-0">
                           <span class="font-label-sm text-label-sm text-on-surface font-semibold truncate">Posición Core</span>

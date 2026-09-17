@@ -13,6 +13,8 @@
     "@supabase/supabase-js": "^2.112.3",
     "@tresjs/cientos": "^5.8.1",
     "@tresjs/core": "^5.8.3",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.18.1",
     "chart.js": "^4.5.1",
     "d3": "^7.9.0",
