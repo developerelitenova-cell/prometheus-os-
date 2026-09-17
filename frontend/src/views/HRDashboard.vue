@@ -519,6 +519,18 @@ const activeTab = ref('employees');
 
 const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
+const fetchWithAuth = async (url, options = {}) => {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  
+  const headers = {
+    ...options.headers,
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+
+  return fetch(url, { ...options, headers });
+};
+
 // Data
 const pendingUsers = ref([]);
 const allEmployees = ref([]);
@@ -591,7 +603,7 @@ onMounted(async () => {
   let isDelegated = false;
   if (profile?.role_id) {
     try {
-      const res = await fetch(`${apiUrl}/api/v1/admin/password-delegated-roles`);
+      const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/password-delegated-roles`);
       if (res.ok) {
         const data = await res.json();
         isDelegated = (data.delegated_role_ids || []).includes(profile.role_id);
@@ -620,7 +632,7 @@ const loadData = async () => {
 
   // 2. Colaboradores / Empleados (intentar vía backend para obtener correos de Auth, fallback a Supabase)
   try {
-    const res = await fetch(`${apiUrl}/api/v1/admin/employees`);
+    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employees`);
     if (res.ok) {
       const data = await res.json();
       allEmployees.value = data.employees || [];
@@ -723,7 +735,7 @@ const submitCreateEmployee = async () => {
 
   createLoading.value = true;
   try {
-    const res = await fetch(`${apiUrl}/api/v1/admin/create-employee`, {
+    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/create-employee`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -767,7 +779,7 @@ const submitEditEmployee = async () => {
   }
   editLoading.value = true;
   try {
-    const res = await fetch(`${apiUrl}/api/v1/admin/employee/${editForm.value.id}`, {
+    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${editForm.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -809,7 +821,7 @@ const submitResetPassword = async () => {
   }
   passwordLoading.value = true;
   try {
-    const res = await fetch(`${apiUrl}/api/v1/admin/employee/${passwordForm.value.id}`, {
+    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${passwordForm.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -835,7 +847,7 @@ const toggleUserStatus = async (user) => {
   if (!confirm(`¿Estás seguro de que deseas ${actionName} el acceso a ${user.full_name}?`)) return;
 
   try {
-    const res = await fetch(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
+    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ approval_status: newStatus })
@@ -851,7 +863,7 @@ const handleDeleteEmployee = async (user) => {
   if (!confirm(`¿Estás seguro de eliminar permanentemente la cuenta de ${user.full_name}? Esta acción no se puede deshacer.`)) return;
 
   try {
-    const res = await fetch(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
+    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error('Error al eliminar cuenta');

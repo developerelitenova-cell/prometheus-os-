@@ -14,32 +14,32 @@
       </div>
 
       <!-- Main Navigation Links — ocupa el espacio sobrante, nunca crece más -->
-      <nav class="hidden lg:flex items-center gap-6 flex-1 min-w-0 overflow-hidden">
+      <nav class="hidden lg:flex items-center gap-3 xl:gap-4 flex-1 min-w-0 overflow-x-auto no-scrollbar">
         <router-link
           v-if="isLoggedIn"
           to="/workspace"
-          class="text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
+          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
           active-class="text-[#8a6d3d] font-bold"
         >Portal Corporativo</router-link>
 
         <router-link
           v-if="isLoggedIn"
           to="/mapa-cargos"
-          class="text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
+          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
           active-class="text-[#8a6d3d] font-bold"
         >Estructura Corporativa</router-link>
 
         <router-link
           v-if="isLoggedIn"
           to="/team"
-          class="text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
+          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
           active-class="text-[#8a6d3d] font-bold"
         >Directorio</router-link>
 
         <router-link
           v-if="isLoggedIn"
           to="/oracle"
-          class="text-[13px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 whitespace-nowrap"
+          class="text-[12px] xl:text-[13px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-primary/90 font-bold"
         >
           <span class="material-symbols-outlined text-[15px]">auto_awesome</span> Oráculo IA
@@ -49,14 +49,14 @@
         <router-link
           v-if="isLoggedIn && isControlUser"
           to="/leader"
-          class="text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
+          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
           active-class="text-[#8a6d3d] font-bold"
         >Centro de Control</router-link>
 
         <router-link
           v-if="isLoggedIn && canManageAccounts"
           to="/cuentas"
-          class="text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors flex items-center gap-1 whitespace-nowrap"
+          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-[#8a6d3d] font-bold"
         >
           <span class="material-symbols-outlined text-[15px]">key</span> Cuentas & Accesos
@@ -65,7 +65,7 @@
         <router-link
           v-if="isMasterUser"
           to="/master"
-          class="text-[13px] font-bold text-[#8a6d3d] hover:text-[#d4b06a] transition-colors flex items-center gap-1 whitespace-nowrap"
+          class="text-[12px] xl:text-[13px] font-bold text-[#8a6d3d] hover:text-[#d4b06a] transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-[#d4b06a]"
         >
           <span class="material-symbols-outlined text-[15px]">admin_panel_settings</span> Auditoría Master
@@ -80,7 +80,7 @@
         <template v-if="!isLoggedIn">
           <router-link
             to="/login"
-            class="h-9 px-5 rounded-full bg-[#1d1d1f] text-white text-[13px] font-medium flex items-center gap-2 hover:bg-[#8a6d3d] transition-all shadow-md whitespace-nowrap"
+            class="h-9 px-5 rounded-full bg-[#1d1d1f] text-white text-[12px] xl:text-[13px] font-medium flex items-center gap-2 hover:bg-[#8a6d3d] transition-all shadow-md whitespace-nowrap"
           >
             <span class="material-symbols-outlined text-[16px]">lock</span>
             <span class="hidden sm:inline">Iniciar Sesión</span>
@@ -88,18 +88,29 @@
         </template>
 
         <template v-else>
+          <!-- Botón Volver Global -->
+          <button
+            v-if="route.path !== '/' && route.path !== '/workspace'"
+            @click="router.back()"
+            class="hidden md:flex h-9 px-3 mr-2 rounded-full bg-[#f5f5f7] border border-[#e5e5ea] text-[#1d1d1f] hover:bg-[#e5e5ea] transition-colors items-center gap-1.5 shadow-sm whitespace-nowrap"
+            title="Volver atrás"
+          >
+            <span class="material-symbols-outlined text-[17px]">arrow_back</span>
+            <span class="text-[13px] font-medium">Volver</span>
+          </button>
+
           <!-- Mi Espacio / Nombre (Desktop solo si hay espacio, o comprimido) -->
           <router-link
             v-if="route.path !== '/workspace'"
             to="/workspace"
-            class="hidden md:flex h-9 px-4 rounded-full bg-[#1d1d1f] text-white text-[13px] font-medium items-center gap-1.5 hover:bg-[#8a6d3d] transition-all shadow-md whitespace-nowrap"
+            class="hidden md:flex h-9 px-4 rounded-full bg-[#1d1d1f] text-white text-[12px] xl:text-[13px] font-medium items-center gap-1.5 hover:bg-[#8a6d3d] transition-all shadow-md whitespace-nowrap"
           >
             <span class="material-symbols-outlined text-[15px]">home</span>
             <span>Mi Espacio</span>
           </router-link>
           <div
             v-else
-            class="hidden md:flex h-9 px-3 rounded-full bg-[#f5f5f7] border border-[#e5e5ea] text-[#1d1d1f] text-[13px] font-semibold items-center gap-1.5 shadow-sm whitespace-nowrap max-w-[140px] truncate"
+            class="hidden md:flex h-9 px-3 rounded-full bg-[#f5f5f7] border border-[#e5e5ea] text-[#1d1d1f] text-[12px] xl:text-[13px] font-semibold items-center gap-1.5 shadow-sm whitespace-nowrap max-w-[140px] truncate"
           >
             <img 
               v-if="currentProfile?.verification_photo || currentProfile?.avatar_url" 
@@ -116,7 +127,7 @@
           <!-- Cerrar sesión (Desktop) -->
           <button
             @click="handleSignOut"
-            class="hidden md:flex h-9 px-3.5 rounded-full bg-red-50 text-red-600 text-[13px] font-medium items-center justify-center gap-1.5 hover:bg-red-100 transition-all whitespace-nowrap"
+            class="hidden md:flex h-9 px-3.5 rounded-full bg-red-50 text-red-600 text-[12px] xl:text-[13px] font-medium items-center justify-center gap-1.5 hover:bg-red-100 transition-all whitespace-nowrap"
             title="Cerrar sesión"
           >
             <span class="material-symbols-outlined text-[17px]">logout</span>
@@ -138,7 +149,7 @@
     <transition name="fade">
       <div v-if="mobileMenuOpen" class="fixed inset-0 top-[64px] z-40 lg:hidden" @click="closeMobileMenu">
         <div class="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
-        <div class="absolute top-0 left-0 w-full bg-white/95 backdrop-blur-xl border-b border-[#e5e5ea] shadow-xl p-6 flex flex-col gap-6" @click.stop>
+        <div class="absolute top-0 left-0 w-full bg-white/95 backdrop-blur-xl border-b border-[#e5e5ea] shadow-xl p-6 flex flex-col gap-3 lg:gap-4" @click.stop>
           
           <!-- Perfil Móvil -->
           <div v-if="isLoggedIn" class="flex items-center gap-3 pb-4 border-b border-[#e5e5ea]">
