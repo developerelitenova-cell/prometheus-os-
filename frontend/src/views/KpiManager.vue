@@ -2,7 +2,7 @@
   <div class="kpi-manager">
     <header class="page-header">
       <div class="header-content">
-        <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
+        <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Gestión de Indicadores Clave (KPIs)</h1>
       </div>
       <div class="tabs">

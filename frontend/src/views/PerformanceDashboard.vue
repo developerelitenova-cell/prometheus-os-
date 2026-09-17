@@ -2,7 +2,7 @@
   <div class="performance-dashboard">
     <header class="glass-panel hub-header">
       <div class="header-content">
-        <router-link to="/" class="back-link">← Volver al Inicio</router-link>
+        <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Centro de Evaluación Corporativa (KPIs)</h1>
         <p>Balanced Scorecard & OKRs - Basado en la IA de PROMETHEUS OS</p>
       </div>

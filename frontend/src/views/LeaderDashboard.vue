@@ -6,7 +6,7 @@
         <span class="material-symbols-outlined text-6xl text-danger mb-4">block</span>
         <h2 class="text-2xl font-bold">Acceso Restringido</h2>
         <p class="text-secondary mt-2">Este módulo es exclusivo para líderes de área.</p>
-        <button @click="router.push('/')" class="mt-6 px-6 py-2 bg-primary text-white rounded-lg">Volver al Inicio</button>
+        <button @click="$router.back()" class="mt-6 px-6 py-2 bg-primary text-white rounded-lg">Volver</button>
       </div>
 
       <div v-else class="flex flex-col w-full">

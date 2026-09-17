@@ -2,10 +2,10 @@
   <div class="mapper-view">
     <header class="stitch-header">
       <div class="header-content">
-        <router-link :to="lockedForSelf ? '/workspace' : '/mapa-cargos'" class="back-link">
+        <button @click="$router.back()" class="back-link cursor-pointer">
           <span class="material-symbols-outlined text-sm mr-1">arrow_back</span>
-          {{ lockedForSelf ? 'Volver a mi Portal' : 'Volver al Directorio' }}
-        </router-link>
+          Volver
+        </button>
         <h1 class="gold-gradient-text text-2xl font-semibold tracking-tight mt-2">Mapeo de Flujo: {{ role?.name || 'Cargando...' }}</h1>
         <p class="text-sm text-gray-500 mt-1">Área: {{ role?.areas?.name || 'Cargando...' }}</p>
       </div>

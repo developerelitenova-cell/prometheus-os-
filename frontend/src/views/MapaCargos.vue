@@ -33,10 +33,10 @@
                 <span class="material-symbols-outlined text-[18px]">corporate_fare</span>
                 <span>Configuración Corporativa</span>
               </button>
-              <router-link to="/workspace" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm hover:shadow-md transition-all">
+              <button @click="$router.back()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm hover:shadow-md transition-all">
                 <span class="material-symbols-outlined text-primary-container text-[18px]">arrow_back</span>
-                <span>Ir al Workspace</span>
-              </router-link>
+                <span>Volver</span>
+              </button>
             </div>
           </div>
 

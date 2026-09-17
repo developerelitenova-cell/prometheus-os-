@@ -1,7 +1,7 @@
 <template>
   <div class="knowledge-loader">
     <header class="glass-panel header">
-      <router-link to="/mapa-cargos" class="back-link">← Volver al Mapa de Cargos</router-link>
+      <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
       <h1>Cargador de Conocimiento <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"></path><path d="M6.002 6.5A3 3 0 0 1 5.603 5.125"></path><path d="M11.8 12a1 1 0 0 0-1.6 0"></path></svg></h1>
       <p>Sube manuales, políticas y procesos para entrenar el Cerebro Corporativo.</p>
     </header>

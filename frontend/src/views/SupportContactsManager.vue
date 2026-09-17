@@ -2,7 +2,7 @@
   <div class="contacts-manager">
     <header class="page-header">
       <div class="header-content">
-        <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
+        <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Directorio de Soporte (WhatsApp)</h1>
         <p class="subtitle">Contactos que el Asistente IA recomienda cuando un empleado necesita ayuda humana. Mantené esto al día cuando alguien cambie de cargo o de línea.</p>
       </div>

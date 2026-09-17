@@ -2,7 +2,7 @@
   <div class="calendar-container">
     <header class="page-header">
       <div class="header-content">
-        <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
+        <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Programador de Eventos</h1>
         <p class="subtitle">Gestiona fechas especiales, capacitaciones y comunicados obligatorios.</p>
       </div>

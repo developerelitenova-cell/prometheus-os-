@@ -2,7 +2,7 @@
   <div class="role-manager-container">
     <header class="page-header">
       <div class="header-content">
-        <router-link to="/team" class="back-link">← Volver al Panel de Liderazgo</router-link>
+        <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Cargos y Permisos</h1>
         <p class="subtitle">Creá cargos, definí niveles de acceso y asigná a tu equipo dentro de cada área.</p>
       </div>

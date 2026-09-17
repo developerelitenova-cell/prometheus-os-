@@ -2,7 +2,7 @@
   <div class="planner-container">
     <header class="page-header">
       <div class="header-content">
-        <router-link to="/workspace" class="back-link">← Volver a Mi Espacio</router-link>
+        <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Planner y Productividad</h1>
         <p class="subtitle">Gestiona tus tareas diarias, semanales y mensuales.</p>
       </div>
