@@ -107,15 +107,18 @@ def read_root():
 
 # --- Módulo de Administración: Roles ---
 @app.get("/api/v1/roles")
-def get_roles():
+def get_roles(user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
     return {"roles": []}
 
 @app.post("/api/v1/roles")
-def create_role(role_data: dict):
+def create_role(role_data: dict, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
     return {"status": "created", "role": role_data}
 
 @app.put("/api/v1/roles/{role_id}")
-def update_role(role_id: str, role_data: dict):
+def update_role(role_id: str, role_data: dict, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
     return {"status": "updated", "role_id": role_id}
 
 # --- Módulo de Administración: Cuentas de Empleados ---
@@ -163,6 +166,11 @@ def create_employee(req: CreateEmployeeRequest, user=Depends(verify_jwt)):
     require_admin_or_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend (falta SUPABASE_SERVICE_ROLE_KEY)")
+    
+    if req.is_master_admin:
+        res = supabase.table("profiles").select("is_master_admin").eq("id", user.id).single().execute()
+        if not res.data or not res.data.get("is_master_admin"):
+            raise HTTPException(status_code=403, detail="Sólo un Master Admin puede otorgar el rol de Master Admin a otro usuario.")
 
     try:
         auth_res = supabase.auth.admin.create_user({
@@ -200,6 +208,11 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
     require_admin_or_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+    
+    if req.is_master_admin is not None:
+        res = supabase.table("profiles").select("is_master_admin").eq("id", user.id).single().execute()
+        if not res.data or not res.data.get("is_master_admin"):
+            raise HTTPException(status_code=403, detail="Sólo un Master Admin puede otorgar o remover el rol de Master Admin a otro usuario.")
 
     # 1. Actualizar credenciales en Supabase Auth si se suministraron
     auth_updates = {}
@@ -420,16 +433,16 @@ class TaskCreate(BaseModel):
     estimated_hours: float
 
 @app.post("/api/v1/tasks")
-def create_task(task: TaskCreate):
+def create_task(task: TaskCreate, user=Depends(verify_jwt)):
     t = task_manager.create_task(task.role_id, task.title, task.description, task.estimated_hours)
     return {"status": "created", "task": t}
 
 @app.get("/api/v1/tasks/{role_id}")
-def get_tasks(role_id: str):
+def get_tasks(role_id: str, user=Depends(verify_jwt)):
     return {"tasks": task_manager.get_tasks_by_role(role_id)}
 
 @app.post("/api/v1/evaluate/{role_id}")
-def evaluate_role(role_id: str):
+def evaluate_role(role_id: str, user=Depends(verify_jwt)):
     # Lógica de evaluación basada en tareas completadas vs OKRs
     tasks = task_manager.get_tasks_by_role(role_id)
     # Ejemplo con KPIs simulados (Normalmente vienen del agente config)
