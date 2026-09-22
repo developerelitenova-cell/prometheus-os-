@@ -13,3 +13,4 @@ build/
 # Datos reales (PII u otra info sensible) que no deben quedar en el
 # historial de git -- ver database/seed_support_contacts.local.sql
 *.local.sql
+.vercel

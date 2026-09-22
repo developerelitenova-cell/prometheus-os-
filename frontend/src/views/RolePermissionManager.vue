@@ -187,7 +187,10 @@
           <input v-model="newMember.email" type="email" placeholder="persona@elitenutrition.com" />
         </label>
         <label class="field">
-          Contraseña inicial
+          <div class="flex justify-between items-center w-full">
+            <span>Contraseña inicial</span>
+            <button type="button" @click="newMember.password = generateRandomPassword()" class="text-xs text-primary hover:underline" style="background: none; border: none; cursor: pointer; color: var(--primary);">Generar automática</button>
+          </div>
           <input v-model="newMember.password" type="text" placeholder="Mínimo 6 caracteres" />
         </label>
         <label class="field checkbox-field">
@@ -305,8 +308,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { supabase } from '@/api/supabase'; // Assuming supabase instance
+import { useAuthStore } from '@/stores/authStore';
+import { generateRandomPassword } from '@/utils/passwordUtils';
 
 const areas = ref([]);
 const selectedRole = ref(null);
@@ -650,14 +655,22 @@ const submitCreateRole = async () => {
 
   creatingRole.value = true;
   try {
-    const { error } = await supabase.from('roles').insert([{ 
-      name: newRole.value.name.trim(), 
-      area_id: newRole.value.area_id, 
-      access_level: newRole.value.access_level,
-      objective: newRole.value.objective.trim() || null
-    }]);
+    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+    const response = await fetch(`${apiUrl}/api/v1/roles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newRole.value.name.trim(), 
+        area_id: newRole.value.area_id, 
+        access_level: newRole.value.access_level,
+        objective: newRole.value.objective.trim() || null
+      })
+    });
     
-    if (error) throw error;
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.detail || 'Error al crear el rol');
+    }
     
     closeCreateRoleModal();
     fetchData();

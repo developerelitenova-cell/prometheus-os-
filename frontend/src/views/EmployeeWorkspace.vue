@@ -388,7 +388,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../api/supabase';
 import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../api/auth';

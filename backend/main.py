@@ -39,6 +39,7 @@ else:
 
 orchestrator.initialize_clients(supabase, anthropic, claude_model)
 kpi_evaluator.initialize_clients(supabase, anthropic, claude_model)
+task_manager.initialize_clients(supabase)
 
 app = FastAPI(title="Gemelo Digital Corporativo - Elite Nutrition", version="2.0")
 
@@ -101,6 +102,44 @@ def require_admin_or_manager(user):
     if not is_master and access_level not in [1, 2]:
         raise HTTPException(status_code=403, detail="Esta acción requiere permisos administrativos (Leader o Master Admin)")
 
+def require_password_manager(user):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+    res = supabase.table("profiles").select("is_master_admin, role_id, roles(name, access_level, can_manage_passwords)").eq("id", user.id).single().execute()
+    if not res.data:
+        raise HTTPException(status_code=403, detail="Perfil no encontrado")
+    
+    is_master = res.data.get("is_master_admin")
+    if is_master:
+        return
+        
+    roles = res.data.get("roles")
+    if not roles:
+        raise HTTPException(status_code=403, detail="Esta acción requiere permisos de gestión de accesos")
+
+    access_level = roles.get("access_level")
+    role_name = (roles.get("name") or "").lower()
+    can_manage = roles.get("can_manage_passwords")
+
+    if access_level in [1, 2]:
+        return
+    if can_manage:
+        return
+    if "auditor" in role_name:
+        return
+
+    role_id = res.data.get("role_id")
+    try:
+        mem_res = supabase.table("corporate_memory").select("metadata").eq("content", "password_delegated_roles").execute()
+        if mem_res.data and len(mem_res.data) > 0:
+            delegated = mem_res.data[0].get("metadata", {}).get("role_ids", [])
+            if role_id in delegated:
+                return
+    except Exception:
+        pass
+
+    raise HTTPException(status_code=403, detail="No tienes permiso delegado para gestionar accesos y contraseñas")
+
 @app.get("/")
 def read_root():
     return {"message": "Gemelo Digital Corporativo (Fase 2) - Backend Inicializado"}
@@ -108,18 +147,32 @@ def read_root():
 # --- Módulo de Administración: Roles ---
 @app.get("/api/v1/roles")
 def get_roles(user=Depends(verify_jwt)):
-    require_admin_or_manager(user)
-    return {"roles": []}
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    res = supabase.table("roles").select("*").execute()
+    return {"roles": res.data}
 
 @app.post("/api/v1/roles")
 def create_role(role_data: dict, user=Depends(verify_jwt)):
     require_admin_or_manager(user)
-    return {"status": "created", "role": role_data}
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    try:
+        res = supabase.table("roles").insert([role_data]).execute()
+        return {"status": "created", "role": res.data[0]}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.put("/api/v1/roles/{role_id}")
 def update_role(role_id: str, role_data: dict, user=Depends(verify_jwt)):
     require_admin_or_manager(user)
-    return {"status": "updated", "role_id": role_id}
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    try:
+        res = supabase.table("roles").update(role_data).eq("id", role_id).execute()
+        return {"status": "updated", "role_id": role_id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # --- Módulo de Administración: Cuentas de Empleados ---
 # Usa la Service Role Key (solo disponible aquí, en el backend) para crear
@@ -163,7 +216,7 @@ def list_employees(user=Depends(verify_jwt)):
 
 @app.post("/api/v1/admin/create-employee")
 def create_employee(req: CreateEmployeeRequest, user=Depends(verify_jwt)):
-    require_admin_or_manager(user)
+    require_password_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend (falta SUPABASE_SERVICE_ROLE_KEY)")
     
@@ -205,7 +258,7 @@ def create_employee(req: CreateEmployeeRequest, user=Depends(verify_jwt)):
 
 @app.put("/api/v1/admin/employee/{user_id}")
 def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verify_jwt)):
-    require_admin_or_manager(user)
+    require_password_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
     
@@ -249,7 +302,7 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
 
 @app.delete("/api/v1/admin/employee/{user_id}")
 def delete_employee(user_id: str, user=Depends(verify_jwt)):
-    require_admin_or_manager(user)
+    require_password_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
     try:
