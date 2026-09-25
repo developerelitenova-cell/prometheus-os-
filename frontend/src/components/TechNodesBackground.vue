@@ -107,12 +107,12 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .tech-nodes-canvas {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   z-index: 0;
-  pointer-events: none; /* Permite clicks a los elementos por debajo/arriba */
+  pointer-events: none;
 }
 </style>
