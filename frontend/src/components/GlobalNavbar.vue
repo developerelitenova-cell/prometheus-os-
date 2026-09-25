@@ -31,13 +31,6 @@
 
         <router-link
           v-if="isLoggedIn"
-          to="/team"
-          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
-          active-class="text-[#8a6d3d] font-bold"
-        >Directorio</router-link>
-
-        <router-link
-          v-if="isLoggedIn"
           to="/oracle"
           class="text-[12px] xl:text-[13px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-primary/90 font-bold"
@@ -49,15 +42,15 @@
         <router-link
           v-if="isLoggedIn && isControlUser"
           to="/leader"
-          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
-          active-class="text-[#8a6d3d] font-bold"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/leader', '/kpis', '/events', '/rrhh', '/roles', '/manuals', '/support-contacts'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
         >Centro de Control</router-link>
 
         <router-link
           v-if="isLoggedIn && canManageAccounts"
           to="/cuentas"
-          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors flex items-center gap-1 whitespace-nowrap"
-          active-class="text-[#8a6d3d] font-bold"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/cuentas'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
         >
           <span class="material-symbols-outlined text-[15px]">key</span> Cuentas & Accesos
         </router-link>
@@ -127,7 +120,7 @@
           <!-- Cerrar sesión (Desktop) -->
           <button
             @click="handleSignOut"
-            class="hidden md:flex h-9 px-3.5 rounded-full bg-red-50 text-red-600 text-[12px] xl:text-[13px] font-medium items-center justify-center gap-1.5 hover:bg-red-100 transition-all whitespace-nowrap"
+            class="hidden md:flex h-9 px-3.5 rounded-full bg-[#fcf2f2] text-[#8a2a2a] text-[12px] xl:text-[13px] font-medium items-center justify-center gap-1.5 hover:bg-[#fae6e6] transition-all whitespace-nowrap"
             title="Cerrar sesión"
           >
             <span class="material-symbols-outlined text-[17px]">logout</span>
@@ -175,9 +168,6 @@
             <router-link to="/mapa-cargos" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">account_tree</span> Estructura Corporativa
             </router-link>
-            <router-link to="/team" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
-              <span class="material-symbols-outlined text-[20px] text-secondary">group</span> Directorio
-            </router-link>
             <router-link to="/oracle" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span> Oráculo IA
             </router-link>
@@ -194,7 +184,7 @@
 
           <!-- Cerrar sesión móvil -->
           <div v-if="isLoggedIn" class="pt-2">
-            <button @click="handleSignOut" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 text-red-600 font-semibold text-[15px] hover:bg-red-100 transition-colors">
+            <button @click="handleSignOut" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#fcf2f2] text-[#8a2a2a] font-semibold text-[15px] hover:bg-[#fae6e6] transition-colors">
               <span class="material-symbols-outlined text-[20px]">logout</span> Cerrar Sesión
             </button>
           </div>

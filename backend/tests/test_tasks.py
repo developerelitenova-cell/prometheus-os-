@@ -46,3 +46,15 @@ def test_get_tasks_by_role(mock_supabase):
     assert response.status_code == 200
     assert len(response.json()["tasks"]) == 1
     assert response.json()["tasks"][0]["title"] == "Task 1"
+
+def test_update_task_status(mock_supabase):
+    # Simulate DB update response
+    mock_supabase.table().update().eq().execute.return_value = MagicMock(
+        data=[{"id": "t1", "status": "completed"}]
+    )
+
+    response = client.put("/api/v1/tasks/t1/status", json={"status": "completed"})
+    
+    assert response.status_code == 200
+    assert response.json()["task"]["status"] == "completed"
+    mock_supabase.table.assert_called_with("tasks")

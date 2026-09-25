@@ -168,7 +168,7 @@
 
       <div class="main-content glass-panel empty-selection" v-else>
         <svg viewBox="0 0 24 24" width="48" height="48" stroke="var(--border)" stroke-width="1" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        <p>Selecciona un rol del panel izquierdo para configurar sus permisos y miembros.</p>
+        <p>Selecciona un área o un rol del panel izquierdo para configurar sus permisos y miembros.</p>
       </div>
     </div>
 
@@ -203,7 +203,7 @@
         <div class="modal-actions">
           <button class="btn-secondary" @click="closeAssignModal">Cancelar</button>
           <button class="btn-primary" @click="createMember" :disabled="creatingMember">
-            {{ creatingMember ? 'Creando...' : 'Crear cuenta' }}
+            {{ creatingMember ? 'Asignando...' : 'Asignar rol' }}
           </button>
         </div>
       </div>
@@ -722,13 +722,14 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 24px;
-  min-height: 70vh;
+  align-items: start;
 }
 
 .sidebar {
   padding: 20px 0;
   display: flex;
   flex-direction: column;
+  max-height: 80vh;
 }
 
 .sidebar-header {

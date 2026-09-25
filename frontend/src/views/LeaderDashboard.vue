@@ -802,6 +802,7 @@ const openScheduledModal = async () => {
 
 const submitScheduled = async () => {
   if (!newScheduled.value.title || !newScheduled.value.recurrence_type) return;
+  if (!window.confirm('¿Estás seguro de que deseas crear esta orden programada?')) return;
   isSavingScheduled.value = true;
   try {
     const { data: session } = await supabase.auth.getSession();
@@ -1051,6 +1052,9 @@ const submitTask = async () => {
     alert('Completa los campos requeridos: destinatario, título y fecha límite.');
     return;
   }
+  
+  if (!window.confirm('¿Estás seguro de que deseas asignar esta tarea?')) return;
+  
   isSaving.value = true;
 
   try {

@@ -133,7 +133,7 @@ const routes = [
     meta: { leaderOnly: true }
   },
   {
-    path: '/team',
+    path: '/leader',
     name: 'LeaderDashboard',
     component: () => import('../views/LeaderDashboard.vue'),
     meta: { managerOnly: true }
