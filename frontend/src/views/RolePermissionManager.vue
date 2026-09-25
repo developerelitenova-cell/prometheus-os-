@@ -310,7 +310,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { supabase } from '@/api/supabase'; // Assuming supabase instance
-import { useAuthStore } from '@/stores/authStore';
 import { generateRandomPassword } from '@/utils/passwordUtils';
 
 const areas = ref([]);
