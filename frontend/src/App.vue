@@ -1,27 +1,35 @@
 <template>
   <div class="app-container">
-    <GlobalNavbar v-if="showNavbar" />
+    <div v-if="globalError" class="fixed inset-0 z-[9999] bg-white p-8 overflow-auto">
+      <h1 class="text-4xl text-red-600 font-bold mb-4">CRITICAL RENDER ERROR</h1>
+      <p class="text-xl mb-4">Por favor, envía una captura de pantalla de esta ventana al desarrollador.</p>
+      <pre class="bg-gray-100 p-4 rounded text-sm text-red-800 whitespace-pre-wrap">{{ globalError.message }}
+Info: {{ globalError.info }}
+
+{{ globalError.stack }}</pre>
+      <button @click="globalError = null" class="mt-6 px-4 py-2 bg-black text-white rounded">Cerrar y Reintentar</button>
+    </div>
+
+    <GlobalNavbar v-if="showNavbar && !globalError" />
     <!-- Router View con Animación de Transición -->
-    <router-view v-slot="{ Component }">
+    <router-view v-if="!globalError" v-slot="{ Component }">
       <transition name="fade-up" mode="out-in">
         <component :is="Component" />
       </transition>
     </router-view>
 
-    <!-- Marca de agua global -- las pantallas de identidad (Home, Login, Bienvenida,
-         Pendiente de aprobación) ya muestran el logo en grande, así que se omite ahí
-         para no duplicarlo. -->
-    <router-link v-if="showBrandMark" to="/" class="global-brand-mark" title="PROMETHEUS OS">
+    <!-- Marca de agua global -->
+    <router-link v-if="showBrandMark && !globalError" to="/" class="global-brand-mark" title="PROMETHEUS OS">
       <img src="@/assets/elite-nova-logo.png" alt="PROMETHEUS OS" />
     </router-link>
 
     <!-- Modal Global de Eventos Obligatorios -->
-    <MandatoryEventModal />
+    <MandatoryEventModal v-if="!globalError" />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onErrorCaptured } from 'vue';
 import { useRoute } from 'vue-router';
 import GlobalNavbar from '@/components/GlobalNavbar.vue';
 import MandatoryEventModal from '@/components/MandatoryEventModal.vue';
@@ -32,6 +40,13 @@ const NO_NAVBAR_ROUTES = ['/login', '/welcome', '/pending-approval'];
 
 const showBrandMark = computed(() => !NO_BRAND_MARK_ROUTES.includes(route.path));
 const showNavbar = computed(() => !NO_NAVBAR_ROUTES.includes(route.path));
+
+const globalError = ref(null);
+onErrorCaptured((err, instance, info) => {
+  globalError.value = { message: err.message, stack: err.stack, info };
+  console.error("APP_CRASH", err, info);
+  return false;
+});
 </script>
 
 <style>
