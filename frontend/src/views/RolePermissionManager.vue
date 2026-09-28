@@ -468,9 +468,14 @@ const saveRoleLevel = async () => {
     // 2. Guardar delegación de contraseñas si cambió
     if (pendingCanManagePasswords.value !== initialCanManagePasswords.value && canDelegate.value) {
       const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
       const res = await fetch(`${apiUrl}/api/v1/admin/roles/${selectedRole.value.id}/password-permission`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ can_manage_passwords: pendingCanManagePasswords.value })
       });
       if (!res.ok) {

@@ -802,6 +802,18 @@ const openScheduledModal = async () => {
 
 const submitScheduled = async () => {
   if (!newScheduled.value.title || !newScheduled.value.recurrence_type) return;
+  if (newScheduled.value.target_type === 'area' && !newScheduled.value.target_area_id) {
+    alert('Por favor selecciona un área.');
+    return;
+  }
+  if (newScheduled.value.target_type === 'profile' && (!newScheduled.value.target_profile_ids || newScheduled.value.target_profile_ids.length === 0)) {
+    alert('Por favor selecciona al menos una persona.');
+    return;
+  }
+  if (newScheduled.value.recurrence_type === 'once' && !newScheduled.value.due_date) {
+    alert('Por favor selecciona una fecha de entrega.');
+    return;
+  }
   if (!window.confirm('¿Estás seguro de que deseas crear esta orden programada?')) return;
   isSavingScheduled.value = true;
   try {
@@ -828,7 +840,7 @@ const submitScheduled = async () => {
     setTimeout(() => { showSuccessToast.value = false; }, 3000);
   } catch (e) {
     console.error('Error creando orden programada:', e);
-    alert('Error al guardar la orden programada.');
+    alert('Error al guardar la orden programada: ' + e.message);
   } finally {
     isSavingScheduled.value = false;
   }

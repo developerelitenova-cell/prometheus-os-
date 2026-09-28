@@ -445,6 +445,19 @@
               </select>
             </div>
 
+            <div class="grid grid-cols-2 gap-3 mt-2">
+              <div>
+                <label class="block text-xs font-semibold text-secondary uppercase mb-1">Contrato Laboral</label>
+                <input type="file" @change="(e) => editForm.contractFile = e.target.files[0]" accept=".pdf,.doc,.docx" class="w-full p-1.5 border border-dashed rounded-xl bg-surface-container-low text-xs">
+                <a v-if="editForm.contract_url" :href="editForm.contract_url" target="_blank" class="text-xs text-primary underline mt-1 block">Ver actual</a>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-secondary uppercase mb-1">Firma Digital</label>
+                <input type="file" @change="(e) => editForm.signatureFile = e.target.files[0]" accept="image/*" class="w-full p-1.5 border border-dashed rounded-xl bg-surface-container-low text-xs">
+                <a v-if="editForm.signature_url" :href="editForm.signature_url" target="_blank" class="text-xs text-primary underline mt-1 block">Ver actual</a>
+              </div>
+            </div>
+
             <p v-if="editError" class="text-xs text-danger font-medium">{{ editError }}</p>
 
             <div class="flex justify-end gap-3 mt-2">
@@ -765,7 +778,11 @@ const openEditModal = (emp) => {
     full_name: emp.full_name || '',
     email: emp.email || '',
     role_id: emp.role_id || '',
-    approval_status: emp.approval_status || 'approved'
+    approval_status: emp.approval_status || 'approved',
+    contract_url: emp.contract_url || '',
+    signature_url: emp.signature_url || '',
+    contractFile: null,
+    signatureFile: null
   };
   editError.value = '';
   showEditModal.value = true;
@@ -779,6 +796,29 @@ const submitEditEmployee = async () => {
   }
   editLoading.value = true;
   try {
+    let finalContractUrl = editForm.value.contract_url;
+    let finalSignatureUrl = editForm.value.signature_url;
+
+    if (editForm.value.contractFile) {
+      const file = editForm.value.contractFile;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${editForm.value.id}/contract_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('employee_documents').upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('employee_documents').getPublicUrl(fileName);
+      finalContractUrl = urlData.publicUrl;
+    }
+
+    if (editForm.value.signatureFile) {
+      const file = editForm.value.signatureFile;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${editForm.value.id}/signature_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('employee_documents').upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('employee_documents').getPublicUrl(fileName);
+      finalSignatureUrl = urlData.publicUrl;
+    }
+
     const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${editForm.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -786,7 +826,9 @@ const submitEditEmployee = async () => {
         full_name: editForm.value.full_name.trim(),
         email: editForm.value.email ? editForm.value.email.trim() : undefined,
         role_id: editForm.value.role_id || null,
-        approval_status: editForm.value.approval_status
+        approval_status: editForm.value.approval_status,
+        contract_url: finalContractUrl,
+        signature_url: finalSignatureUrl
       })
     });
     const data = await res.json();

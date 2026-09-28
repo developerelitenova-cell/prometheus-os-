@@ -43,7 +43,7 @@
           v-if="isLoggedIn && isControlUser"
           to="/leader"
           class="text-[12px] xl:text-[13px] font-medium transition-colors whitespace-nowrap px-2.5 py-1 rounded-md"
-          :class="['/leader', '/kpis', '/events', '/rrhh', '/roles', '/manuals', '/support-contacts'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+          :class="isCentroControlActive ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
         >Centro de Control</router-link>
 
         <router-link
@@ -203,6 +203,11 @@ import { currentProfile, loadCurrentProfile, isMasterAdmin, isManager, signOut }
 
 const router = useRouter()
 const route = useRoute()
+
+const isCentroControlActive = computed(() => {
+  const paths = ['/leader', '/kpis', '/events', '/rrhh', '/roles', '/manuals', '/support-contacts'];
+  return paths.some(p => route.path === p || route.path.startsWith(p + '/'));
+});
 
 const isLoggedIn = ref(false)
 const mobileMenuOpen = ref(false)

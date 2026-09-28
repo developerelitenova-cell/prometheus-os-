@@ -191,6 +191,8 @@ class UpdateEmployeeRequest(BaseModel):
     password: Optional[str] = None
     approval_status: Optional[str] = None
     is_master_admin: Optional[bool] = None
+    contract_url: Optional[str] = None
+    signature_url: Optional[str] = None
 
 @app.get("/api/v1/admin/employees")
 def list_employees(user=Depends(verify_jwt)):
@@ -291,6 +293,10 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
         profile_updates["approval_status"] = req.approval_status
     if req.is_master_admin is not None:
         profile_updates["is_master_admin"] = req.is_master_admin
+    if req.contract_url is not None:
+        profile_updates["contract_url"] = req.contract_url
+    if req.signature_url is not None:
+        profile_updates["signature_url"] = req.signature_url
 
     if profile_updates:
         try:

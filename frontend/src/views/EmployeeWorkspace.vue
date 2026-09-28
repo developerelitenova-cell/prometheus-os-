@@ -621,7 +621,7 @@ const fetchNotifications = async (profileId, role) => {
     console.error('Error cargando notificaciones:', e);
     notifications.value = [];
     categorizationMessages.value = [];
-  } catch(err) { console.error("Workspace Load Error:", err); } finally {
+  } finally {
     loadingNotifications.value = false;
   }
 };
@@ -1109,7 +1109,7 @@ KPIs esperados: ${JSON.stringify(flowData.kpis)}
 
   } catch (error) {
     console.error('Error fetching role data:', error);
-  } catch(err) { console.error("Workspace Load Error:", err); } finally {
+  } finally {
     loadingKpis.value = false;
   }
 };
@@ -1121,7 +1121,7 @@ const fetchKpiDetail = async (roleId) => {
   } catch (e) {
     console.error('Error cargando KPIs del cargo:', e);
     kpiDetail.value = { overallScore: 0, metrics: [] };
-  } catch(err) { console.error("Workspace Load Error:", err); } finally {
+  } finally {
     loadingKpiDetail.value = false;
   }
 };
@@ -1191,7 +1191,7 @@ const sendMessage = async () => {
     }
   } catch (error) {
     messages.value.push({ sender: 'ai', text: 'Error de conexión con PROMETHEUS OS AI.' });
-  } catch(err) { console.error("Workspace Load Error:", err); } finally {
+  } finally {
     isTyping.value = false;
     scrollToBottom();
   }
