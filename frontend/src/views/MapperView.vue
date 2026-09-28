@@ -42,10 +42,6 @@
           </li>
         </ul>
 
-        <div class="recording-tip">
-          <span class="material-symbols-outlined text-gold-deep mr-2">mic</span>
-          <small>También puedes grabar la conversación, pasarla a texto y subir el archivo.</small>
-        </div>
       </aside>
 
       <!-- Panel Principal -->
@@ -73,40 +69,9 @@
         <div class="step-content w-full" v-show="step === 1">
           <h2 class="text-xl font-medium text-gray-900 mb-6 text-center">Cuéntanos tu proceso</h2>
 
-          <div class="stitch-tabs">
-            <button :class="['stitch-tab', { active: inputMode === 'wizard' }]" @click="inputMode = 'wizard'">
-              Asistente Interactivo (Recomendado)
-            </button>
-            <button :class="['stitch-tab', { active: inputMode === 'transcript' }]" @click="inputMode = 'transcript'">
-              Subir Transcripción / Archivo
-            </button>
-          </div>
-
-          <div v-if="inputMode === 'wizard'" class="mt-8">
+          <div class="mt-8">
             <WorkflowWizard @submit="handleWizardSubmit" />
             <p v-if="processError" class="error-text mt-4 text-center">{{ processError }}</p>
-          </div>
-
-          <div v-else class="transcript-form mt-8">
-            <p class="text-center text-gray-500 text-sm mb-6">Sube el archivo de texto de la entrevista o pega la transcripción completa aquí.</p>
-
-            <div class="drop-zone" @click="triggerFileInput">
-              <span class="material-symbols-outlined text-4xl text-gray-300 mb-2">upload_file</span>
-              <p class="text-sm text-gray-600 font-medium">Haz clic para subir archivo (.txt, .md)</p>
-              <input type="file" ref="fileInput" @change="handleFileUpload" accept=".txt,.md,.doc,.docx" style="display:none">
-            </div>
-            
-            <div class="or-divider">O Pega el Texto Directamente</div>
-            
-            <textarea class="stitch-input" v-model="rawTranscript" placeholder="Pega aquí la transcripción de la entrevista..." rows="8"></textarea>
-            
-            <p v-if="processError" class="error-text mt-2">{{ processError }}</p>
-            <div class="flex justify-center mt-6">
-              <button class="btn-primary" :disabled="!rawTranscript.trim() || processing" @click="processWithAI(rawTranscript)">
-                <span class="material-symbols-outlined mr-2" v-if="!processing">memory</span>
-                {{ processing ? 'Procesando con IA...' : 'Procesar Transcripción' }}
-              </button>
-            </div>
           </div>
         </div>
 

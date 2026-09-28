@@ -886,7 +886,6 @@ const saveEditRole = async () => {
         name: editForm.value.name.trim(),
         area_id: editForm.value.area_id,
         access_level: editForm.value.access_level,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', editingRole.value.id);
     if (error) throw error;
@@ -995,7 +994,6 @@ const toggleTaskActive = async (task) => {
   try {
     const { error } = await supabase
       .from('role_task_templates')
-      .update({ active: task.active, updated_at: new Date().toISOString() })
       .eq('id', task.id);
     if (error) throw error;
   } catch (err) {
