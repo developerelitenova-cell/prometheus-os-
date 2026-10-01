@@ -99,13 +99,8 @@ export const canAccessKpis = () => {
   if (!currentProfile.value) return false
   if (isMasterAdmin()) return true
   const roleName = (currentProfile.value.roles?.name || '').toLowerCase()
-  const level = accessLevel()
-  // 1. CEO / Director General / Level 1
-  if (level === 1 || roleName.includes('ceo') || roleName.includes('director general') || roleName.includes('gerente general')) {
-    return true
-  }
-  // 2. Analista de Datos / Especialista de Datos
-  if (roleName.includes('datos') || roleName.includes('analista de datos') || roleName.includes('especialista de datos')) {
+  // Exclusivo: Analista de Datos / Especialista de Datos y Admin Maestro
+  if (roleName.includes('analista de datos') || roleName.includes('especialista de datos') || roleName.includes('datos')) {
     return true
   }
   return false

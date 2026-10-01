@@ -17,22 +17,37 @@
             <!-- Header Row -->
             <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md">
               <div class="flex flex-col max-w-2xl">
-                <div class="inline-flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-surface-container w-fit mb-space-sm">
-                  <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
-                  <span class="font-caption text-caption tracking-wider text-on-surface-variant uppercase font-semibold">Dirección • {{ leaderArea?.name || 'Área' }}</span>
+                <div class="inline-flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-surface-container w-fit mb-space-sm flex-wrap">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="isMaster ? 'bg-amber-500' : 'bg-primary-container'"></span>
+                  <span class="font-caption text-caption tracking-wider text-on-surface-variant uppercase font-semibold">
+                    {{ isMaster ? 'Centro de Control Global' : 'Gerencia de Equipo' }} • {{ leaderArea?.name || 'Mi Equipo' }}
+                  </span>
+                  <!-- Selector de Área para Admin Maestro -->
+                  <div v-if="isMaster && availableAreas.length > 0" class="inline-flex items-center gap-1 ml-1.5 border-l border-surface-container-high pl-2">
+                    <span class="material-symbols-outlined text-[14px] text-secondary">filter_alt</span>
+                    <select v-model="selectedAreaFilter" @change="onAreaFilterChange" class="bg-surface-container-low text-[11px] font-semibold text-on-surface px-2 py-0.5 rounded-md border border-surface-container-high outline-none cursor-pointer hover:border-primary">
+                      <option value="all">🌐 Toda la Empresa (Global)</option>
+                      <option v-for="a in availableAreas" :key="a.id" :value="a.id">{{ a.name }}</option>
+                    </select>
+                  </div>
                 </div>
-                <h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Centro de Control</h1>
-                <p class="font-body-md text-body-md text-secondary mt-1">Supervisión táctica y rendimiento del equipo.</p>
+                <h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">
+                  {{ isMaster && selectedAreaFilter === 'all' ? 'Centro de Control Global' : `Centro de Control • ${leaderArea?.name || 'Equipo'}` }}
+                </h1>
+                <p class="font-body-md text-body-md text-secondary mt-1">
+                  {{ isMaster && selectedAreaFilter === 'all' ? 'Supervisión táctica de todas las áreas de la compañía.' : 'Supervisión táctica, asignación de tareas y resultados de tu equipo a cargo.' }}
+                </p>
               </div>
               
-              <div class="flex items-center gap-space-sm self-start lg:self-end shrink-0">
+              <div class="flex items-center gap-space-sm self-start lg:self-end shrink-0 flex-wrap">
                 <button v-if="canManageKpis" @click="router.push('/kpis')" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container border border-[#b08d57]/40 hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm" type="button">
                   <span class="material-symbols-outlined text-[#8a6d3d] text-[18px]">analytics</span>
                   <span>Módulo KPIs & Actas</span>
                 </button>
-                <button @click="router.push('/workspace')" class="group inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-lowest border border-surface-container-high hover:border-outline-variant text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm" type="button">
+                <!-- Botón: Ver Mis KPIs (Resultados del Equipo: Diario / Semanal / Mensual para hacer presión) -->
+                <button @click="openTeamKpiModal" class="group inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-lowest border border-[#b08d57]/50 hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm cursor-pointer" type="button" title="Ver resultados del equipo, diario, semanal y mensual para hacer presión">
                   <span class="material-symbols-outlined text-primary text-[18px] transition-transform group-hover:scale-110">monitoring</span>
-                  <span>Ver Mis KPIs</span>
+                  <span>Ver Mis KPIs (Resultados del Equipo)</span>
                 </button>
                 <button @click="openScheduledModal" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm">
                   <span class="material-symbols-outlined text-[#0071e3] text-[18px]">event_repeat</span>
@@ -40,7 +55,7 @@
                 </button>
                 <button @click="openTaskModal(null)" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md transition-all duration-200 shadow-[0_2px_10px_rgba(176,141,87,0.25)] active:scale-[0.98]">
                   <span class="material-symbols-outlined text-[18px]">add_task</span>
-                  <span>Asignar Tarea General</span>
+                  <span>Asignar Pendiente</span>
                 </button>
               </div>
             </div>
@@ -310,20 +325,99 @@
 
             <!-- Selección múltiple si es General -->
             <div v-else class="space-y-2">
-              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Seleccionar colaborador(es) <span class="text-danger">*</span></label>
-              <div class="max-h-36 overflow-y-auto space-y-1 border border-surface-container-high rounded-xl p-2 bg-surface-container-low">
-                <label v-for="m in teamMembers" :key="m.id"
-                  class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-surface-container transition-colors"
-                  :class="newTask.assigned_to_list?.includes(m.id) ? 'bg-[#b08d57]/5 border border-[#b08d57]/20' : ''">
-                  <input type="checkbox" :value="m.id" v-model="newTask.assigned_to_list" class="rounded accent-[#b08d57]" />
-                  <div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-xs font-bold text-on-surface shrink-0">{{ m.full_name.charAt(0) }}</div>
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Seleccionar colaborador(es) a cargo <span class="text-danger">*</span></label>
+                <div class="flex items-center gap-2">
+                  <button type="button" @click="selectAllTeam" class="text-[11px] font-semibold text-primary hover:underline">
+                    Seleccionar todo mi equipo ({{ filteredAssigneeList.length }})
+                  </button>
+                  <span class="text-secondary text-xs">•</span>
+                  <button type="button" @click="clearAssigneeSelection" class="text-[11px] text-secondary hover:text-danger">
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Input de búsqueda rápida en el equipo -->
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-secondary">search</span>
+                <input 
+                  type="text" 
+                  v-model="taskAssigneeSearch"
+                  placeholder="Buscar en mi equipo por nombre o cargo..."
+                  class="w-full pl-9 pr-4 py-2 rounded-xl bg-surface-container-low border border-surface-container-high focus:border-primary text-xs outline-none"
+                />
+              </div>
+
+              <!-- Listado de Colaboradores del Equipo -->
+              <div class="max-h-44 overflow-y-auto space-y-1 border border-surface-container-high rounded-xl p-2 bg-surface-container-low">
+                <div v-if="filteredAssigneeList.length === 0" class="py-4 text-center text-xs text-secondary">
+                  No hay colaboradores registrados en este equipo aún.
+                </div>
+                <label v-for="m in filteredAssigneeList" :key="m.id"
+                  class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-surface-container transition-colors border"
+                  :class="newTask.assigned_to_list?.includes(m.id) ? 'bg-[#b08d57]/10 border-[#b08d57]/40 shadow-xs' : 'border-transparent'">
+                  <input type="checkbox" :value="m.id" v-model="newTask.assigned_to_list" class="rounded accent-[#b08d57] w-4 h-4 cursor-pointer" />
+                  <div class="w-8 h-8 rounded-lg bg-surface-container-high text-[#8a6d3d] flex items-center justify-center text-xs font-bold shrink-0 border border-surface-container-high">
+                    {{ m.full_name.charAt(0) }}
+                  </div>
                   <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-on-surface truncate">{{ m.full_name }}</p>
-                    <p class="text-xs text-secondary truncate">{{ m.roles?.name }}</p>
+                    <p class="text-sm font-semibold text-on-surface truncate">{{ m.full_name }}</p>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                      <p class="text-xs text-secondary truncate">{{ m.roles?.name || 'Sin cargo' }}</p>
+                      <span v-if="m.roles?.areas?.name" class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-medium">
+                        {{ m.roles.areas.name }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0 text-right">
+                    <span v-if="m.overdue_tasks_count > 0" class="text-[10px] font-bold text-danger bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                      {{ m.overdue_tasks_count }} vencidas
+                    </span>
+                    <span v-else class="text-[10px] text-secondary bg-surface-container px-2 py-0.5 rounded-full">
+                      {{ m.pending_tasks_count || 0 }} pend.
+                    </span>
                   </div>
                 </label>
               </div>
-              <p class="text-xs text-secondary">{{ (newTask.assigned_to_list || []).length }} seleccionado(s)</p>
+              <p class="text-xs text-secondary font-medium">{{ (newTask.assigned_to_list || []).length }} colaborador(es) seleccionado(s)</p>
+
+              <!-- Panel Detallado: Al seleccionar, le debe aparecer toda la información (Requerimiento 2) -->
+              <div v-if="(newTask.assigned_to_list || []).length > 0" class="mt-3 p-3 rounded-xl bg-surface-container/60 border border-[#b08d57]/30 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold text-[#8a6d3d] uppercase tracking-wider flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">id_card</span>
+                    Información Completa de Colaborador(es) Seleccionado(s)
+                  </span>
+                  <span class="text-[11px] text-secondary font-semibold">Carga actual de trabajo</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                  <div v-for="selId in newTask.assigned_to_list" :key="selId" class="p-2.5 rounded-lg bg-surface-container-lowest border border-surface-container-high flex flex-col justify-between shadow-2xs">
+                    <div class="flex items-start gap-2">
+                      <div class="w-8 h-8 rounded-lg bg-[#b08d57]/15 text-[#8a6d3d] font-bold text-xs flex items-center justify-center shrink-0 border border-[#b08d57]/30">
+                        {{ getMemberById(selId)?.full_name?.charAt(0) || 'U' }}
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-on-surface truncate">{{ getMemberById(selId)?.full_name }}</p>
+                        <p class="text-[11px] text-secondary truncate">{{ getMemberById(selId)?.roles?.name || 'Sin cargo' }} (Nv. {{ getMemberById(selId)?.roles?.access_level || 3 }})</p>
+                        <p class="text-[10px] text-secondary truncate mt-0.5">📧 {{ getMemberCorporateEmail(getMemberById(selId)) }}</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-surface-container-high text-[10px]">
+                      <span class="text-secondary">Área: <strong class="text-on-surface">{{ getMemberById(selId)?.roles?.areas?.name || leaderArea?.name || 'General' }}</strong></span>
+                      <div class="flex items-center gap-2">
+                        <span :class="getMemberById(selId)?.overdue_tasks_count > 0 ? 'text-danger font-bold' : 'text-secondary'">
+                          {{ getMemberById(selId)?.overdue_tasks_count || 0 }} venc.
+                        </span>
+                        <span class="text-emerald-700 font-semibold bg-emerald-50 px-1 rounded">
+                          KPI: {{ getMemberById(selId)?.latest_score || 0 }}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -489,6 +583,216 @@
             class="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white hover:brightness-105 shadow-md transition-all flex items-center gap-2">
             <span v-if="isSaving" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
             <span>{{ isSaving ? 'Guardando...' : 'Asignar Tarea' }}</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Modal: Resultados del Equipo (KPIs) y Herramienta de Presión Gerencial (Requerimiento 3) -->
+    <div v-if="showTeamKpiModal" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 md:p-6">
+      <div class="bg-surface-container-lowest rounded-2xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[92vh] border border-surface-container-high overflow-hidden">
+        
+        <!-- Header del Modal de Resultados -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between px-6 py-4 border-b border-surface-container shrink-0 gap-3 bg-surface-container-low/40">
+          <div>
+            <div class="inline-flex items-center gap-2 mb-1">
+              <span class="material-symbols-outlined text-[#8a6d3d] text-[20px]">monitoring</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-[#8a6d3d]">
+                {{ isMaster ? 'Supervisión Global' : 'Panel de Gerencia' }} • {{ leaderArea?.name || 'Equipo' }}
+              </span>
+            </div>
+            <h2 class="text-xl font-bold text-on-surface">Resultados y Control de Presión del Equipo</h2>
+            <p class="text-xs text-secondary mt-0.5">Monitoreo de entregas en tiempo real para ejercer supervisión y presión por resultados.</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <!-- Selector de Período Diario / Semanal / Mensual -->
+            <div class="flex items-center bg-surface-container rounded-xl p-1 border border-surface-container-high shadow-xs">
+              <button v-for="p in ['Diario', 'Semanal', 'Mensual']" :key="p"
+                @click="selectedPeriod = p; updateMetrics()"
+                :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  selectedPeriod === p ? 'bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white shadow-xs' : 'text-secondary hover:text-on-surface']">
+                {{ p === 'Diario' ? '🗓️ Diario (Hoy)' : p === 'Semanal' ? '📅 Semanal' : '📊 Mensual' }}
+              </button>
+            </div>
+
+            <button @click="showTeamKpiModal = false" class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center cursor-pointer">
+              <span class="material-symbols-outlined text-secondary">close</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Contenido scrolleable -->
+        <div class="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+          
+          <!-- Bento de Resumen del Período -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="p-4 rounded-xl bg-surface-container-low border border-surface-container flex flex-col justify-between">
+              <span class="text-[11px] font-semibold text-secondary uppercase tracking-wider">Cumplimiento Global ({{ selectedPeriod }})</span>
+              <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl font-bold" :class="averageKpi >= 70 ? 'text-[#2e7d32]' : 'text-amber-600'">{{ averageKpi }}%</span>
+                <span class="text-xs text-secondary">de eficiencia</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-surface-container-low border border-surface-container flex flex-col justify-between">
+              <span class="text-[11px] font-semibold text-secondary uppercase tracking-wider">Entregas en {{ selectedPeriod }}</span>
+              <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl font-bold text-on-surface">{{ teamMembers.reduce((acc, m) => acc + (m.completed_tasks_count || 0), 0) }}</span>
+                <span class="text-xs text-secondary">de {{ teamMembers.reduce((acc, m) => acc + (m.total_tasks || 0), 0) }} totales</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-surface-container-low border border-surface-container flex flex-col justify-between">
+              <span class="text-[11px] font-semibold text-secondary uppercase tracking-wider">Pendientes por Entregar</span>
+              <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl font-bold text-amber-600">{{ teamMembers.reduce((acc, m) => acc + (m.pending_tasks_count || 0), 0) }}</span>
+                <span class="text-xs text-secondary">tareas activas</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl flex flex-col justify-between border"
+                 :class="totalOverdue > 0 ? 'bg-error-container/25 border-danger/40' : 'bg-surface-container-low border-surface-container'">
+              <span class="text-[11px] font-semibold uppercase tracking-wider" :class="totalOverdue > 0 ? 'text-danger' : 'text-secondary'">
+                Tareas Vencidas (Alerta Roja)
+              </span>
+              <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl font-bold" :class="totalOverdue > 0 ? 'text-danger' : 'text-on-surface'">{{ totalOverdue }}</span>
+                <span class="text-xs" :class="totalOverdue > 0 ? 'text-danger font-semibold' : 'text-secondary'">
+                  {{ totalOverdue > 0 ? '¡Requiere Presión!' : 'Todo al día' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Presión Masiva -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-[#b08d57]/10 border border-[#b08d57]/30 gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[#8a6d3d] text-[22px]">campaign</span>
+              <div>
+                <p class="text-xs font-bold text-on-surface">Herramienta de Presión Gerencial</p>
+                <p class="text-[11px] text-secondary">Envía una notificación urgente a los colaboradores con compromisos retrasados o sin entregar en {{ selectedPeriod }}.</p>
+              </div>
+            </div>
+
+            <button 
+              @click="sendMassivePressure"
+              :disabled="isSendingPressure"
+              class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 text-white text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[16px]">bolt</span>
+              <span>{{ isSendingPressure ? 'Enviando...' : 'Hacer Presión Masiva' }}</span>
+            </button>
+          </div>
+
+          <!-- Tabla de Resultados por Colaborador -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-primary">groups</span>
+                Rendimiento Individual del Equipo ({{ teamMembers.length }} colaboradores)
+              </h3>
+              <span class="text-xs text-secondary font-medium">Período evaluado: <strong>{{ selectedPeriod }}</strong></span>
+            </div>
+
+            <div class="border border-surface-container-high rounded-xl overflow-hidden shadow-xs">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-surface-container-low text-secondary font-semibold border-b border-surface-container-high uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th class="p-3">Colaborador</th>
+                    <th class="p-3">Cargo y Área</th>
+                    <th class="p-3 text-center">Tareas Totales</th>
+                    <th class="p-3 text-center">Listas</th>
+                    <th class="p-3 text-center">Pendientes</th>
+                    <th class="p-3 text-center">Vencidas</th>
+                    <th class="p-3 text-center">Eficiencia</th>
+                    <th class="p-3 text-center">Score KPI</th>
+                    <th class="p-3 text-right">Acción de Presión</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-surface-container-high bg-surface-container-lowest">
+                  <tr v-if="teamMembers.length === 0">
+                    <td colspan="9" class="p-8 text-center text-secondary">
+                      No hay colaboradores registrados en este equipo aún.
+                    </td>
+                  </tr>
+                  <tr v-for="m in teamMembers" :key="m.id" class="hover:bg-surface-container-low/50 transition-colors">
+                    <td class="p-3">
+                      <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-surface-container-high text-[#8a6d3d] font-bold text-xs flex items-center justify-center shrink-0">
+                          {{ m.full_name.charAt(0) }}
+                        </div>
+                        <div class="min-w-0">
+                          <p class="font-bold text-on-surface truncate">{{ m.full_name }}</p>
+                          <p class="text-[10px] text-secondary truncate">{{ getMemberCorporateEmail(m) }}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-3">
+                      <p class="font-medium text-on-surface truncate">{{ m.roles?.name || 'Sin cargo' }}</p>
+                      <span class="text-[10px] text-secondary">{{ m.roles?.areas?.name || leaderArea?.name }}</span>
+                    </td>
+                    <td class="p-3 text-center font-bold text-on-surface">{{ m.total_tasks || 0 }}</td>
+                    <td class="p-3 text-center font-bold text-emerald-700 bg-emerald-50/50">{{ m.completed_tasks_count || 0 }}</td>
+                    <td class="p-3 text-center font-bold text-amber-700 bg-amber-50/50">{{ m.pending_tasks_count || 0 }}</td>
+                    <td class="p-3 text-center font-bold" :class="m.overdue_tasks_count > 0 ? 'text-danger bg-red-50 animate-pulse' : 'text-secondary'">
+                      {{ m.overdue_tasks_count || 0 }}
+                    </td>
+                    <td class="p-3 text-center">
+                      <div class="flex flex-col items-center gap-1">
+                        <span class="font-bold" :class="m.completion_rate >= 80 ? 'text-emerald-700' : m.completion_rate >= 40 ? 'text-amber-700' : 'text-danger'">
+                          {{ m.total_tasks > 0 ? m.completion_rate + '%' : '0%' }}
+                        </span>
+                        <div class="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
+                          <div class="h-full" :class="m.completion_rate >= 80 ? 'bg-emerald-500' : m.completion_rate >= 40 ? 'bg-amber-500' : 'bg-danger'" :style="`width: ${m.completion_rate}%;`"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-3 text-center font-bold text-primary">
+                      {{ m.latest_score || 0 }}%
+                    </td>
+                    <td class="p-3 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button 
+                          @click="sendPressureAlert(m)"
+                          :class="[
+                            'px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer',
+                            pressuredMembers.has(m.id) 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                              : m.overdue_tasks_count > 0
+                                ? 'bg-red-600 hover:bg-red-700 text-white animate-bounce'
+                                : 'bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-container-high'
+                          ]"
+                          :title="pressuredMembers.has(m.id) ? 'Alerta ya enviada' : 'Enviar notificación urgente de presión a este colaborador'"
+                        >
+                          <span class="material-symbols-outlined text-[14px]">
+                            {{ pressuredMembers.has(m.id) ? 'check' : 'campaign' }}
+                          </span>
+                          <span>{{ pressuredMembers.has(m.id) ? 'Presionado' : 'Hacer Presión' }}</span>
+                        </button>
+                        
+                        <button 
+                          @click="showTeamKpiModal = false; openTaskModal(m)"
+                          class="px-2 py-1.5 rounded-lg bg-[#b08d57]/15 hover:bg-[#b08d57]/30 text-[#8a6d3d] text-[11px] font-semibold transition-all border border-[#b08d57]/30 cursor-pointer"
+                          title="Asignar pendiente directo"
+                        >
+                          <span class="material-symbols-outlined text-[14px]">add</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end px-6 py-3 border-t border-surface-container bg-surface-container-low/30 shrink-0">
+          <button @click="showTeamKpiModal = false" class="px-5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold cursor-pointer">
+            Cerrar Panel
           </button>
         </div>
 
@@ -810,6 +1114,101 @@ const searchQuery = ref('');
 const selectedPeriod = ref('Mensual'); // Default
 const selectedMember = ref(null);
 
+const availableAreas = ref([]);
+const selectedAreaFilter = ref('all');
+const showTeamKpiModal = ref(false);
+const taskAssigneeSearch = ref('');
+const isSendingPressure = ref(false);
+const pressuredMembers = ref(new Set());
+
+const getMemberById = (id) => teamMembers.value.find(m => m.id === id);
+
+const getMemberCorporateEmail = (m) => {
+  if (!m) return 'colaborador@elitenutrition.com';
+  if (m.email) return m.email;
+  const cleanName = (m.full_name || 'usuario')
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, '.');
+  return `${cleanName}@elitenutrition.com`;
+};
+
+const filteredAssigneeList = computed(() => {
+  if (!taskAssigneeSearch.value.trim()) return teamMembers.value;
+  const q = taskAssigneeSearch.value.toLowerCase().trim();
+  return teamMembers.value.filter(m => 
+    (m.full_name || '').toLowerCase().includes(q) ||
+    (m.roles?.name || '').toLowerCase().includes(q)
+  );
+});
+
+const selectAllTeam = () => {
+  newTask.value.assigned_to_list = filteredAssigneeList.value.map(m => m.id);
+};
+
+const clearAssigneeSelection = () => {
+  newTask.value.assigned_to_list = [];
+};
+
+const openTeamKpiModal = () => {
+  updateMetrics();
+  showTeamKpiModal.value = true;
+};
+
+const sendPressureAlert = async (member) => {
+  if (!member) return;
+  try {
+    const periodName = selectedPeriod.value;
+    const { error } = await supabase.from('notifications').insert({
+      profile_id: member.id,
+      type: 'pressure_alert',
+      message: `🚨 ALERTA DE GERENCIA: Tu líder te solicita entrega inmediata de tus compromisos de ${periodName} (${member.pending_tasks_count || 0} pendientes / ${member.overdue_tasks_count || 0} vencidas). Por favor reporta tu avance en el Portal Corporativo.`,
+      is_read: false,
+      action_url: '/workspace'
+    });
+    if (error) throw error;
+    pressuredMembers.value.add(member.id);
+    successToastMessage.value = `¡Alerta de presión enviada con éxito a ${member.full_name}!`;
+    showSuccessToast.value = true;
+    setTimeout(() => { showSuccessToast.value = false; }, 3500);
+  } catch (err) {
+    console.error('Error enviando alerta de presión:', err);
+    alert('Error al enviar alerta de presión: ' + (err.message || 'Error'));
+  }
+};
+
+const sendMassivePressure = async () => {
+  const atRiskMembers = teamMembers.value.filter(m => (m.overdue_tasks_count > 0 || m.pending_tasks_count > 0));
+  if (atRiskMembers.length === 0) {
+    alert('¡Felicitaciones! Todo el equipo está al día con sus compromisos en este período.');
+    return;
+  }
+  if (!window.confirm(`¿Enviar alerta de presión a ${atRiskMembers.length} colaborador(es) que tienen tareas pendientes o vencidas?`)) return;
+  
+  isSendingPressure.value = true;
+  try {
+    const periodName = selectedPeriod.value;
+    const notifs = atRiskMembers.map(m => ({
+      profile_id: m.id,
+      type: 'pressure_alert',
+      message: `🚨 ALERTA GENERAL DE GERENCIA: Tienes compromisos pendientes de entrega en el período ${periodName}. Tu líder solicita reporte de avance prioritario.`,
+      is_read: false,
+      action_url: '/workspace'
+    }));
+    await supabase.from('notifications').insert(notifs);
+    atRiskMembers.forEach(m => pressuredMembers.value.add(m.id));
+    successToastMessage.value = `¡Alerta de presión masiva enviada a ${atRiskMembers.length} colaboradores!`;
+    showSuccessToast.value = true;
+    setTimeout(() => { showSuccessToast.value = false; }, 3500);
+  } catch (err) {
+    console.error('Error en presión masiva:', err);
+    alert('Error: ' + (err.message || 'Error desconocido'));
+  } finally {
+    isSendingPressure.value = false;
+  }
+};
+
 const showEditProfileModal = ref(false);
 const isSavingProfile = ref(false);
 const availableRoles = ref([]);
@@ -1085,16 +1484,88 @@ const filterTasksByPeriod = (tasks, periodStr) => {
   });
 };
 
+let allLoadedProfiles = [];
+
+const onAreaFilterChange = async () => {
+  loading.value = true;
+  await enrichAndSetTeam(allLoadedProfiles, currentUser.value?.id);
+  loading.value = false;
+};
+
+const enrichAndSetTeam = async (profilesPool, userId) => {
+  let members = [];
+  if (isMaster.value) {
+    if (selectedAreaFilter.value === 'all') {
+      members = (profilesPool || []).filter(p => !p.is_master_admin || p.id !== userId);
+      leaderArea.value = { name: 'Global / Todas las áreas' };
+    } else {
+      members = (profilesPool || []).filter(p => p.roles?.area_id === selectedAreaFilter.value);
+      const a = availableAreas.value.find(area => area.id === selectedAreaFilter.value);
+      leaderArea.value = a || { name: 'Área' };
+    }
+  } else {
+    // Gerente de Área
+    const userAreaId = currentUser.value?.roles?.area_id;
+    if (userAreaId) {
+      const a = availableAreas.value.find(area => area.id === userAreaId);
+      leaderArea.value = a || currentUser.value?.roles?.areas || { name: 'Mi Equipo' };
+      members = (profilesPool || []).filter(p => p.roles?.area_id === userAreaId && p.id !== userId);
+      // Si no hay otros colaboradores en esa área, mostrarse a sí mismo para que no quede vacía
+      if (members.length === 0) {
+        members = (profilesPool || []).filter(p => p.roles?.area_id === userAreaId);
+      }
+    } else {
+      leaderArea.value = { name: 'Mi Equipo' };
+      members = (profilesPool || []).filter(p => p.id !== userId);
+    }
+  }
+
+  // Si por alguna razón el filtro da 0 pero hay perfiles, fallback al conjunto de perfiles
+  if (members.length === 0 && profilesPool?.length > 0 && isMaster.value) {
+    members = profilesPool.filter(p => p.id !== userId);
+  }
+
+  const enrichedMembers = await Promise.all(members.map(async (m) => {
+    let latestScore = 0;
+    if (m.roles?.id) {
+      try {
+        latestScore = await getLatestRoleKpiScore(m.roles.id);
+      } catch (kpiErr) {
+        console.warn('Error fetching kpi score for role:', m.roles?.id, kpiErr);
+      }
+    }
+
+    const { data: tasks } = await supabase.from('tasks')
+      .select('id, title, status, created_at, started_at, completed_at, due_date')
+      .eq('assigned_to', m.id);
+      
+    m.all_tasks = tasks || [];
+    m.latest_score = latestScore || 0;
+    
+    return m;
+  }));
+
+  teamMembers.value = enrichedMembers;
+  updateMetrics();
+  
+  if (teamMembers.value.length > 0) {
+    selectedMember.value = teamMembers.value[0];
+  } else {
+    selectedMember.value = null;
+  }
+};
+
 const fetchData = async () => {
   loading.value = true;
-  const { data: session } = await supabase.auth.getSession();
-  if (!session?.session?.user) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData?.session;
+  if (!session?.user) {
     loading.value = false;
     return;
   }
-  const userId = session.session.user.id;
+  const userId = session.user.id;
 
-  const { data: profile } = await supabase.from('profiles').select('*, roles(name, area_id, access_level)').eq('id', userId).single();
+  const { data: profile } = await supabase.from('profiles').select('*, roles(id, name, area_id, access_level, areas(id, name))').eq('id', userId).single();
   currentUser.value = profile;
   
   // Fetch system alerts proactively generated by AI for leaders
@@ -1108,50 +1579,30 @@ const fetchData = async () => {
     systemAlerts.value = alertsData;
   }
 
-  if (profile?.is_master_admin || profile?.roles?.access_level === 1) {
-    isLeader.value = true;
-    isMaster.value = profile?.is_master_admin;
-  }
+  // Cargar áreas disponibles
+  const { data: areasData } = await supabase.from('areas').select('id, name').order('name');
+  availableAreas.value = areasData || [];
+
+  const roleName = (profile?.roles?.name || '').toLowerCase();
+  const isLvlLeader = [1, 2].includes(profile?.roles?.access_level);
+  const isNamedLeader = roleName.includes('gerente') || roleName.includes('director') || roleName.includes('lider') || roleName.includes('líder') || roleName.includes('coordinador');
+  
+  isMaster.value = !!profile?.is_master_admin;
+  isLeader.value = isMaster.value || isLvlLeader || isNamedLeader;
 
   if (isLeader.value) {
-    let membersQuery = supabase
+    const { data: rawProfiles, error: profsError } = await supabase
       .from('profiles')
-      .select('id, full_name, roles!inner(id, name, area_id, access_level)')
-      .neq('id', userId);
+      .select('id, full_name, role_id, is_master_admin, approval_status, roles(id, name, area_id, access_level, areas(id, name))')
+      .neq('approval_status', 'rejected')
+      .order('full_name');
 
-    if (!isMaster.value && profile?.roles?.area_id) {
-      const { data: area } = await supabase.from('areas').select('*').eq('id', profile.roles.area_id).single();
-      leaderArea.value = area;
-      membersQuery = membersQuery.eq('roles.area_id', profile.roles.area_id);
-    } else {
-      leaderArea.value = { name: 'Global / Todas las áreas' };
+    if (profsError) {
+      console.error('Error cargando perfiles:', profsError);
     }
 
-    const { data: members } = await membersQuery;
-
-    if (members) {
-      const now = new Date();
-      
-      const enrichedMembers = await Promise.all(members.map(async (m) => {
-        const latestScore = await getLatestRoleKpiScore(m.roles.id);
-
-        const { data: tasks } = await supabase.from('tasks')
-          .select('id, title, status, created_at, started_at, completed_at, due_date')
-          .eq('assigned_to', m.id);
-          
-        m.all_tasks = tasks || [];
-        m.latest_score = latestScore || 0;
-        
-        return m;
-      }));
-      
-      teamMembers.value = enrichedMembers;
-      updateMetrics();
-      
-      if (teamMembers.value.length > 0) {
-        selectedMember.value = teamMembers.value[0];
-      }
-    }
+    allLoadedProfiles = rawProfiles || [];
+    await enrichAndSetTeam(allLoadedProfiles, userId);
   }
   loading.value = false;
 };

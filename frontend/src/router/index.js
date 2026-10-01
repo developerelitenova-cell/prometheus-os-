@@ -238,10 +238,8 @@ router.beforeEach(async (to) => {
   if (to.meta.kpiAccessOnly) {
     const isMaster = !!profile.is_master_admin;
     const roleName = (profile.roles?.name || '').toLowerCase();
-    const level = profile.roles?.access_level;
-    const isCEO = level === 1 || roleName.includes('ceo') || roleName.includes('director general') || roleName.includes('gerente general');
-    const isDataAnalyst = roleName.includes('datos') || roleName.includes('analista de datos') || roleName.includes('especialista de datos');
-    if (!isMaster && !isCEO && !isDataAnalyst) {
+    const isDataAnalyst = roleName.includes('analista de datos') || roleName.includes('especialista de datos') || roleName.includes('datos');
+    if (!isMaster && !isDataAnalyst) {
       return { path: '/workspace' };
     }
   }

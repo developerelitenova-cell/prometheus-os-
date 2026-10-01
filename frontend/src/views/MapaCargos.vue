@@ -24,14 +24,6 @@
             
             <!-- Action Buttons -->
             <div class="flex flex-wrap items-center gap-3 shrink-0">
-              <!-- Switch to Miro Process Map -->
-              <router-link
-                to="/mapa-procesos"
-                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white font-label-md text-label-md shadow-sm hover:brightness-105 transition-all"
-              >
-                <span class="material-symbols-outlined text-[18px]">account_tree</span>
-                <span>Mapa de Procesos con IA (Miro)</span>
-              </router-link>
               <!-- Corporate Config Button — Master Admin only -->
               <button
                 v-if="isMaster"
@@ -254,13 +246,6 @@
 
                   <!-- Actions -->
                   <div class="space-y-2 mb-6">
-                    <router-link :to="`/mapa-procesos?roleId=${selectedRole.id}`" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-[#d4b06a]/20 to-[#8a6d3d]/20 border border-[#b08d57]/40 text-primary font-label-md text-label-md hover:bg-[#b08d57]/30 transition-all shadow-2xs font-semibold">
-                      <span class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">account_tree</span>
-                        Ver en Mapa de Procesos con IA (Miro)
-                      </span>
-                      <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </router-link>
                     <router-link :to="`/mapper/${selectedRole.id}`" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary/90 transition-all shadow-sm">
                       <span class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-[18px]">edit_note</span>

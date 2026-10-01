@@ -797,7 +797,11 @@ const loading = ref(true);
 const templates = ref([]);
 const allRoles = ref([]);
 
-const isMaster = computed(() => isMasterAdmin());
+const isDataAnalyst = computed(() => {
+  const roleName = (currentProfile.value?.roles?.name || '').toLowerCase();
+  return roleName.includes('datos') || roleName.includes('analista');
+});
+const isMaster = computed(() => isMasterAdmin() || isDataAnalyst.value);
 const myAreaId = computed(() => currentProfile.value?.roles?.area_id || null);
 
 const fetchTemplates = async () => {
