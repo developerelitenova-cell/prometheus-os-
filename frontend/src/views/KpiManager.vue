@@ -82,9 +82,11 @@
           </div>
         </div>
 
-        <button v-if="isMaster" class="btn-text" @click="addMetric(template)">+ Agregar KPI</button>
-
-        <button v-if="isMaster" class="btn-text danger-text" @click="confirmDeleteTemplate(template)">Eliminar plantilla completa</button>
+        <div class="template-actions">
+          <button v-if="isMaster" class="btn-text" @click="addMetric(template)">+ Agregar KPI manual</button>
+          <button v-if="isMaster" class="btn-text ai-btn" @click="openAiDesignerForTemplate(template)">✨ Diseñar Tabla con IA</button>
+          <button v-if="isMaster" class="btn-text danger-text" @click="confirmDeleteTemplate(template)">Eliminar plantilla</button>
+        </div>
       </div>
 
       <div v-if="templates.length === 0" class="empty-state">Todavía no hay plantillas de KPI cargadas.</div>
@@ -128,6 +130,23 @@
       </div>
 
       <div v-else class="measurement-form glass-panel">
+        <!-- Banner Asistente IA de Calificación -->
+        <div class="ai-evaluator-card">
+          <div class="ai-evaluator-text">
+            <div class="ai-title-row">
+              <span class="ai-badge-chip">✨ Inteligencia Artificial</span>
+              <span class="checkpoint-label">{{ periodCheckpointLabel }} · {{ periodMonthName }} {{ periodYear }}</span>
+            </div>
+            <h4>Flujo de Calificación Asistido por IA</h4>
+            <p class="ai-desc">
+              Pegá el reporte semanal, novedades o notas del líder y la IA extraerá los números, calculará matemáticamente el % contra cada meta y generará las observaciones para el 1 a 1.
+            </p>
+          </div>
+          <button type="button" class="btn-ai-sparkle" @click="openAiEvaluatorModal">
+            ✨ Calificar con IA
+          </button>
+        </div>
+
         <table class="metrics-table">
           <thead>
             <tr>
@@ -220,6 +239,178 @@
         </div>
       </div>
     </div>
+
+    <!-- ============ MODAL: ASISTENTE DE CALIFICACIÓN CON IA ============ -->
+    <div v-if="showAiEvaluatorModal" class="modal-overlay" @click.self="showAiEvaluatorModal = false">
+      <div class="modal-content glass-panel large-modal">
+        <div class="modal-header-ai">
+          <div class="ai-badge-chip">✨ Asistente de Calificación Inteligente</div>
+          <h2>Calificar {{ selectedPair?.roleLabel }}</h2>
+          <p class="subtitle">
+            Corte: <strong>{{ periodCheckpointLabel }}</strong> · {{ periodMonthName }} {{ periodYear }}
+          </p>
+        </div>
+
+        <div class="expected-metrics-bar">
+          <span class="bar-title">Métricas de este cargo:</span>
+          <div class="mini-metrics-chips">
+            <span v-for="m in measurementRows" :key="m.metric_id" class="mini-metric-chip">
+              {{ m.name }}: <strong>{{ m.meta_label }}</strong>
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-with-samples">
+            <label>Reporte Semanal, Novedades o Resumen del Colaborador</label>
+            <div class="samples-buttons">
+              <span class="sample-label">Cargar ejemplo:</span>
+              <button type="button" class="btn-sample" @click="loadSamplePerformance('comercial')">Comercial</button>
+              <button type="button" class="btn-sample" @click="loadSamplePerformance('bodega')">Bodega</button>
+              <button type="button" class="btn-sample" @click="loadSamplePerformance('general')">General</button>
+            </div>
+          </div>
+          <textarea
+            v-model="aiPerformanceText"
+            rows="4"
+            class="ai-textarea"
+            placeholder="Pegá aquí el resumen de desempeño, reporte de WhatsApp, correos de cierre o notas del líder. Ej: 'Esta semana atendió 130 chats, cerró 20 ventas por $21.500.000, su tiempo promedio fue de 2.5 min y tuvo 0 quejas...'"
+          ></textarea>
+        </div>
+
+        <div class="ai-action-row">
+          <button
+            type="button"
+            class="btn-magic-action"
+            :disabled="isEvaluatingAi || !aiPerformanceText.trim()"
+            @click="runAiEvaluation"
+          >
+            {{ isEvaluatingAi ? 'Analizando con IA y calculando %...' : '🪄 Analizar y Calcular Calificación' }}
+          </button>
+        </div>
+
+        <p v-if="aiEvaluationError" class="error-text">{{ aiEvaluationError }}</p>
+
+        <!-- Resultados generados por la IA -->
+        <div v-if="aiEvaluationResults" class="ai-results-preview">
+          <div class="results-header">
+            <h4>Propuesta de Calificación Calculada por IA</h4>
+            <div class="preview-total-badge">
+              Promedio: <strong>{{ aiEvaluationResults.average }}%</strong>
+            </div>
+          </div>
+          <p class="summary-box" v-if="aiEvaluationResults.summary">
+            💡 <strong>Resumen del Asistente:</strong> {{ aiEvaluationResults.summary }}
+          </p>
+
+          <table class="metrics-table preview-table">
+            <thead>
+              <tr>
+                <th>KPI</th>
+                <th>Meta</th>
+                <th>Realizado Extraído</th>
+                <th>% Calculado</th>
+                <th>Estado</th>
+                <th>Nota de Retroalimentación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="res in aiEvaluationResults.results" :key="res.metric_id">
+                <td><strong>{{ res.name || metricNameById(res.metric_id) }}</strong></td>
+                <td class="meta-cell">{{ metricMetaById(res.metric_id) }}</td>
+                <td><input v-model="res.realizado_raw" class="preview-input" /></td>
+                <td><input type="number" v-model.number="res.percentage" class="preview-input pct" /></td>
+                <td>
+                  <select v-model="res.estado" class="preview-select">
+                    <option value="cumpliendo">Cumpliendo</option>
+                    <option value="revisar">Revisar</option>
+                  </select>
+                </td>
+                <td><input v-model="res.notes" class="preview-input" /></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="apply-cta-box">
+            <p>Podés editar cualquier valor arriba antes de volcarlo a la tabla de mediciones.</p>
+            <button type="button" class="btn-primary" @click="applyAiEvaluation">
+              ✅ Aplicar Calificación a la Tabla
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-actions" v-if="!aiEvaluationResults">
+          <button class="btn-text" @click="showAiEvaluatorModal = false">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MODAL: DISEÑADOR DE TABLAS CON IA ============ -->
+    <div v-if="showAiDesignerModal" class="modal-overlay" @click.self="showAiDesignerModal = false">
+      <div class="modal-content glass-panel large-modal">
+        <div class="modal-header-ai">
+          <div class="ai-badge-chip">✨ Inteligencia Artificial</div>
+          <h2>Diseñar Tabla de Medición para {{ designerTargetTemplate?.area_label }}</h2>
+          <p class="subtitle">
+            La IA consulta los manuales de cargo, tareas del día a día y cuellos de botella mapeados en <code>role_workflows</code> para proponer métricas calibradas.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label>Selecciona el Cargo Base para Extraer el Flujo</label>
+          <div class="input-with-action">
+            <select v-model="designerSelectedRoleId" class="designer-role-select">
+              <option :value="null">— Selecciona un cargo —</option>
+              <option v-for="r in allRoles" :key="r.id" :value="r.id">
+                {{ r.areas?.name ? r.areas.name + ' · ' : '' }}{{ r.name }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn-magic"
+              :disabled="isGeneratingDesigner || !designerSelectedRoleId"
+              @click="runAiDesigner"
+            >
+              {{ isGeneratingDesigner ? 'Analizando...' : '✨ Analizar Workflow' }}
+            </button>
+          </div>
+        </div>
+
+        <p v-if="designerError" class="error-text">{{ designerError }}</p>
+
+        <!-- Lista de KPIs propuestos por la IA -->
+        <div v-if="designerProposedKpis.length > 0" class="designer-proposals-box">
+          <label class="section-title">Métricas Propuestas por la IA (Selecciona las que deseas incorporar):</label>
+          <div v-for="(kpi, idx) in designerProposedKpis" :key="idx" class="kpi-proposal-card">
+            <input type="checkbox" v-model="kpi.selected" class="proposal-check" />
+            <div class="proposal-fields">
+              <input v-model="kpi.name" placeholder="Nombre de la métrica" class="kpi-name-field" />
+              <div class="proposal-meta-row">
+                <span class="meta-tag">Meta:</span>
+                <input v-model="kpi.meta_label" placeholder="Ej: 95%" class="meta-field" />
+                <select v-model="kpi.meta_type" class="type-field">
+                  <option value="percentage">% Porcentaje</option>
+                  <option value="currency">$ Moneda</option>
+                  <option value="count"># Conteo</option>
+                  <option value="text">Texto</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-text" @click="showAiDesignerModal = false">Cancelar</button>
+            <button class="btn-primary" @click="saveAiDesignerToTemplate">
+              ➕ Agregar a la Plantilla {{ designerTargetTemplate?.area_label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-actions" v-else>
+          <button class="btn-text" @click="showAiDesignerModal = false">Cancelar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -227,6 +418,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { supabase } from '../api/supabase';
 import { currentProfile, isMasterAdmin, isLeader } from '../api/auth';
+import { evaluateMeasurementsWithAi, generateRoleSpecificKpis } from '../api/kpiAi';
 
 const tab = ref('templates');
 const loading = ref(true);
@@ -518,6 +710,156 @@ const saveMeasurements = async () => {
     saving.value = false;
   }
 };
+
+// ============ ASISTENTE DE CALIFICACIÓN CON IA ============
+const showAiEvaluatorModal = ref(false);
+const isEvaluatingAi = ref(false);
+const aiEvaluationError = ref('');
+const aiPerformanceText = ref('');
+const aiEvaluationResults = ref(null);
+
+const periodMonthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const periodMonthName = computed(() => periodMonthNames[periodMonth.value] || `Mes ${periodMonth.value}`);
+const periodCheckpointLabel = computed(() => ({
+  semana_2: 'Semana 2',
+  semana_3: 'Semana 3',
+  semana_4: 'Semana 4',
+  cierre: 'Cierre Mensual'
+}[periodCheckpoint.value] || periodCheckpoint.value));
+
+const metricNameById = (metricId) => {
+  const m = measurementRows.value.find(r => r.metric_id === metricId);
+  return m ? m.name : 'KPI';
+};
+
+const metricMetaById = (metricId) => {
+  const m = measurementRows.value.find(r => r.metric_id === metricId);
+  return m ? m.meta_label : '-';
+};
+
+const openAiEvaluatorModal = () => {
+  aiEvaluationError.value = '';
+  aiPerformanceText.value = '';
+  aiEvaluationResults.value = null;
+  showAiEvaluatorModal.value = true;
+};
+
+const loadSamplePerformance = (type) => {
+  if (type === 'comercial') {
+    aiPerformanceText.value = 'Durante este corte de semana se atendieron 135 chats en el chatcenter, cerrando ventas por un total de $21.500.000. El tiempo promedio de primera respuesta fue de 2.5 minutos y no se recibió ningún reclamo o queja de clientes.';
+  } else if (type === 'bodega') {
+    aiPerformanceText.value = 'En esta semana se despachó el 99% de pedidos antes del horario límite de corte. Se ejecutaron 2 inventarios cíclicos programados con 0 diferencias en unidades y 0 errores de empaque reportados.';
+  } else {
+    aiPerformanceText.value = 'El colaborador completó el 95% de sus tareas asignadas dentro del plazo estipulado, entregó los reportes solicitados a tiempo y no se presentaron novedades críticas en la operación.';
+  }
+};
+
+const runAiEvaluation = async () => {
+  if (!aiPerformanceText.value.trim()) {
+    aiEvaluationError.value = 'Por favor ingresá un reporte, novedades o resumen semanal para evaluar.';
+    return;
+  }
+  isEvaluatingAi.value = true;
+  aiEvaluationError.value = '';
+  try {
+    const res = await evaluateMeasurementsWithAi({
+      roleName: selectedPair.value?.roleLabel || 'Cargo',
+      areaName: selectedPair.value?.template?.area_label || 'Área',
+      periodLabel: `${periodCheckpointLabel.value} · ${periodMonthName.value} ${periodYear.value}`,
+      metrics: measurementRows.value.map(r => ({
+        id: r.metric_id,
+        name: r.name,
+        meta_label: r.meta_label,
+        meta_type: 'percentage'
+      })),
+      performanceText: aiPerformanceText.value.trim()
+    });
+    aiEvaluationResults.value = res;
+  } catch (e) {
+    aiEvaluationError.value = e.message || 'Error al procesar la evaluación con IA.';
+  } finally {
+    isEvaluatingAi.value = false;
+  }
+};
+
+const applyAiEvaluation = () => {
+  if (!aiEvaluationResults.value?.results) return;
+  const byMetric = {};
+  aiEvaluationResults.value.results.forEach(r => { byMetric[r.metric_id] = r; });
+
+  measurementRows.value.forEach(row => {
+    const evalData = byMetric[row.metric_id];
+    if (evalData) {
+      row.realizado_raw = evalData.realizado_raw || row.realizado_raw;
+      row.percentage = evalData.percentage !== undefined && evalData.percentage !== null ? Number(evalData.percentage) : row.percentage;
+      row.estado = evalData.estado || row.estado;
+      row.notes = evalData.notes || row.notes;
+    }
+  });
+
+  showAiEvaluatorModal.value = false;
+};
+
+// ============ DISEÑADOR DE TABLAS CON IA ============
+const showAiDesignerModal = ref(false);
+const designerTargetTemplate = ref(null);
+const designerSelectedRoleId = ref(null);
+const isGeneratingDesigner = ref(false);
+const designerProposedKpis = ref([]);
+const designerError = ref('');
+
+const openAiDesignerForTemplate = (template) => {
+  designerTargetTemplate.value = template;
+  designerSelectedRoleId.value = template.kpi_role_template_links?.[0]?.role_id || null;
+  designerProposedKpis.value = [];
+  designerError.value = '';
+  showAiDesignerModal.value = true;
+};
+
+const runAiDesigner = async () => {
+  if (!designerSelectedRoleId.value) {
+    designerError.value = 'Por favor selecciona un cargo para analizar su workflow.';
+    return;
+  }
+  isGeneratingDesigner.value = true;
+  designerError.value = '';
+  try {
+    const roleObj = allRoles.value.find(r => r.id === designerSelectedRoleId.value);
+    const kpis = await generateRoleSpecificKpis(
+      designerSelectedRoleId.value,
+      roleObj?.name || 'Cargo',
+      designerTargetTemplate.value?.area_label || 'Área'
+    );
+    designerProposedKpis.value = kpis.map(k => ({ ...k, selected: true }));
+  } catch (e) {
+    designerError.value = e.message || 'Error al generar la tabla de medición con IA.';
+  } finally {
+    isGeneratingDesigner.value = false;
+  }
+};
+
+const saveAiDesignerToTemplate = async () => {
+  const toAdd = designerProposedKpis.value.filter(k => k.selected && k.name.trim());
+  if (toAdd.length === 0) {
+    designerError.value = 'Selecciona al menos un KPI para agregar.';
+    return;
+  }
+  try {
+    const payload = toAdd.map((k, idx) => ({
+      template_id: designerTargetTemplate.value.id,
+      name: k.name,
+      meta_label: k.meta_label,
+      meta_type: k.meta_type || 'percentage',
+      display_order: designerTargetTemplate.value.kpi_template_metrics.length + idx + 1
+    }));
+    const { data, error } = await supabase.from('kpi_template_metrics').insert(payload).select();
+    if (error) throw error;
+    designerTargetTemplate.value.kpi_template_metrics.push(...(data || []));
+    showAiDesignerModal.value = false;
+  } catch (e) {
+    designerError.value = e.message || 'Error al guardar los KPIs en la plantilla.';
+  }
+};
 </script>
 
 <style scoped>
@@ -624,4 +966,72 @@ const saveMeasurements = async () => {
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
 .btn-danger { background: var(--danger); color: #fff; border: none; padding: 10px 20px; border-radius: var(--radius-pill); font-weight: 600; cursor: pointer; }
+
+/* --- Estilos del Asistente y Diseñador de IA --- */
+.template-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.ai-btn { color: #b08d57 !important; background: rgba(176, 141, 87, 0.1); padding: 6px 14px; border-radius: var(--radius-pill); border: 1px solid rgba(176, 141, 87, 0.3); transition: all 0.2s; margin-top: 0 !important; }
+.ai-btn:hover { background: rgba(176, 141, 87, 0.2); transform: translateY(-1px); }
+
+.ai-evaluator-card { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(176, 141, 87, 0.08) 0%, rgba(245, 245, 247, 0.8) 100%); border: 1px solid rgba(176, 141, 87, 0.25); border-radius: 14px; padding: 18px 22px; margin-bottom: 20px; gap: 20px; flex-wrap: wrap; }
+.ai-evaluator-text { flex: 1; min-width: 280px; }
+.ai-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.ai-badge-chip { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #b08d57 0%, #80663f 100%); color: #fff; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 20px; box-shadow: 0 2px 6px rgba(176, 141, 87, 0.3); }
+.checkpoint-label { font-size: 0.82rem; font-weight: 600; color: var(--gold-deep); }
+.ai-evaluator-card h4 { margin: 0 0 4px 0; font-size: 1.05rem; color: var(--ink); }
+.ai-desc { margin: 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+
+.btn-ai-sparkle { background: linear-gradient(135deg, #1d1d1f 0%, #3a3a3c 100%); color: #fff; border: 1px solid rgba(176, 141, 87, 0.5); padding: 10px 20px; border-radius: 22px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.25s ease; box-shadow: 0 3px 10px rgba(0,0,0,0.1); white-space: nowrap; }
+.btn-ai-sparkle:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(176, 141, 87, 0.25); border-color: #b08d57; }
+
+/* Modales Grandes */
+.modal-content.large-modal { max-width: 820px; max-height: 90vh; overflow-y: auto; }
+.modal-header-ai { margin-bottom: 20px; }
+.modal-header-ai h2 { margin: 8px 0 4px 0; }
+
+.expected-metrics-bar { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
+.bar-title { display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; margin-bottom: 8px; }
+.mini-metrics-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mini-metric-chip { background: var(--surface); border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; color: var(--ink); }
+
+.label-with-samples { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+.samples-buttons { display: flex; align-items: center; gap: 6px; }
+.sample-label { font-size: 0.75rem; color: var(--text-tertiary); font-weight: 500; }
+.btn-sample { background: var(--surface); border: 1px solid var(--border); font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; color: var(--gold-deep); font-weight: 600; transition: all 0.15s; }
+.btn-sample:hover { background: var(--gold-light); }
+
+.ai-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: inherit; font-size: 0.88rem; color: var(--ink); background: var(--surface); resize: vertical; line-height: 1.45; }
+.ai-textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light); }
+
+.ai-action-row { margin-top: 14px; display: flex; justify-content: flex-end; }
+.btn-magic-action { background: linear-gradient(135deg, #b08d57 0%, #80663f 100%); color: #fff; border: none; padding: 11px 24px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(176, 141, 87, 0.3); }
+.btn-magic-action:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(176, 141, 87, 0.4); }
+.btn-magic-action:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.ai-results-preview { margin-top: 24px; border-top: 2px dashed var(--border-subtle); padding-top: 20px; }
+.results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.results-header h4 { margin: 0; font-size: 1.05rem; color: var(--ink); }
+.preview-total-badge { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; padding: 4px 12px; border-radius: 14px; font-size: 0.85rem; font-weight: 600; }
+.summary-box { background: rgba(176, 141, 87, 0.08); border-left: 4px solid var(--gold); padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; color: var(--ink); margin-bottom: 16px; line-height: 1.45; }
+
+.preview-table { font-size: 0.82rem; }
+.preview-input { width: 100%; padding: 5px 7px; border: 1px solid var(--border); border-radius: 5px; font-size: 0.8rem; font-family: inherit; }
+.preview-input.pct { max-width: 60px; font-weight: 700; }
+.preview-select { padding: 5px; border-radius: 5px; font-size: 0.8rem; }
+
+.apply-cta-box { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); gap: 16px; flex-wrap: wrap; }
+.apply-cta-box p { margin: 0; font-size: 0.8rem; color: var(--text-tertiary); }
+
+/* Diseñador con IA */
+.input-with-action { display: flex; gap: 10px; align-items: center; }
+.designer-role-select { flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; font-family: inherit; background: var(--surface); }
+.designer-proposals-box { margin-top: 20px; }
+.section-title { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 10px; }
+.kpi-proposal-card { display: flex; gap: 12px; align-items: flex-start; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 10px; }
+.proposal-check { margin-top: 6px; transform: scale(1.15); cursor: pointer; }
+.proposal-fields { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.kpi-name-field { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600; font-size: 0.88rem; }
+.proposal-meta-row { display: flex; gap: 8px; align-items: center; }
+.meta-tag { font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 600; }
+.meta-field { max-width: 120px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; font-weight: 600; }
+.type-field { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; }
 </style>

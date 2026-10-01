@@ -590,6 +590,83 @@ def generate_kpis(request: Request, req: GenerateKpiRequest, user=Depends(verify
         print(f"Error generando KPIs: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+class EvaluateKpiItem(BaseModel):
+    id: str
+    name: str
+    meta_label: str
+    meta_type: Optional[str] = "percentage"
+
+class EvaluateKpiRequest(BaseModel):
+    role_name: str
+    area_name: Optional[str] = ""
+    period_label: Optional[str] = ""
+    metrics: List[EvaluateKpiItem]
+    performance_text: str
+
+EVALUATE_KPI_SYSTEM = """Eres el Auditor de Rendimiento y Evaluación de KPIs de Elite Nutrition.
+Tu tarea es analizar el reporte de desempeño o resumen semanal provisto por el líder y contrastarlo contra las métricas esperadas para calcular el cumplimiento de forma justa, matemática y constructiva.
+
+Para cada métrica en la lista:
+1. Extrae el valor realizado del texto (realizado_raw), por ejemplo: "$18.500.000", "125 chats", "2.8 min", "0 errores". Si no se menciona explícitamente, infiérelo del tono general o usa el valor esperado.
+2. Calcula el porcentaje matemático de cumplimiento (percentage: número entero entre 0 y 150) respecto a meta_label.
+3. Asigna estado: "cumpliendo" si percentage >= 90, o "revisar" si percentage < 90.
+4. Escribe una nota breve, objetiva y útil (notes) que sirva de retroalimentación para el colaborador.
+
+Responde EXCLUSIVAMENTE en JSON válido con este formato:
+{
+  "results": [
+    {
+      "metric_id": "id_de_la_metrica",
+      "realizado_raw": "valor_encontrado",
+      "percentage": 95,
+      "estado": "cumpliendo",
+      "notes": "explicación objetiva"
+    }
+  ],
+  "average": 95,
+  "summary": "Resumen ejecutivo del corte y recomendación gerencial para el 1 a 1."
+}"""
+
+@app.post("/api/v1/evaluate-kpis")
+@limiter.limit("10/minute")
+def evaluate_kpis(request: Request, req: EvaluateKpiRequest, user=Depends(verify_jwt)):
+    if not anthropic:
+        raise HTTPException(status_code=500, detail="Anthropic no configurado en backend")
+    
+    user_prompt = f"""Cargo: {req.role_name} ({req.area_name})
+Periodo / Corte: {req.period_label}
+Métricas a evaluar:
+{json.dumps([m.dict() for m in req.metrics], ensure_ascii=False, indent=2)}
+
+Reporte semanal / Notas del líder:
+\"\"\"
+{req.performance_text}
+\"\"\""""
+
+    try:
+        ai_response = anthropic.messages.create(
+            model=claude_model,
+            max_tokens=1500,
+            system=EVALUATE_KPI_SYSTEM,
+            messages=[{"role": "user", "content": user_prompt}]
+        )
+        text_block = next((b for b in ai_response.content if b.type == 'text'), None)
+        if not text_block:
+            raise HTTPException(status_code=502, detail="No se obtuvo respuesta del modelo")
+        
+        raw_json = text_block.text.strip()
+        if raw_json.startswith("```"):
+            lines = raw_json.split("\n")
+            if lines[0].startswith("```"): lines = lines[1:]
+            if lines[-1].startswith("```"): lines = lines[:-1]
+            raw_json = "\n".join(lines).strip()
+
+        return json.loads(raw_json)
+    except Exception as e:
+        print(f"Error evaluando KPIs con IA: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # --- Módulo de Ingesta y Procesamiento de Flujos ---
 class ExtractWorkflowRequest(BaseModel):
     roleId: str
