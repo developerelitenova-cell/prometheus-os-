@@ -1024,8 +1024,8 @@ const publishNews = async () => {
     const { error: insertError } = await supabase.from('corporate_news').insert({
       title: newsForm.value.title,
       image_url: imageUrl,
-      start_date: newsForm.value.start_date,
-      end_date: newsForm.value.end_date,
+      start_date: newsForm.value.start_date || new Date().toISOString().split('T')[0],
+      end_date: newsForm.value.end_date ? newsForm.value.end_date : null,
       created_by: userData.user.id
     });
     
