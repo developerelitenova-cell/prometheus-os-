@@ -1179,7 +1179,8 @@ const sendMessage = async () => {
         message: text,
         roleId: currentRole.value.id,
         roleName: currentRole.value.name,
-        roleContext: roleContextStr.value
+        roleContext: roleContextStr.value,
+        userId: currentProfile.value?.id
       })
     });
 

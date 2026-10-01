@@ -167,21 +167,29 @@ def run_get_area_audit(area_name: str, supabase) -> Dict[str, Any]:
     }
 
 def run_get_role_details(role_name: str, supabase) -> Dict[str, Any]:
-    res = supabase.table("roles").select("id, name, area_id, access_level, objective, areas(name)").ilike("name", f"%{role_name}%").limit(1).execute()
+    res = supabase.table("roles").select("id, name, area_id, access_level, objective, areas(name)").ilike("name", f"%{role_name}%").limit(5).execute()
     if not res.data:
         return {"message": f"No se encontró el cargo '{role_name}'."}
 
-    role = res.data[0]
-    wf = supabase.table("role_workflows").select("*").eq("role_id", role["id"]).maybe_single().execute()
+    role_ids = [r["id"] for r in res.data]
+    wf_res = supabase.table("role_workflows").select("*").in_("role_id", role_ids).execute()
+    mapped_map = {w["role_id"]: w for w in (wf_res.data or [])}
+
+    role = next((r for r in res.data if r["id"] in mapped_map), res.data[0])
+    wf = mapped_map.get(role["id"])
+
     kp = supabase.table("kpi_role_templates").select("*").eq("role_id", role["id"]).execute()
     users = supabase.table("profiles").select("full_name, approval_status").eq("role_id", role["id"]).execute()
+    mems = supabase.table("corporate_memory").select("content, metadata").limit(20).execute()
+    role_memories = [m["content"] for m in (mems.data or []) if (m.get("metadata") or {}).get("role_id") == role["id"]]
 
     return {
         "nombre": role["name"],
         "area": role.get("areas", {}).get("name") if role.get("areas") else "No asignada",
         "nivel_acceso": role.get("access_level"),
         "objetivo": role.get("objective") or "Sin objetivo definido",
-        "flujo_mapeado": wf.data if wf.data else "No mapeado",
+        "flujo_mapeado": wf if wf else "No mapeado",
         "kpis": kp.data or [],
-        "colaboradores": users.data or []
+        "colaboradores": users.data or [],
+        "memorias_y_acuerdos_del_cargo": role_memories
     }

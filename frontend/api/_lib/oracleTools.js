@@ -195,30 +195,49 @@ async function runGetRoleDetails(roleName, supabase) {
     .from('roles')
     .select('id, name, area_id, access_level, objective, areas(name)')
     .ilike('name', `%${roleName}%`)
-    .limit(1);
+    .limit(5);
 
   if (!roles || roles.length === 0) {
     return { message: `No se encontró ningún cargo que coincida con "${roleName}".` };
   }
 
-  const role = roles[0];
-  const [workflowRes, kpiRes, usersRes] = await Promise.all([
-    supabase.from('role_workflows').select('*').eq('role_id', role.id).maybeSingle(),
+  // Si hay roles duplicados por área, buscar cuál tiene flujo de trabajo mapeado
+  const roleIds = roles.map(r => r.id);
+  const { data: workflows } = await supabase
+    .from('role_workflows')
+    .select('*')
+    .in('role_id', roleIds);
+
+  const mappedMap = new Map((workflows || []).map(w => [w.role_id, w]));
+  const role = roles.find(r => mappedMap.has(r.id)) || roles[0];
+  const workflowData = mappedMap.get(role.id) || null;
+
+  const [kpiRes, usersRes, memoryRes] = await Promise.all([
     supabase.from('kpi_role_templates').select('*').eq('role_id', role.id),
-    supabase.from('profiles').select('full_name, approval_status').eq('role_id', role.id)
+    supabase.from('profiles').select('full_name, approval_status').eq('role_id', role.id),
+    supabase.from('corporate_memory').select('content, metadata').limit(20)
   ]);
+
+  const roleMemories = (memoryRes.data || [])
+    .filter(m => m.metadata?.role_id === role.id)
+    .map(m => m.content);
 
   return {
     nombre: role.name,
     area: role.areas?.name || 'No asignada',
     nivel_acceso: role.access_level,
     objetivo: role.objective || 'Sin objetivo definido',
-    flujo_mapeado: workflowRes.data ? {
-      tareas: workflowRes.data.tasks || [],
-      herramientas: workflowRes.data.tools || [],
-      kpis: workflowRes.data.kpis || []
+    flujo_mapeado: workflowData ? {
+      entradas_insumos: workflowData.inputs || [],
+      tareas_operativas: workflowData.tasks || [],
+      herramientas_utilizadas: workflowData.tools_used || [],
+      cuellos_de_botella: workflowData.bottlenecks || [],
+      entregables_salidas: workflowData.outputs || [],
+      kpis_asociados: workflowData.kpis || [],
+      reglas_de_decision: workflowData.decision_rules || []
     } : 'No mapeado',
     indicadores_kpi: kpiRes.data || [],
-    colaboradores_asignados: usersRes.data || []
+    colaboradores_asignados: usersRes.data || [],
+    memorias_y_acuerdos_del_cargo: roleMemories
   };
 }
