@@ -51,7 +51,7 @@
           </div>
           <div class="template-link" v-else>
             <span class="linked-role" v-if="template.kpi_role_template_links.length">
-              {{ template.kpi_role_template_links.map(l => l.roles?.name).join(', ') }}
+              {{ Array.from(new Set(template.kpi_role_template_links.map(l => l.roles?.name).filter(Boolean))).join(', ') }}
             </span>
             <span class="linked-role muted" v-else>Sin vincular a un cargo todavía</span>
           </div>
@@ -821,6 +821,12 @@ const fetchTemplates = async () => {
   (data || []).forEach(t => {
     t.kpi_template_metrics.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
     t._roleToAdd = null;
+    const seenRoleIds = new Set();
+    t.kpi_role_template_links = (t.kpi_role_template_links || []).filter(l => {
+      if (!l.role_id || seenRoleIds.has(l.role_id)) return false;
+      seenRoleIds.add(l.role_id);
+      return true;
+    });
   });
   templates.value = data || [];
 };
@@ -845,7 +851,15 @@ const fetchRolesAndProfiles = async () => {
     supabase.from('profiles').select('id,full_name,role_id').order('full_name'),
     supabase.from('areas').select('id,name').order('name')
   ]);
-  if (!rolesRes.error) allRoles.value = rolesRes.data || [];
+  if (!rolesRes.error) {
+    const seenRoleNames = new Set();
+    allRoles.value = (rolesRes.data || []).filter(r => {
+      const key = `${r.name?.toLowerCase().trim()}::${r.area_id}`;
+      if (seenRoleNames.has(key)) return false;
+      seenRoleNames.add(key);
+      return true;
+    });
+  }
   if (!profRes.error) allProfiles.value = profRes.data || [];
   if (!areaRes.error) allAreas.value = areaRes.data || [];
 };

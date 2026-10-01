@@ -1248,7 +1248,13 @@ const openEditProfile = async (member) => {
       .from('roles')
       .select('id, name, area_id, access_level, areas(name)')
       .order('name');
-    availableRoles.value = rolesData || [];
+    const seenRoleKeys = new Set();
+    availableRoles.value = (rolesData || []).filter(r => {
+      const key = `${r.name?.toLowerCase().trim()}::${r.area_id}`;
+      if (seenRoleKeys.has(key)) return false;
+      seenRoleKeys.add(key);
+      return true;
+    });
   }
   
   showEditProfileModal.value = true;

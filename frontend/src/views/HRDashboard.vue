@@ -710,7 +710,13 @@ const loadData = async () => {
     .from('roles')
     .select('id, name, access_level, areas(name)')
     .order('name');
-  rolesList.value = rolesData || [];
+  const seenRoleKeys = new Set();
+  rolesList.value = (rolesData || []).filter(r => {
+    const key = `${r.name?.toLowerCase().trim()}::${r.areas?.name || ''}`;
+    if (seenRoleKeys.has(key)) return false;
+    seenRoleKeys.add(key);
+    return true;
+  });
 
   // 2. Colaboradores / Empleados (intentar vía backend para obtener correos de Auth, fallback a Supabase)
   try {
