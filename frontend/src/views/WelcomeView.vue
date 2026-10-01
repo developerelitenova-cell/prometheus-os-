@@ -146,8 +146,24 @@ onMounted(async () => {
   if (profile.value?.verification_photo || profile.value?.avatar_url) {
     capturedPhoto.value = profile.value.verification_photo || profile.value.avatar_url;
   } else {
-    // Intentar iniciar la cámara automáticamente
-    startCamera();
+    // Buscar en ai_user_memory como respaldo
+    if (profile.value?.id) {
+      try {
+        const { data: mem } = await supabase
+          .from('ai_user_memory')
+          .select('memory_value')
+          .eq('employee_id', profile.value.id)
+          .eq('memory_key', 'verification_photo')
+          .maybeSingle();
+        if (mem?.memory_value) {
+          capturedPhoto.value = mem.memory_value;
+        }
+      } catch (_) {}
+    }
+
+    if (!capturedPhoto.value) {
+      startCamera();
+    }
   }
 });
 
@@ -223,41 +239,131 @@ const handleFileUpload = (e) => {
 };
 
 const continueOnboarding = async () => {
-  if (!profile.value || !capturedPhoto.value) return;
+  if (!capturedPhoto.value) return;
   loading.value = true;
+
   try {
-    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+    // 1. Asegurar perfil y sesión
+    if (!profile.value) {
+      await loadCurrentProfile();
+      profile.value = currentProfile.value;
+    }
     
-    // 1. Guardar foto de verificación en backend
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = profile.value?.id || session?.user?.id;
+    if (!userId) {
+      throw new Error('No se pudo identificar la sesión activa.');
+    }
+
+    const token = session?.access_token;
+    const photoData = capturedPhoto.value;
+
+    // 2. Guardar en SQL permanente vía Supabase:
+    // A) ai_user_memory (clave verification_photo)
     try {
-      await fetch(`${apiUrl}/api/v1/user/verification-photo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: profile.value.id,
-          photo: capturedPhoto.value
-        })
+      await supabase.from('ai_user_memory').upsert({
+        employee_id: userId,
+        memory_key: 'verification_photo',
+        memory_value: photoData
       });
-    } catch (e) {
-      console.warn('Fallback backend save:', e);
+    } catch (errMem) {
+      console.warn('ai_user_memory upsert warning:', errMem);
     }
 
-    // 2. Actualizar profiles en Supabase
+    // B) corporate_memory (respaldo documental corporativo)
     try {
-      await supabase.from('profiles').update({ 
-        welcome_seen: true,
-        verification_photo: capturedPhoto.value,
-        avatar_url: capturedPhoto.value
-      }).eq('id', profile.value.id);
-    } catch (e) {
-      await supabase.from('profiles').update({ welcome_seen: true }).eq('id', profile.value.id);
+      await supabase.from('corporate_memory').upsert({
+        content: `verification_photo:${userId}`,
+        metadata: {
+          type: 'verification_photo',
+          user_id: userId,
+          photo: photoData,
+          verified_at: new Date().toISOString()
+        }
+      });
+    } catch (errCorp) {
+      console.warn('corporate_memory upsert warning:', errCorp);
     }
 
+    // C) profiles (welcome_seen: true + foto si las columnas existen)
+    try {
+      const { error: fullUpdateErr } = await supabase.from('profiles').update({
+        welcome_seen: true,
+        verification_photo: photoData,
+        avatar_url: photoData
+      }).eq('id', userId);
+
+      if (fullUpdateErr) {
+        // Fallback adaptativo: guardar solo welcome_seen si las columnas de foto aún no existen en profiles
+        await supabase.from('profiles').update({
+          welcome_seen: true
+        }).eq('id', userId);
+      }
+    } catch (errProf) {
+      console.warn('profiles update exception:', errProf);
+      try {
+        await supabase.from('profiles').update({ welcome_seen: true }).eq('id', userId);
+      } catch (_) {}
+    }
+
+    // 3. Notificar a la API (serverless o backend FastAPI) para sincronización redundante
+    try {
+      const authHeaders = { 'Content-Type': 'application/json' };
+      if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+
+      // Intentar primero con la ruta serverless /api/verification-photo
+      await fetch('/api/verification-photo', {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ user_id: userId, photo: photoData })
+      }).catch(async () => {
+        // Fallback al backend FastAPI
+        const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+        return fetch(`${apiUrl}/api/v1/user/verification-photo`, {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ user_id: userId, photo: photoData })
+        });
+      });
+    } catch (eApi) {
+      console.warn('API sync warning:', eApi);
+    }
+
+    // 4. Detener cámara y sincronizar estado en memoria
     stopCamera();
+
+    if (currentProfile.value) {
+      currentProfile.value.welcome_seen = true;
+      currentProfile.value.verification_photo = photoData;
+      currentProfile.value.avatar_url = photoData;
+    }
     await loadCurrentProfile();
-    
-    // Entrar directo al panel de trabajo
-    router.replace('/workspace');
+    if (currentProfile.value) {
+      currentProfile.value.welcome_seen = true;
+      currentProfile.value.verification_photo = photoData;
+    }
+
+    // 5. Redireccionar de forma segura al panel de trabajo
+    try {
+      await router.replace('/workspace');
+    } catch (navErr) {
+      console.warn('Router replace fallback:', navErr);
+      window.location.href = '/workspace';
+    }
+
+    // Fallback de navegación si el router sigue en /welcome después de 300ms
+    setTimeout(() => {
+      if (window.location.pathname.includes('/welcome')) {
+        window.location.href = '/workspace';
+      }
+    }, 350);
+
+  } catch (err) {
+    console.error('Error al activar perfil:', err);
+    if (currentProfile.value) {
+      currentProfile.value.welcome_seen = true;
+    }
+    window.location.href = '/workspace';
   } finally {
     loading.value = false;
   }

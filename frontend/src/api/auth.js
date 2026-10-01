@@ -20,7 +20,29 @@ export const loadCurrentProfile = async () => {
     .eq('id', session.user.id)
     .single()
 
-  currentProfile.value = error ? null : data
+  if (error || !data) {
+    currentProfile.value = null
+    authReady.value = true
+    return null
+  }
+
+  // Enriquecer con foto de verificación si no está en la tabla profiles
+  if (!data.verification_photo && !data.avatar_url) {
+    try {
+      const { data: mem } = await supabase
+        .from('ai_user_memory')
+        .select('memory_value')
+        .eq('employee_id', session.user.id)
+        .eq('memory_key', 'verification_photo')
+        .maybeSingle()
+      if (mem?.memory_value) {
+        data.verification_photo = mem.memory_value
+        data.avatar_url = mem.memory_value
+      }
+    } catch (_) {}
+  }
+
+  currentProfile.value = data
   authReady.value = true
   return currentProfile.value
 }

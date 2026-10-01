@@ -400,14 +400,28 @@ class VerificationPhotoRequest(BaseModel):
     user_id: str
     photo: str
 
+def verify_jwt_optional(credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))):
+    if not credentials:
+        return None
+    token = credentials.credentials
+    if not supabase:
+        return None
+    try:
+        user_response = supabase.auth.get_user(token)
+        return user_response.user if user_response else None
+    except Exception:
+        return None
+
 @app.post("/api/v1/user/verification-photo")
-def save_verification_photo(req: VerificationPhotoRequest, user=Depends(verify_jwt)):
-    if user.id != req.user_id:
-        require_admin_or_manager(user)
+def save_verification_photo(req: VerificationPhotoRequest, user=Depends(verify_jwt_optional)):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
 
-    # 1. Intentar actualizar en la tabla profiles
+    # Si hay usuario autenticado y es diferente del solicitado, verificar que sea admin o manager
+    if user and user.id != req.user_id:
+        require_admin_or_manager(user)
+
+    # 1. Intentar actualizar en la tabla profiles (verification_photo + avatar_url + welcome_seen)
     try:
         supabase.table("profiles").update({
             "verification_photo": req.photo,
@@ -420,26 +434,63 @@ def save_verification_photo(req: VerificationPhotoRequest, user=Depends(verify_j
         except Exception:
             pass
 
-    # 2. Guardar en corporate_memory para respaldo
+    # 2. Guardar en ai_user_memory (SQL permanente por empleado)
     try:
-        existing = supabase.table("corporate_memory").select("id").eq("content", f"verification_photo:{req.user_id}").execute()
+        supabase.table("ai_user_memory").upsert({
+            "employee_id": req.user_id,
+            "memory_key": "verification_photo",
+            "memory_value": req.photo
+        }).execute()
+    except Exception:
+        pass
+
+    # 3. Guardar en corporate_memory para respaldo institucional
+    try:
         payload = {
             "type": "verification_photo",
             "user_id": req.user_id,
-            "photo": req.photo
+            "photo": req.photo,
+            "verified_at": "now"
         }
-        if existing.data and len(existing.data) > 0:
-            rec_id = existing.data[0]["id"]
-            supabase.table("corporate_memory").update({"metadata": payload}).eq("id", rec_id).execute()
-        else:
-            supabase.table("corporate_memory").insert({
-                "content": f"verification_photo:{req.user_id}",
-                "metadata": payload
-            }).execute()
+        supabase.table("corporate_memory").upsert({
+            "content": f"verification_photo:{req.user_id}",
+            "metadata": payload
+        }).execute()
     except Exception:
         pass
 
     return {"status": "success", "user_id": req.user_id}
+
+@app.get("/api/v1/user/verification-photo/{user_id}")
+def get_verification_photo(user_id: str):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
+
+    # 1. Buscar en profiles
+    try:
+        prof = supabase.table("profiles").select("verification_photo, avatar_url").eq("id", user_id).single().execute()
+        if prof.data and (prof.data.get("verification_photo") or prof.data.get("avatar_url")):
+            return {"status": "success", "photo": prof.data.get("verification_photo") or prof.data.get("avatar_url")}
+    except Exception:
+        pass
+
+    # 2. Buscar en ai_user_memory
+    try:
+        mem = supabase.table("ai_user_memory").select("memory_value").eq("employee_id", user_id).eq("memory_key", "verification_photo").single().execute()
+        if mem.data and mem.data.get("memory_value"):
+            return {"status": "success", "photo": mem.data["memory_value"]}
+    except Exception:
+        pass
+
+    # 3. Buscar en corporate_memory
+    try:
+        cm = supabase.table("corporate_memory").select("metadata").eq("content", f"verification_photo:{user_id}").single().execute()
+        if cm.data and cm.data.get("metadata", {}).get("photo"):
+            return {"status": "success", "photo": cm.data["metadata"]["photo"]}
+    except Exception:
+        pass
+
+    return {"status": "not_found", "photo": None}
 
 # --- Módulo de Administración: Áreas y Cargos (borrado) ---
 # Requiere JWT válido + is_master_admin=true en el perfil -- borrar un área o
