@@ -2,13 +2,13 @@
   <div class="welcome-container">
     <TechNodesBackground />
     <div class="welcome-card glass-panel">
-      <img src="../assets/elite-nova-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
+      <img src="../assets/elite-nova-logo.png" alt="NOVA WORK" class="brand-lockup" />
       
       <div class="status-icon">
         <span class="material-symbols-outlined text-4xl text-[#d4b06a]">verified_user</span>
       </div>
 
-      <h1 class="welcome-title">¡Bienvenido a PROMETHEUS OS!</h1>
+      <h1 class="welcome-title">¡Bienvenido a NOVA WORK!</h1>
       
       <p class="subtitle" v-if="profile">
         Acceso verificado como <strong>{{ profile.roles?.name || 'Colaborador' }}</strong>

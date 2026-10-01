@@ -9,7 +9,7 @@ const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
 // Instrucciones fijas del Motor Analítico: idénticas para los ~70 roles de la empresa,
 // así que se marcan como cacheables (cache_control) para que Anthropic reutilice este
 // bloque entre evaluaciones de distintos roles/periodos en vez de cobrarlo cada vez.
-const SYSTEM_INSTRUCTIONS = `Eres el Motor Analítico de PROMETHEUS OS, encargado de generar evaluaciones de desempeño (Balanced Scorecard) objetivas para el Gemelo Digital Corporativo de Elite Nutrition.
+const SYSTEM_INSTRUCTIONS = `Eres el Motor Analítico de NOVA WORK, encargado de generar evaluaciones de desempeño (Balanced Scorecard) objetivas para el Gemelo Digital Corporativo de Elite Nutrition.
 
 Vas a recibir en el mensaje del usuario los datos reales de un cargo específico y el periodo a evaluar. Con base ÚNICAMENTE en esa información, genera la evaluación.
 

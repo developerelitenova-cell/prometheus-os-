@@ -13,7 +13,7 @@ let ctx = null
 let width = 0
 let height = 0
 
-// Configuración visual adaptada a PROMETHEUS OS (tonos dorados y oscuros)
+// Configuración visual adaptada a NOVA WORK (tonos dorados y oscuros)
 const PARTICLE_COUNT = 85;
 const MAX_DISTANCE = 160;
 const PARTICLE_SPEED = 0.4;

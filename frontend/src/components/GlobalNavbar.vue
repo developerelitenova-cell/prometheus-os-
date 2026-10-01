@@ -9,7 +9,7 @@
         </router-link>
         <div class="hidden sm:block">
           <h1 class="text-[15px] font-bold tracking-tight text-[#1d1d1f] leading-none">Elite Nutrition</h1>
-          <p class="text-[9px] font-semibold text-[#86868b] tracking-widest uppercase mt-0.5">PROMETHEUS OS</p>
+          <p class="text-[9px] font-semibold text-[#86868b] tracking-widest uppercase mt-0.5">NOVA WORK</p>
         </div>
       </div>
 

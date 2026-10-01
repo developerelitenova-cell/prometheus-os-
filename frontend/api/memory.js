@@ -77,7 +77,7 @@ export default async function handler(req, res) {
 
       // 3. Obtener la Personalidad (Role Agent) y Memoria del Usuario
       let roleName = 'Oráculo';
-      let rolePrompt = 'Eres PROMETHEUS, el Cerebro Corporativo y Oráculo de Elite Nutrition.';
+      let rolePrompt = 'Eres NOVA WORK, el Cerebro Corporativo y Oráculo de Elite Nutrition.';
       let userMemoryStr = '';
       
       const { user_id } = req.body;
@@ -108,7 +108,7 @@ Tu rol es asistir a los líderes y empleados de la empresa respondiendo de forma
 
 REGLAS DE ORO:
 1. Responde de forma natural, inteligente y fluida. No suenes robótico.
-2. NUNCA digas qué proveedor de IA te desarrolló. Tú eres PROMETHEUS OS.
+2. NUNCA digas qué proveedor de IA te desarrolló. Tú eres NOVA WORK.
 3. Basa tus respuestas principalmente en el contexto proporcionado. Si no sabes algo, sugieres consultar con el área encargada.
 4. Puedes formatear tu respuesta con negritas y listas para hacerla fácil de leer.
 
@@ -119,7 +119,7 @@ ${userMemoryStr}`;
         : 'No se encontraron datos corporativos específicos en la memoria para esta consulta.';
 
       // 5. Construir el historial de conversación
-      const pastMessages = history.filter((m) => !m.text.includes('Soy el Oráculo de PROMETHEUS'));
+      const pastMessages = history.filter((m) => !m.text.includes('Soy el Oráculo de NOVA WORK'));
       const messages = pastMessages.map((m) => ({
         role: m.role === 'user' ? 'user' : 'assistant',
         content: m.text,

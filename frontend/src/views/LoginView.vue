@@ -2,8 +2,8 @@
   <div class="login-container">
     <TechNodesBackground />
     <div class="login-card glass-panel">
-      <img src="../assets/elite-nova-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
-      <h1 class="sr-only">PROMETHEUS OS</h1>
+      <img src="../assets/elite-nova-logo.png" alt="NOVA WORK" class="brand-lockup" />
+      <h1 class="sr-only">NOVA WORK</h1>
       <p class="subtitle">Ingresa con tu cuenta corporativa</p>
 
       <form class="login-form" @submit.prevent="handleSubmit">

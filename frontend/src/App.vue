@@ -19,8 +19,8 @@ Info: {{ globalError.info }}
     </router-view>
 
     <!-- Marca de agua global -->
-    <router-link v-if="showBrandMark && !globalError" to="/" class="global-brand-mark" title="PROMETHEUS OS">
-      <img src="@/assets/elite-nova-logo.png" alt="PROMETHEUS OS" />
+    <router-link v-if="showBrandMark && !globalError" to="/" class="global-brand-mark" title="NOVA WORK">
+      <img src="@/assets/elite-nova-logo.png" alt="NOVA WORK" />
     </router-link>
 
     <!-- Modal Global de Eventos Obligatorios -->

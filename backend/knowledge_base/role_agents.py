@@ -12,7 +12,7 @@ class RoleAgent:
         self.anthropic = anthropic_client
         self.claude_model = claude_model
         
-        self.system_prompt = "Eres el Oráculo, un asistente de IA para PROMETHEUS OS."
+        self.system_prompt = "Eres el Oráculo, un asistente de IA para NOVA WORK."
         self.context = []
 
     def load_context(self):

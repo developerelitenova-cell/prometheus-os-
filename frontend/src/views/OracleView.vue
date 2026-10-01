@@ -484,7 +484,7 @@ const openDocsModal = async (role) => {
 const messages = ref([
   {
     role: 'ai',
-    text: 'Saludos. Soy el Oráculo de PROMETHEUS OS. He indexado la base de conocimiento de la corporación. ¿Qué deseas consultar sobre el ecosistema de la empresa?'
+    text: 'Saludos. Soy el Oráculo de NOVA WORK. He indexado la base de conocimiento de la corporación. ¿Qué deseas consultar sobre el ecosistema de la empresa?'
   }
 ]);
 

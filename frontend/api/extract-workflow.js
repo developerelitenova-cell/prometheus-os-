@@ -8,7 +8,7 @@ const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
 
 // Instrucciones fijas del extractor: idénticas para cualquier rol, así que se cachean
 // (cache_control) para reutilizarse entre mapeos de distintos roles.
-const SYSTEM_INSTRUCTIONS = `Eres el Motor de Mapeo de Flujos de PROMETHEUS OS. Tu tarea es leer la transcripción de una entrevista o los documentos operativos de un cargo, y extraer de ahí una estructura de flujo de trabajo (workflow) real y precisa.
+const SYSTEM_INSTRUCTIONS = `Eres el Motor de Mapeo de Flujos de NOVA WORK. Tu tarea es leer la transcripción de una entrevista o los documentos operativos de un cargo, y extraer de ahí una estructura de flujo de trabajo (workflow) real y precisa.
 
 Vas a recibir en el mensaje del usuario el texto fuente (transcripción de entrevista, manuales de cargo, procesos documentados, etc.) para un cargo específico.
 

@@ -595,7 +595,7 @@ class ExtractWorkflowRequest(BaseModel):
     roleId: str
     sourceText: str
 
-SYSTEM_INSTRUCTIONS = """Eres el Motor de Mapeo de Flujos de PROMETHEUS OS. Tu tarea es leer la transcripción de una entrevista o los documentos operativos de un cargo, y extraer de ahí una estructura de flujo de trabajo (workflow) real y precisa.
+SYSTEM_INSTRUCTIONS = """Eres el Motor de Mapeo de Flujos de NOVA WORK. Tu tarea es leer la transcripción de una entrevista o los documentos operativos de un cargo, y extraer de ahí una estructura de flujo de trabajo (workflow) real y precisa.
 
 Vas a recibir en el mensaje del usuario el texto fuente (transcripción de entrevista, manuales de cargo, procesos documentados, etc.) para un cargo específico.
 

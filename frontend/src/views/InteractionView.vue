@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">PROMETHEUS OS</div>
+        <div class="brand" @click="router.push('/')">NOVA WORK</div>
       </div>
       
       <div class="header-center">

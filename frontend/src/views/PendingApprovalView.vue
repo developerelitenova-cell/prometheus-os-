@@ -2,7 +2,7 @@
   <div class="pending-container">
     <TechNodesBackground />
     <div class="pending-card glass-panel">
-      <img src="../assets/elite-nova-logo.png" alt="PROMETHEUS OS" class="brand-lockup" />
+      <img src="../assets/elite-nova-logo.png" alt="NOVA WORK" class="brand-lockup" />
       <img src="../assets/hourglass.jpg" alt="Pendiente" class="status-icon-img" />
       <h1>Registro exitoso</h1>
       <p class="subtitle">Tu solicitud de acceso quedó registrada.</p>

@@ -316,13 +316,13 @@
 
         </div>
 
-        <!-- RIGHT COLUMN (3 cols): Asistente IA Prometheus -->
+        <!-- RIGHT COLUMN (3 cols): Asistente IA Nova Work -->
         <div class="lg:col-span-3 h-[550px] lg:h-[calc(100vh-120px)] static lg:sticky lg:top-[90px] flex flex-col bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
           <div class="px-5 py-4 border-b border-[#e5e5ea] bg-[#f5f5f7]/50 flex justify-between items-center">
             <div>
               <h3 class="text-[15px] font-semibold text-[#1d1d1f] flex items-center gap-2">
                 <span class="material-symbols-outlined text-[#b08d57]">smart_toy</span>
-                Agente Prometheus
+                Agente Nova Work
               </h3>
               <p class="text-[11px] text-[#86868b] mt-1 font-medium flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#34c759]"></span>
@@ -337,7 +337,7 @@
           <!-- Chat Messages -->
           <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f5f5f7]/20" ref="chatContainer">
             <div v-if="messages.length === 0" class="text-center text-[13px] text-[#86868b] mt-10">
-              Hola, soy la IA de Prometheus. ¿En qué te puedo asistir hoy?
+              Hola, soy la IA de Nova Work. ¿En qué te puedo asistir hoy?
             </div>
             
             <div v-for="(msg, index) in messages" :key="index" 
@@ -558,8 +558,8 @@ const handleSignOut = async () => {
 
 // --- Notificaciones ---
 
-const DISMISSED_MESSAGES_KEY = 'prometheus_os_dismissed_messages';
-const HIDDEN_MESSAGES_KEY = 'prometheus_os_hidden_messages';
+const DISMISSED_MESSAGES_KEY = 'nova_work_dismissed_messages';
+const HIDDEN_MESSAGES_KEY = 'nova_work_hidden_messages';
 
 const loadDismissed = () => {
   try {
@@ -1190,7 +1190,7 @@ const sendMessage = async () => {
       messages.value.push({ sender: 'ai', text: `Error: ${data.error}` });
     }
   } catch (error) {
-    messages.value.push({ sender: 'ai', text: 'Error de conexión con PROMETHEUS OS AI.' });
+    messages.value.push({ sender: 'ai', text: 'Error de conexión con NOVA WORK AI.' });
   } finally {
     isTyping.value = false;
     scrollToBottom();
