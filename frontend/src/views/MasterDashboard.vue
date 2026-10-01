@@ -107,9 +107,6 @@
           <div class="lg:col-span-7 flex flex-col gap-space-md">
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-2xl font-bold text-[#1d1d1f]">Mando de Procesos (Flujos)</h3>
-              <router-link to="/process" class="text-sm font-semibold text-[#b08d57] hover:text-[#8a6d3d] flex items-center gap-1">
-                Ir a Procesos <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </router-link>
             </div>
             
             <div class="bg-white rounded-3xl border border-[#e5e5ea] shadow-sm p-2 flex flex-col gap-2">
