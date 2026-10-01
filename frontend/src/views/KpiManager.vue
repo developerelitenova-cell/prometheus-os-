@@ -20,7 +20,11 @@
         <button class="btn-primary" @click="openNewTemplate">+ Nueva Plantilla de Área</button>
       </div>
 
-      <div v-for="template in templates" :key="template.id" class="template-card glass-panel">
+      <div v-if="visibleTemplates.length === 0" class="empty-state">
+        <p>No se encontraron plantillas de KPIs asignadas a tu área.</p>
+      </div>
+
+      <div v-for="template in visibleTemplates" :key="template.id" class="template-card glass-panel">
         <div class="template-header">
           <div>
             <h3>{{ template.area_label }}</h3>
@@ -820,6 +824,17 @@ const fetchTemplates = async () => {
   });
   templates.value = data || [];
 };
+
+const visibleTemplates = computed(() => {
+  if (isMaster.value) return templates.value;
+  if (!myAreaId.value) return [];
+  const currentAreaName = (currentProfile.value?.roles?.areas?.name || '').toLowerCase();
+  return templates.value.filter(t => {
+    const hasRoleInMyArea = t.kpi_role_template_links?.some(l => l.roles?.area_id === myAreaId.value);
+    const labelMatch = currentAreaName && t.area_label?.toLowerCase().includes(currentAreaName);
+    return hasRoleInMyArea || labelMatch;
+  });
+});
 
 const allProfiles = ref([]);
 const allAreas = ref([]);

@@ -218,8 +218,7 @@ const router = useRouter()
 const route = useRoute()
 
 const isCentroControlActive = computed(() => {
-  const paths = ['/leader', '/kpis', '/events', '/rrhh', '/roles', '/manuals', '/support-contacts'];
-  return paths.some(p => route.path === p || route.path.startsWith(p + '/'));
+  return route.path === '/leader' || route.path.startsWith('/leader/');
 });
 
 const isLoggedIn = ref(false)

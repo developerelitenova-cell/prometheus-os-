@@ -945,8 +945,17 @@
 
             <!-- Por área -->
             <div v-if="newScheduled.target_type === 'area'" class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Área</label>
-              <select v-model="newScheduled.target_area_id"
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Área Destino</label>
+              <!-- Si es Gerente / Líder (no master), su área queda fijada automáticamente -->
+              <div v-if="!isMaster" class="px-3 py-2.5 rounded-xl bg-surface-container border border-surface-container-high text-sm font-semibold text-on-surface flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+                  <span>{{ leaderArea?.name || currentUser?.roles?.areas?.name || 'Mi Área' }}</span>
+                </div>
+                <span class="text-[11px] text-secondary font-normal px-2 py-0.5 rounded bg-surface-container-high">Tu departamento a cargo</span>
+              </div>
+              <!-- Si es Master Admin, puede seleccionar cualquier área de la compañía -->
+              <select v-else v-model="newScheduled.target_area_id"
                 class="px-3 py-2 rounded-xl bg-surface-container border border-surface-container-high focus:border-primary outline-none text-sm">
                 <option disabled value="">Seleccionar área...</option>
                 <option v-for="area in allAreas" :key="area.id" :value="area.id">{{ area.name }}</option>
@@ -1349,12 +1358,20 @@ const isSavingScheduled = ref(false);
 const allAreas = ref([]);
 const allTeamMembers = ref([]);
 
-const targetTypes = [
-  { k: 'all',     l: 'Todos',              icon: 'public' },
-  { k: 'level',   l: 'Por Nivel',          icon: 'layers' },
-  { k: 'area',    l: 'Por Área',           icon: 'corporate_fare' },
-  { k: 'profile', l: 'Personas Específicas', icon: 'person_search' },
-];
+const targetTypes = computed(() => {
+  if (isMaster.value) {
+    return [
+      { k: 'all',     l: 'Toda la Empresa',    icon: 'public' },
+      { k: 'level',   l: 'Por Nivel',          icon: 'layers' },
+      { k: 'area',    l: 'Por Área',           icon: 'corporate_fare' },
+      { k: 'profile', l: 'Personas Específicas', icon: 'person_search' },
+    ];
+  }
+  return [
+    { k: 'area',    l: 'Todo mi Equipo (' + (leaderArea.value?.name || currentUser.value?.roles?.areas?.name || 'Mi Área') + ')', icon: 'corporate_fare' },
+    { k: 'profile', l: 'Personas de mi Equipo', icon: 'person_search' },
+  ];
+});
 
 const newScheduled = ref({
   title: '',
@@ -1363,7 +1380,7 @@ const newScheduled = ref({
   recurrence_value: null,
   due_date: '',
   priority: 'medium',
-  target_type: 'all',
+  target_type: 'area',
   target_role_ids: [],
   target_profile_ids: [],
   target_level: null,
@@ -1371,32 +1388,63 @@ const newScheduled = ref({
 });
 
 const openScheduledModal = async () => {
+  const defaultTargetType = isMaster.value ? 'all' : 'area';
+  const defaultAreaId = currentUser.value?.roles?.area_id || '';
   newScheduled.value = {
     title: '', description: '',
     recurrence_type: 'monthly_day', recurrence_value: null, due_date: '',
-    priority: 'medium', target_type: 'all',
-    target_role_ids: [], target_profile_ids: [], target_level: null, target_area_id: ''
+    priority: 'medium', target_type: defaultTargetType,
+    target_role_ids: [], target_profile_ids: [], target_level: null,
+    target_area_id: !isMaster.value ? defaultAreaId : ''
   };
   showScheduledModal.value = true;
-  // Cargar áreas si no están
-  if (!allAreas.value.length) {
+  // Cargar áreas si no están (solo para master admin)
+  if (isMaster.value && !allAreas.value.length) {
     const { data } = await supabase.from('areas').select('id,name').order('name');
     allAreas.value = data || [];
   }
-  // Usar teamMembers ya cargados
+  // Usar teamMembers ya cargados (restringidos al área para gerentes)
   allTeamMembers.value = teamMembers.value;
 };
 
 const submitScheduled = async () => {
   if (!newScheduled.value.title || !newScheduled.value.recurrence_type) return;
-  if (newScheduled.value.target_type === 'area' && !newScheduled.value.target_area_id) {
-    alert('Por favor selecciona un área.');
-    return;
+
+  if (!isMaster.value) {
+    // Si es gerente / líder, forzar ámbito estrictamente a su departamento
+    if (newScheduled.value.target_type === 'area') {
+      newScheduled.value.target_area_id = currentUser.value?.roles?.area_id || newScheduled.value.target_area_id;
+      if (!newScheduled.value.target_area_id) {
+        alert('No se pudo identificar tu departamento para vincular la orden.');
+        return;
+      }
+    } else if (newScheduled.value.target_type === 'profile') {
+      if (!newScheduled.value.target_profile_ids || newScheduled.value.target_profile_ids.length === 0) {
+        alert('Por favor selecciona al menos una persona de tu equipo.');
+        return;
+      }
+      const allowedIds = new Set(teamMembers.value.map(m => m.id));
+      const hasUnauthorized = newScheduled.value.target_profile_ids.some(id => !allowedIds.has(id));
+      if (hasUnauthorized) {
+        alert('Solo tienes permisos para asignar órdenes a miembros de tu propio equipo.');
+        return;
+      }
+    } else {
+      alert('Solo el Administrador Maestro puede crear órdenes globales o por nivel.');
+      return;
+    }
+  } else {
+    // Es Master Admin
+    if (newScheduled.value.target_type === 'area' && !newScheduled.value.target_area_id) {
+      alert('Por favor selecciona un área.');
+      return;
+    }
+    if (newScheduled.value.target_type === 'profile' && (!newScheduled.value.target_profile_ids || newScheduled.value.target_profile_ids.length === 0)) {
+      alert('Por favor selecciona al menos una persona.');
+      return;
+    }
   }
-  if (newScheduled.value.target_type === 'profile' && (!newScheduled.value.target_profile_ids || newScheduled.value.target_profile_ids.length === 0)) {
-    alert('Por favor selecciona al menos una persona.');
-    return;
-  }
+
   if (newScheduled.value.recurrence_type === 'once' && !newScheduled.value.due_date) {
     alert('Por favor selecciona una fecha de entrega.');
     return;
