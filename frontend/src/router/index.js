@@ -47,7 +47,8 @@ const routes = [
     path: '/mapa-procesos',
     alias: ['/procesos-ia', '/miro-map'],
     name: 'ProcessMap',
-    component: () => import('../views/MiroProcessMap.vue')
+    component: () => import('../views/MiroProcessMap.vue'),
+    meta: { masterAdminOnly: true }
   },
   {
     path: '/academia',

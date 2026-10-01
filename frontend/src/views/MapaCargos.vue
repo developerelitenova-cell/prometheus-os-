@@ -303,18 +303,25 @@
                         </div>
                         
                         <ul class="divide-y divide-surface-container-high">
-                          <li v-for="task in tasksByFrequency[freq]" :key="task.id" class="p-3 hover:bg-surface-container/30 transition-colors" :class="{ 'opacity-50': !task.active }">
+                          <li v-for="task in tasksByFrequency[freq]" :key="task.id" class="p-3 hover:bg-surface-container/30 transition-colors" :class="{ 'opacity-60 bg-gray-50/50': !task.active }">
                             <div class="flex justify-between items-start gap-2">
-                              <div>
-                                <span class="font-label-sm text-label-sm text-on-surface font-medium block">{{ task.title }}</span>
+                              <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                  <span class="font-label-sm text-label-sm text-on-surface font-medium block">{{ task.title }}</span>
+                                  <span :class="['text-[10px] font-bold px-1.5 py-0.5 rounded', task.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-500 border border-gray-200']">
+                                    {{ task.active ? 'Activa' : 'Pausada' }}
+                                  </span>
+                                </div>
                                 <p v-if="task.description" class="font-caption text-caption text-secondary mt-0.5">{{ task.description }}</p>
                               </div>
                               <div v-if="canManageTasks" class="flex items-center gap-1 shrink-0">
-                                <button @click="toggleTaskActive(task)" class="p-1 rounded text-secondary hover:bg-surface-container hover:text-on-surface transition-colors" :title="task.active ? 'Desactivar' : 'Activar'">
-                                  <span class="material-symbols-outlined text-[14px]">{{ task.active ? 'visibility_off' : 'visibility' }}</span>
+                                <button @click="toggleTaskActive(task)" class="p-1 rounded text-secondary hover:bg-surface-container transition-colors" :title="task.active ? 'Pausar tarea (no saldrá en el portal)' : 'Activar tarea (visible en portal)'">
+                                  <span class="material-symbols-outlined text-[20px]" :class="task.active ? 'text-emerald-600' : 'text-gray-400'">
+                                    {{ task.active ? 'toggle_on' : 'toggle_off' }}
+                                  </span>
                                 </button>
-                                <button @click="deleteRoleTask(task)" class="p-1 rounded text-error hover:bg-error-container transition-colors" title="Eliminar">
-                                  <span class="material-symbols-outlined text-[14px]">delete</span>
+                                <button @click="deleteRoleTask(task)" class="p-1 rounded text-error hover:bg-error-container transition-colors" title="Eliminar tarea">
+                                  <span class="material-symbols-outlined text-[16px]">delete</span>
                                 </button>
                               </div>
                             </div>
@@ -1005,14 +1012,17 @@ const addRoleTask = async () => {
 
 const toggleTaskActive = async (task) => {
   const previous = task.active;
-  task.active = !previous;
+  const nextState = !previous;
+  task.active = nextState;
   try {
     const { error } = await supabase
       .from('role_task_templates')
+      .update({ active: nextState })
       .eq('id', task.id);
     if (error) throw error;
   } catch (err) {
     task.active = previous;
+    alert('Error al actualizar estado de la tarea: ' + (err.message || err));
   }
 };
 

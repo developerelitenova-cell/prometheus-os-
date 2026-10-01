@@ -444,15 +444,15 @@ const canManageKpis = computed(() => canAccessKpis());
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// Tareas atrasadas: vencidas SIN completar (de `tasks` ad-hoc)
+// Tareas atrasadas: vencidas SIN completar (de `tasks` ad-hoc o asignadas)
 const overdueTasks = computed(() => {
-  const all = [...(dailyTasks.value || []), ...(weeklyTasks.value || []), ...(monthlyTasks.value || [])];
+  const all = allTasks.value || [];
   return all.filter(t => t.status !== 'completed' && t.due_date && new Date(t.due_date) < today);
 });
 
-// Pendientes de HOY: tasks asignadas con due_date >= hoy + programados que activan hoy
+// Pendientes de HOY: tasks asignadas con due_date >= hoy (o sin fecha) + programados que activan hoy
 const todayPendingTasks = computed(() => {
-  const all = [...(dailyTasks.value || []), ...(weeklyTasks.value || []), ...(monthlyTasks.value || [])];
+  const all = allTasks.value || [];
   const adHoc = all.filter(t => t.status !== 'completed' && (!t.due_date || new Date(t.due_date) >= today));
   // Programados que activan HOY (se inyectan como pendientes)
   const fromScheduled = scheduledDeliveries.value
@@ -479,7 +479,7 @@ const upcomingScheduled = computed(() => {
 
 // KPI calculation — incluye las 3 capas
 const kpiPercentage = computed(() => {
-  const allSched = [...(dailyTasks.value||[]), ...(weeklyTasks.value||[]), ...(monthlyTasks.value||[])];
+  const allSched = allTasks.value || [];
   const allDaily = [...(dmDailyTasks.value||[]), ...(dmWeeklyTasks.value||[]), ...(dmMonthlyTasks.value||[])];
   const allProg  = scheduledDeliveries.value.filter(sd => sd._triggersToday);
 
@@ -566,10 +566,12 @@ const roleContextStr = ref('');
 const kpiDetail = ref({ overallScore: 0, metrics: [] });
 const loadingKpiDetail = ref(false);
 
-// Cronograma Programacional (tareas ad-hoc de `tasks`)
+// Cronograma Programacional (tareas ad-hoc y asignadas de `tasks`)
+const allTasks = ref([]);
 const dailyTasks = ref([]);
 const weeklyTasks = ref([]);
 const monthlyTasks = ref([]);
+let realtimeChannel = null;
 
 // Gestión Diaria (memoria del cargo, role_task_templates)
 const dmDailyTasks = ref([]);
@@ -897,9 +899,33 @@ const initWorkspace = async () => {
     await fetchChecklists(currentProfile.value.id);
     await fetchNotifications(currentProfile.value.id, currentRole.value);
     await fetchNews();
+    setupRealtime(currentProfile.value.id);
   } catch(err) { console.error("Workspace Load Error:", err); } finally {
     loadingProfile.value = false;
   }
+};
+
+// Configuración de suscripciones Realtime para actualización automática sin recargar
+const setupRealtime = (profileId) => {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+  if (!profileId) return;
+
+  realtimeChannel = supabase.channel(`workspace-rt-${profileId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `assigned_to=eq.${profileId}` }, async () => {
+      await fetchChecklists(profileId);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `profile_id=eq.${profileId}` }, async () => {
+      await fetchNotifications(profileId, currentRole.value);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'role_task_templates' }, async () => {
+      if (currentRole.value?.id) {
+        await fetchDailyManagement(currentRole.value.id, profileId);
+      }
+    })
+    .subscribe();
 };
 
 // Cronograma Programacional: tareas puntuales que el líder asignó a esta
@@ -909,11 +935,13 @@ const fetchChecklists = async (profileId) => {
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('assigned_to', profileId);
+      .eq('assigned_to', profileId)
+      .order('due_date', { ascending: true });
 
     if (error) throw error;
 
     if (tasks) {
+      allTasks.value = tasks;
       dailyTasks.value = tasks.filter(t => t.task_type === 'daily');
       weeklyTasks.value = tasks.filter(t => t.task_type === 'weekly');
       monthlyTasks.value = tasks.filter(t => t.task_type === 'monthly');
@@ -1280,8 +1308,12 @@ const getScoreColor = (score) => {
   return 'red';
 };
 
-
-
+onUnmounted(() => {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+});
 </script>
 <style scoped>
 /* Tailwind classes handle the layout now */

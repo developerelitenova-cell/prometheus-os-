@@ -23,14 +23,14 @@
         >Portal Corporativo</router-link>
 
         <router-link
-          v-if="isLoggedIn"
+          v-if="isLoggedIn && isControlUser"
           to="/mapa-cargos"
           class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors whitespace-nowrap"
           active-class="text-[#8a6d3d] font-bold"
         >Estructura Corporativa</router-link>
 
         <router-link
-          v-if="isLoggedIn"
+          v-if="isLoggedIn && isMasterUser"
           to="/mapa-procesos"
           class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-[#8a6d3d] font-bold"
@@ -39,7 +39,7 @@
         </router-link>
 
         <router-link
-          v-if="isLoggedIn"
+          v-if="isLoggedIn && isMasterUser"
           to="/oracle"
           class="text-[12px] xl:text-[13px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-primary/90 font-bold"
@@ -184,10 +184,13 @@
             <router-link to="/workspace" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] active-class='bg-[#f5f5f7] text-[#8a6d3d] font-bold'">
               <span class="material-symbols-outlined text-[20px] text-secondary">home</span> Portal Corporativo
             </router-link>
-            <router-link to="/mapa-cargos" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+            <router-link v-if="isControlUser" to="/mapa-cargos" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">account_tree</span> Estructura Corporativa
             </router-link>
-            <router-link to="/oracle" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+            <router-link v-if="isMasterUser" to="/mapa-procesos" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">account_tree</span> Procesos IA (Miro)
+            </router-link>
+            <router-link v-if="isMasterUser" to="/oracle" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span> Oráculo IA
             </router-link>
             <router-link v-if="isControlUser" to="/leader" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">

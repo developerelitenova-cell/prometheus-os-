@@ -1285,27 +1285,43 @@ const submitTask = async () => {
   isSaving.value = true;
 
   try {
-    const { data: session } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUserId = session?.user?.id;
     
     // Insertar una tarea por cada destinatario seleccionado
     const inserts = recipients.map(recipientId => ({
-      title: newTask.value.title,
-      description: newTask.value.description || null,
-      deliverable: newTask.value.deliverable || null,
-      category: newTask.value.category || null,
+      title: newTask.value.title.trim(),
+      description: newTask.value.description?.trim() || null,
+      deliverable: newTask.value.deliverable?.trim() || null,
+      category: newTask.value.category || 'operativo',
       due_time: newTask.value.due_time || null,
       estimated_minutes: newTask.value.estimated_minutes ? parseInt(newTask.value.estimated_minutes) : null,
-      leader_note: newTask.value.leader_note || null,
-      priority: newTask.value.priority,
-      task_type: newTask.value.task_type,
+      leader_note: newTask.value.leader_note?.trim() || null,
+      priority: newTask.value.priority || 'medium',
+      task_type: newTask.value.task_type || 'once',
       due_date: newTask.value.due_date,
       assigned_to: recipientId,
-      assigned_by: session.session.user.id,
+      assigned_by: currentUserId || null,
       status: 'pending'
     }));
 
-    const { error } = await supabase.from('tasks').insert(inserts);
-    if (error) throw error;
+    const { error: taskError } = await supabase.from('tasks').insert(inserts);
+    if (taskError) throw taskError;
+
+    // Generar notificaciones en tiempo real para cada colaborador
+    const notifs = recipients.map(recipientId => ({
+      profile_id: recipientId,
+      type: 'task_assigned',
+      message: `Nueva tarea asignada por liderazgo: "${newTask.value.title.trim()}". Fecha límite: ${newTask.value.due_date}`,
+      action_url: '/workspace',
+      is_read: false
+    }));
+
+    try {
+      await supabase.from('notifications').insert(notifs);
+    } catch (notifErr) {
+      console.warn('Error al insertar notificaciones:', notifErr);
+    }
     
     closeTaskModal();
     successToastMessage.value = '¡Tarea asignada con éxito!';
@@ -1314,7 +1330,7 @@ const submitTask = async () => {
     await fetchData();
   } catch (error) {
     console.error('Error asignando tarea:', error);
-    alert('Ocurrió un error al guardar la tarea.');
+    alert('Ocurrió un error al guardar la tarea: ' + (error.message || ''));
   } finally {
     isSaving.value = false;
   }
