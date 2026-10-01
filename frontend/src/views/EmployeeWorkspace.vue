@@ -5,6 +5,30 @@
     <!-- Main Content Grid -->
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 py-5 sm:px-6 sm:py-8">
       
+      <!-- Banner Modo Auditoría -->
+      <div v-if="isAuditMode" class="mb-6 bg-gradient-to-r from-[#d4b06a] via-[#b08d57] to-[#8a6d3d] text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 border border-amber-300/40">
+        <div class="flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner">
+            <span class="material-symbols-outlined text-white text-2xl">visibility</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="bg-black/25 text-white text-[11px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase">Modo Auditoría Activo</span>
+              <span class="text-xs text-amber-100">Inspección de Espacio de Trabajo</span>
+            </div>
+            <p class="text-sm sm:text-base font-semibold text-white mt-1">
+              Estás auditando el espacio de <span class="underline underline-offset-2 font-bold">{{ currentProfile?.full_name }}</span> · {{ currentRole?.name || 'Sin cargo asignado' }}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button @click="exitAuditMode" class="px-4 py-2 bg-white text-[#8a6d3d] hover:bg-amber-50 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            <span>Volver a Directorio de Líder</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Carrusel de Noticias Corporativas -->
       <div v-if="activeNews.length > 0" class="mb-6 bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden relative group">
         <div class="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10 pointer-events-none"></div>
@@ -551,6 +575,10 @@ onMounted(async () => {
   await initWorkspace();
 });
 
+watch(() => route.query.view_as, async () => {
+  await initWorkspace();
+});
+
 const handleSignOut = async () => {
   await signOut();
   router.push('/login');
@@ -799,6 +827,10 @@ onUnmounted(() => {
   if (newsInterval) clearInterval(newsInterval);
 });
 
+const exitAuditMode = () => {
+  router.push('/leader');
+};
+
 const initWorkspace = async () => {
   loadingProfile.value = true;
   try {
@@ -807,21 +839,28 @@ const initWorkspace = async () => {
     }
     
     // Lógica de Modo Auditoría (Impersonation)
-    if (authProfile.value?.is_master_admin && route.query.view_as) {
-      const { data: auditProfile } = await supabase
+    // Permitido a Master Admins y Líderes con access_level 1 o 2
+    const canAudit = authProfile.value?.is_master_admin || 
+                     (authProfile.value?.roles?.access_level && [1, 2].includes(authProfile.value.roles.access_level));
+
+    if (canAudit && route.query.view_as) {
+      const { data: auditProfile, error: auditError } = await supabase
         .from('profiles')
         .select('*, roles(id, name, area_id, access_level)')
         .eq('id', route.query.view_as)
         .single();
         
-      if (auditProfile) {
+      if (auditProfile && !auditError) {
         currentProfile.value = auditProfile;
         isAuditMode.value = true;
       } else {
+        console.warn("No se pudo cargar el perfil para auditar:", auditError);
         currentProfile.value = authProfile.value;
+        isAuditMode.value = false;
       }
     } else {
       currentProfile.value = authProfile.value;
+      isAuditMode.value = false;
     }
 
     currentRole.value = currentProfile.value?.roles || null;
@@ -1220,11 +1259,6 @@ const getScoreColor = (score) => {
   if (score >= 85) return 'green';
   if (score >= 70) return 'yellow';
   return 'red';
-};
-
-const exitAuditMode = () => {
-  router.push('/workspace');
-  setTimeout(() => { window.location.reload(); }, 100);
 };
 
 

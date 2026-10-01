@@ -140,16 +140,29 @@
                   </div>
                 </div>
                 
-                <div class="flex items-center gap-space-lg text-right">
-                  <div class="hidden sm:flex flex-col text-left w-24">
-                    <span class="font-caption text-caption text-secondary">Estado ({{ selectedPeriod }})</span>
-                    <span class="font-label-sm text-label-sm" :class="member.overdue_tasks_count > 0 ? 'text-danger font-semibold' : 'text-success'">
-                      {{ member.pending_tasks_count }} Pend.
+                <div class="flex items-center gap-space-md text-right">
+                  <div class="hidden sm:flex flex-col text-left min-w-[90px]">
+                    <span class="font-caption text-caption text-secondary text-[11px]">Estado ({{ selectedPeriod }})</span>
+                    <span class="font-label-sm text-xs font-semibold" :class="member.overdue_tasks_count > 0 ? 'text-danger' : member.pending_tasks_count > 0 ? 'text-amber-600' : 'text-success'">
+                      {{ member.pending_tasks_count }} Pend. {{ member.overdue_tasks_count > 0 ? `(${member.overdue_tasks_count} Venc.)` : '' }}
                     </span>
                   </div>
-                  <div class="w-16 flex justify-end">
-                    <span class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-[#e8f5e9] text-[#2e7d32] font-label-sm text-label-sm font-semibold border border-[#c8e6c9]">
-                      {{ member.latest_score }}%
+                  <div class="flex flex-col items-end min-w-[70px]">
+                    <span v-if="member.total_tasks > 0" 
+                          :class="[
+                            'inline-flex items-center justify-center px-2 py-0.5 rounded-md font-label-sm text-xs font-bold border',
+                            member.completion_rate >= 80 ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9]' :
+                            member.completion_rate >= 40 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-rose-50 text-rose-700 border-rose-200'
+                          ]"
+                          :title="`Eficiencia en ${selectedPeriod}: ${member.completed_tasks_count} de ${member.total_tasks} tareas listas (${member.completion_rate}%)`">
+                      {{ member.completion_rate }}%
+                    </span>
+                    <span v-else class="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-surface-container text-secondary text-[11px] font-medium border border-surface-container-high" title="Sin tareas asignadas en este período">
+                      0%
+                    </span>
+                    <span v-if="member.latest_score > 0" class="text-[10px] text-primary font-medium mt-0.5" :title="`Score KPI: ${member.latest_score}%`">
+                      KPI: {{ member.latest_score }}%
                     </span>
                   </div>
                 </div>
@@ -178,29 +191,41 @@
                 <div class="flex flex-col gap-space-sm mb-space-lg">
                   <div class="flex items-center justify-between">
                     <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Métricas • {{ selectedPeriod }}</span>
+                    <span v-if="selectedMember.latest_score > 0" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full" :title="`Puntaje de medición de KPIs del cargo`">
+                      KPI Cargo: {{ selectedMember.latest_score }}%
+                    </span>
                   </div>
                   
                   <div class="grid grid-cols-2 gap-space-sm">
                     <div class="bg-surface-container-low rounded-xl p-space-sm border border-surface-container">
-                      <span class="font-caption text-caption text-secondary block">Eficiencia</span>
-                      <span class="font-headline-sm text-headline-sm font-semibold text-[#2e7d32]">{{ selectedMember.completion_rate }}%</span>
+                      <div class="flex items-center justify-between mb-0.5">
+                        <span class="font-caption text-caption text-secondary">Eficiencia</span>
+                        <span class="material-symbols-outlined text-[14px] text-secondary cursor-help" title="Fórmula de Eficiencia: (Tareas Listas / Total Tareas en el Período) × 100">info</span>
+                      </div>
+                      <span class="font-headline-sm text-headline-sm font-semibold text-[#2e7d32]">
+                        {{ selectedMember.total_tasks > 0 ? selectedMember.completion_rate + '%' : '0%' }}
+                      </span>
+                      <span class="text-[10px] text-secondary block mt-0.5">
+                        {{ selectedMember.total_tasks > 0 ? `${selectedMember.completed_tasks_count} de ${selectedMember.total_tasks} listas` : 'Sin tareas asignadas' }}
+                      </span>
                     </div>
                     <div class="bg-surface-container-low rounded-xl p-space-sm border border-surface-container">
-                      <span class="font-caption text-caption text-secondary block">T. Promedio</span>
+                      <span class="font-caption text-caption text-secondary block mb-0.5">T. Promedio</span>
                       <span class="font-headline-sm text-headline-sm font-semibold text-on-surface">{{ selectedMember.avg_time_hours }}h</span>
+                      <span class="text-[10px] text-secondary block mt-0.5">Tiempo medio de ejecución</span>
                     </div>
                   </div>
                   
                   <!-- Task Breakdown -->
                   <div class="bg-surface-container-low rounded-xl p-space-sm border border-surface-container mt-1">
                     <div class="flex items-center justify-between font-caption text-caption mb-1.5">
-                      <span class="text-secondary">Desglose de Tareas</span>
-                      <span class="font-semibold">{{ selectedMember.total_tasks }} Totales</span>
+                      <span class="text-secondary font-medium">Desglose de Tareas</span>
+                      <span class="font-semibold text-on-surface">{{ selectedMember.total_tasks }} Totales</span>
                     </div>
                     <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden flex mb-2">
-                      <div class="h-full bg-emerald-500" :style="`width: ${selectedMember.completion_rate}%;`"></div>
-                      <div class="h-full bg-amber-400" :style="`width: ${selectedMember.pending_rate}%;`"></div>
-                      <div class="h-full bg-danger" :style="`width: ${selectedMember.overdue_rate}%;`"></div>
+                      <div class="h-full bg-emerald-500 transition-all duration-300" :style="`width: ${selectedMember.completion_rate}%;`"></div>
+                      <div class="h-full bg-amber-400 transition-all duration-300" :style="`width: ${selectedMember.pending_rate}%;`"></div>
+                      <div class="h-full bg-danger transition-all duration-300" :style="`width: ${selectedMember.overdue_rate}%;`"></div>
                     </div>
                     <div class="flex justify-between text-xs">
                       <span class="text-emerald-700 font-medium">{{ selectedMember.completed_tasks_count }} Listas</span>
@@ -212,19 +237,19 @@
                 
                 <!-- Action Buttons -->
                 <div class="flex flex-col gap-space-sm mt-auto pt-space-md border-t border-surface-container-high">
-                  <button @click="openTaskModal(selectedMember)" class="w-full py-2.5 px-space-md rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md inline-flex items-center justify-center gap-2 shadow-sm transition-all">
+                  <button @click="openTaskModal(selectedMember)" class="w-full py-2.5 px-space-md rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white font-label-md text-label-md inline-flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">assignment_add</span>
                     <span>Asignar Tarea Específica</span>
                   </button>
-                  <button @click="auditWorkspace(selectedMember.id)" class="w-full py-2.5 px-space-md rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container-high text-on-surface font-label-md text-label-md text-center transition-all inline-flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[18px]">find_in_page</span>
+                  <button @click="auditWorkspace(selectedMember.id)" class="w-full py-2.5 px-space-md rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-container-high text-on-surface font-label-md text-label-md text-center transition-all inline-flex items-center justify-center gap-2 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">visibility</span>
                     <span>Auditar Espacio</span>
                   </button>
-                  <div v-if="currentUser?.is_master_admin" class="flex gap-2 w-full pt-1">
-                    <button @click="editProfileName(selectedMember)" class="flex-1 py-2 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-high text-on-surface-variant text-label-sm font-semibold transition-all flex items-center justify-center gap-1" title="Editar Nombre del Empleado">
-                      <span class="material-symbols-outlined text-[16px]">edit</span> Editar Perfil
+                  <div v-if="currentUser?.is_master_admin || isLeader" class="flex gap-2 w-full pt-1">
+                    <button @click="openEditProfile(selectedMember)" class="flex-1 py-2 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-high text-on-surface-variant text-label-sm font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer" title="Editar Perfil del Colaborador">
+                      <span class="material-symbols-outlined text-[16px]">manage_accounts</span> Editar Perfil
                     </button>
-                    <button @click="manageLegal(selectedMember)" class="flex-1 py-2 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-high text-on-surface-variant text-label-sm font-semibold transition-all flex items-center justify-center gap-1" title="Gestionar Firmas y Contratos">
+                    <button @click="manageLegal(selectedMember)" class="flex-1 py-2 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-high text-on-surface-variant text-label-sm font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer" title="Gestionar Firmas y Contratos">
                       <span class="material-symbols-outlined text-[16px]">gavel</span> Legal / Contratos
                     </button>
                   </div>
@@ -470,7 +495,7 @@
     <transition enter-active-class="transition duration-300 ease-out" enter-from-class="transform translate-y-2 opacity-0" enter-to-class="transform translate-y-0 opacity-100" leave-active-class="transition duration-200 ease-in" leave-from-class="transform translate-y-0 opacity-100" leave-to-class="transform translate-y-2 opacity-0">
       <div v-if="showSuccessToast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] bg-[#2e7d32] text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 font-label-md text-label-md">
         <span class="material-symbols-outlined">check_circle</span>
-        <span>¡Tarea asignada con éxito!</span>
+        <span>{{ successToastMessage }}</span>
       </div>
     </transition>
 
@@ -634,15 +659,96 @@
       </div>
     </div>
 
-    <!-- Modals for Legal and Profile Edit -->
-    <div v-if="showEditNameModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div class="bg-surface-container-lowest w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
-        <h3 class="text-xl font-bold text-on-surface mb-4">Editar Nombre de Empleado</h3>
-        <input type="text" v-model="editNameInput" class="w-full bg-surface-container-low border border-surface-container rounded-xl p-3 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container mb-4" />
-        <div class="flex gap-3">
-          <button @click="showEditNameModal = false" class="flex-1 py-2 rounded-xl border border-surface-container text-on-surface-variant font-semibold">Cancelar</button>
-          <button @click="saveProfileName" class="flex-1 py-2 rounded-xl bg-primary text-white font-semibold shadow-md">Guardar</button>
+    <!-- Modal: Editar Perfil de Colaborador -->
+    <div v-if="showEditProfileModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-surface-container-lowest w-full max-w-md rounded-3xl p-6 shadow-2xl relative border border-surface-container-high">
+        <button @click="showEditProfileModal = false" class="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-secondary">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined">manage_accounts</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-on-surface">Editar Perfil del Colaborador</h3>
+            <p class="text-xs text-secondary">Actualiza nombre, cargo y estado del colaborador</p>
+          </div>
         </div>
+
+        <form @submit.prevent="saveProfile" class="space-y-4">
+          <!-- Nombre Completo -->
+          <div>
+            <label class="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5">Nombre Completo *</label>
+            <input 
+              type="text" 
+              v-model="editProfileForm.full_name" 
+              required
+              placeholder="Ej. Juan Pérez"
+              class="w-full bg-surface-container-low border border-surface-container rounded-xl p-3 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container text-sm" 
+            />
+          </div>
+
+          <!-- Cargo / Rol Asignado -->
+          <div>
+            <label class="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5">Cargo / Rol Asignado</label>
+            <select 
+              v-model="editProfileForm.role_id"
+              class="w-full bg-surface-container-low border border-surface-container rounded-xl p-3 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container text-sm"
+            >
+              <option value="">-- Sin cargo asignado --</option>
+              <option v-for="r in availableRoles" :key="r.id" :value="r.id">
+                {{ r.name }} {{ r.areas?.name ? `(${r.areas.name})` : '' }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Estado de Aprobación / Cuenta -->
+          <div>
+            <label class="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5">Estado de la Cuenta</label>
+            <select 
+              v-model="editProfileForm.approval_status"
+              class="w-full bg-surface-container-low border border-surface-container rounded-xl p-3 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container text-sm"
+            >
+              <option value="approved">Aprobado / Activo</option>
+              <option value="pending">Pendiente de Aprobación</option>
+              <option value="suspended">Suspendido</option>
+              <option value="rejected">Rechazado</option>
+            </select>
+          </div>
+
+          <!-- Master Admin (solo visible para Master Admins) -->
+          <div v-if="currentUser?.is_master_admin" class="p-3 bg-surface-container-low rounded-xl border border-surface-container flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-on-surface block">Privilegios Master Admin</span>
+              <span class="text-[11px] text-secondary">Acceso global y control total</span>
+            </div>
+            <input 
+              type="checkbox" 
+              v-model="editProfileForm.is_master_admin"
+              class="w-5 h-5 accent-primary cursor-pointer rounded"
+            />
+          </div>
+
+          <!-- Botones de Acción -->
+          <div class="flex gap-3 pt-2">
+            <button 
+              type="button" 
+              @click="showEditProfileModal = false" 
+              class="flex-1 py-2.5 rounded-xl border border-surface-container text-on-surface-variant font-semibold text-sm hover:bg-surface-container transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              :disabled="isSavingProfile"
+              class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white font-semibold text-sm shadow-md hover:brightness-105 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              <span v-if="isSavingProfile" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ isSavingProfile ? 'Guardando...' : 'Guardar Cambios' }}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -699,23 +805,99 @@ const searchQuery = ref('');
 const selectedPeriod = ref('Mensual'); // Default
 const selectedMember = ref(null);
 
-const showEditNameModal = ref(false);
-const editNameInput = ref('');
+const showEditProfileModal = ref(false);
+const isSavingProfile = ref(false);
+const availableRoles = ref([]);
 const currentEditingMember = ref(null);
+const editProfileForm = ref({
+  id: '',
+  full_name: '',
+  role_id: '',
+  approval_status: 'approved',
+  is_master_admin: false
+});
 
 const showLegalModal = ref(false);
 
-const editProfileName = (member) => {
+const openEditProfile = async (member) => {
+  if (!member) return;
   currentEditingMember.value = member;
-  editNameInput.value = member.full_name;
-  showEditNameModal.value = true;
+  editProfileForm.value = {
+    id: member.id,
+    full_name: member.full_name || '',
+    role_id: member.roles?.id || member.role_id || '',
+    approval_status: member.approval_status || 'approved',
+    is_master_admin: !!member.is_master_admin
+  };
+  
+  if (availableRoles.value.length === 0) {
+    const { data: rolesData } = await supabase
+      .from('roles')
+      .select('id, name, area_id, access_level, areas(name)')
+      .order('name');
+    availableRoles.value = rolesData || [];
+  }
+  
+  showEditProfileModal.value = true;
 };
 
-const saveProfileName = async () => {
-  if (currentEditingMember.value && editNameInput.value) {
-    currentEditingMember.value.full_name = editNameInput.value;
-    // Logic to save to Supabase would go here
-    showEditNameModal.value = false;
+const saveProfile = async () => {
+  if (!editProfileForm.value.full_name?.trim()) {
+    alert('El nombre del colaborador no puede estar vacío.');
+    return;
+  }
+  
+  isSavingProfile.value = true;
+  try {
+    const updatePayload = {
+      full_name: editProfileForm.value.full_name.trim(),
+      role_id: editProfileForm.value.role_id || null,
+      approval_status: editProfileForm.value.approval_status
+    };
+    
+    // Solo si el usuario que edita es Master Admin puede cambiar el flag is_master_admin
+    if (currentUser.value?.is_master_admin) {
+      updatePayload.is_master_admin = editProfileForm.value.is_master_admin;
+    }
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update(updatePayload)
+      .eq('id', editProfileForm.value.id);
+      
+    if (error) throw error;
+    
+    // Actualizar localmente el miembro actual
+    const updatedRole = availableRoles.value.find(r => r.id === editProfileForm.value.role_id);
+    if (currentEditingMember.value) {
+      currentEditingMember.value.full_name = editProfileForm.value.full_name;
+      if (updatedRole) {
+        currentEditingMember.value.roles = updatedRole;
+        currentEditingMember.value.role_id = updatedRole.id;
+      }
+      currentEditingMember.value.approval_status = editProfileForm.value.approval_status;
+      currentEditingMember.value.is_master_admin = editProfileForm.value.is_master_admin;
+    }
+    if (selectedMember.value && selectedMember.value.id === editProfileForm.value.id) {
+      selectedMember.value.full_name = editProfileForm.value.full_name;
+      if (updatedRole) {
+        selectedMember.value.roles = updatedRole;
+        selectedMember.value.role_id = updatedRole.id;
+      }
+    }
+    
+    showEditProfileModal.value = false;
+    successToastMessage.value = `¡Perfil de ${editProfileForm.value.full_name} actualizado con éxito!`;
+    showSuccessToast.value = true;
+    setTimeout(() => { showSuccessToast.value = false; }, 3500);
+    
+    // Re-sincronizar datos
+    await fetchData();
+  } catch (err) {
+    console.error('Error al guardar perfil:', err);
+    alert('Error al guardar los cambios del perfil: ' + (err.message || 'Error desconocido'));
+  } finally {
+    isSavingProfile.value = false;
   }
 };
 
@@ -729,6 +911,7 @@ const showTaskModal = ref(false);
 const taskTargetMember = ref(null);
 const isSaving = ref(false);
 const showSuccessToast = ref(false);
+const successToastMessage = ref('¡Operación realizada con éxito!');
 const newTask = ref({
   title: '',
   description: '',
@@ -826,21 +1009,33 @@ const submitScheduled = async () => {
       due_date: newScheduled.value.recurrence_type === 'once' ? newScheduled.value.due_date : null,
       priority: newScheduled.value.priority,
       target_type: newScheduled.value.target_type,
-      target_profile_ids: newScheduled.value.target_type === 'profile' ? newScheduled.value.target_profile_ids : null,
-      target_level: newScheduled.value.target_type === 'level' ? newScheduled.value.target_level : null,
-      target_area_id: newScheduled.value.target_type === 'area' ? newScheduled.value.target_area_id : null,
-      target_role_ids: null,
       active: true,
       created_by: session.session.user.id
     };
+
+    if (newScheduled.value.target_type === 'profile') {
+      payload.target_profile_ids = newScheduled.value.target_profile_ids;
+    }
+    if (newScheduled.value.target_type === 'level') {
+      payload.target_level = newScheduled.value.target_level;
+    }
+    if (newScheduled.value.target_type === 'area') {
+      payload.target_area_id = newScheduled.value.target_area_id;
+    }
+
     const { error } = await supabase.from('scheduled_deliveries').insert(payload);
     if (error) throw error;
     showScheduledModal.value = false;
+    successToastMessage.value = '¡Orden programada creada con éxito!';
     showSuccessToast.value = true;
-    setTimeout(() => { showSuccessToast.value = false; }, 3000);
+    setTimeout(() => { showSuccessToast.value = false; }, 3500);
   } catch (e) {
     console.error('Error creando orden programada:', e);
-    alert('Error al guardar la orden programada: ' + e.message);
+    if (e.message && (e.message.includes('target_area_id') || e.message.includes('target_type') || e.message.includes('schema cache'))) {
+      alert('Error en base de datos: La tabla "scheduled_deliveries" necesita las columnas de destino. Por favor ejecuta el script SQL "database/fix_scheduled_deliveries_columns.sql" en el Supabase SQL Editor.');
+    } else {
+      alert('Error al guardar la orden programada: ' + (e.message || 'Error desconocido'));
+    }
   } finally {
     isSavingScheduled.value = false;
   }
@@ -857,20 +1052,31 @@ const calculateTimeDifferenceHours = (start, end) => {
 };
 
 const filterTasksByPeriod = (tasks, periodStr) => {
-  if (!tasks) return [];
+  if (!tasks || tasks.length === 0) return [];
   const now = new Date();
-  let msLimit = 0;
-  
-  if (periodStr === 'Diario') msLimit = 24 * 60 * 60 * 1000;
-  else if (periodStr === 'Semanal') msLimit = 7 * 24 * 60 * 60 * 1000;
-  else if (periodStr === 'Mensual') msLimit = 30 * 24 * 60 * 60 * 1000;
-  else if (periodStr === 'Trimestral') msLimit = 90 * 24 * 60 * 60 * 1000;
-  else if (periodStr === 'Semestral') msLimit = 180 * 24 * 60 * 60 * 1000;
-  else if (periodStr === 'Anual') msLimit = 365 * 24 * 60 * 60 * 1000;
   
   return tasks.filter(t => {
-    const taskDate = new Date(t.created_at || t.due_date);
-    return (now - taskDate) <= msLimit;
+    const dueStr = t.due_date ? t.due_date.split('T')[0] : null;
+    const createdStr = t.created_at ? t.created_at.split('T')[0] : null;
+    const completedStr = t.completed_at ? t.completed_at.split('T')[0] : null;
+    const todayStr = now.toISOString().split('T')[0];
+
+    if (periodStr === 'Diario') {
+      return dueStr === todayStr || completedStr === todayStr || createdStr === todayStr;
+    }
+    
+    const refDate = new Date(t.due_date || t.completed_at || t.created_at);
+    if (isNaN(refDate.getTime())) return true;
+    
+    let msLimit = 30 * 24 * 60 * 60 * 1000;
+    if (periodStr === 'Semanal') msLimit = 7 * 24 * 60 * 60 * 1000;
+    else if (periodStr === 'Mensual') msLimit = 30 * 24 * 60 * 60 * 1000;
+    else if (periodStr === 'Trimestral') msLimit = 90 * 24 * 60 * 60 * 1000;
+    else if (periodStr === 'Semestral') msLimit = 180 * 24 * 60 * 60 * 1000;
+    else if (periodStr === 'Anual') msLimit = 365 * 24 * 60 * 60 * 1000;
+    
+    const diff = now.getTime() - refDate.getTime();
+    return diff <= msLimit && diff >= -(7 * 24 * 60 * 60 * 1000);
   });
 };
 
@@ -1028,6 +1234,10 @@ const selectMember = (member) => {
 };
 
 const auditWorkspace = (employeeId) => {
+  if (!employeeId) {
+    alert('Por favor selecciona un colaborador para auditar su espacio.');
+    return;
+  }
   router.push(`/workspace?view_as=${employeeId}`);
 };
 
@@ -1093,6 +1303,7 @@ const submitTask = async () => {
     if (error) throw error;
     
     closeTaskModal();
+    successToastMessage.value = '¡Tarea asignada con éxito!';
     showSuccessToast.value = true;
     setTimeout(() => { showSuccessToast.value = false; }, 3000);
     await fetchData();
