@@ -44,6 +44,12 @@ const routes = [
     meta: { leaderOnly: true }
   },
   {
+    path: '/mapa-procesos',
+    alias: ['/procesos-ia', '/miro-map'],
+    name: 'ProcessMap',
+    component: () => import('../views/MiroProcessMap.vue')
+  },
+  {
     path: '/academia',
     name: 'AcademiaElite',
     component: () => import('../views/AcademiaElite.vue')

@@ -31,6 +31,15 @@
 
         <router-link
           v-if="isLoggedIn"
+          to="/mapa-procesos"
+          class="text-[12px] xl:text-[13px] font-medium text-[#1d1d1f]/70 hover:text-[#8a6d3d] transition-colors flex items-center gap-1 whitespace-nowrap"
+          active-class="text-[#8a6d3d] font-bold"
+        >
+          <span class="material-symbols-outlined text-[15px]">account_tree</span> Procesos IA (Miro)
+        </router-link>
+
+        <router-link
+          v-if="isLoggedIn"
           to="/oracle"
           class="text-[12px] xl:text-[13px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-primary/90 font-bold"

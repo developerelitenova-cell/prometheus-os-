@@ -129,6 +129,13 @@
               </div>
               <!-- Action tools -->
               <div class="flex items-center gap-2">
+                <router-link 
+                  to="/mapa-procesos"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#b08d57]/10 hover:bg-[#b08d57]/20 text-primary font-label-sm text-label-sm font-semibold transition-colors cursor-pointer"
+                  title="Abrir Lienzo Miro de Procesos con IA">
+                  <span class="material-symbols-outlined text-[16px]">account_tree</span>
+                  <span class="hidden md:inline">Mapa de Procesos IA (Miro)</span>
+                </router-link>
                 <button 
                   @click="exportFullChat" 
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors cursor-pointer" 
@@ -197,9 +204,9 @@
                           <button 
                             @click="goToMapper" 
                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#b08d57]/10 hover:bg-[#b08d57]/20 text-primary transition-all text-caption font-semibold cursor-pointer" 
-                            title="Ver en el Mapa de Procesos interactivo tipo Miro">
+                            title="Ver en el Mapa de Procesos interactivo con IA (Lienzo Miro)">
                             <span class="material-symbols-outlined text-[16px]">account_tree</span>
-                            <span class="text-[12px]">Ver en Mapa</span>
+                            <span class="text-[12px]">Mapa de Procesos IA</span>
                           </button>
                         </div>
                         <div class="flex items-center gap-1 text-secondary font-caption text-[11px]">
@@ -626,7 +633,7 @@ const quickPills = [
   { label: '🏢 Área Comercial', prompt: 'Audita detalladamente el área Comercial: muestra los cargos existentes, cuáles tienen flujos mapeados, manuales y qué cuellos de botella presentan.' },
   { label: '🔺 Pentágono', prompt: 'Audita el área Pentágono: desglosa sus cargos, funciones mapeadas y vacíos de documentación identificados.' },
   { label: '⚠️ Cargos sin Documentar', prompt: 'Lista todos los cargos que actualmente no tienen mapeo de procesos ni manuales de funciones en la corporación.' },
-  { label: '🗺️ Abrir Mapa de Procesos', action: 'mapper' }
+  { label: '🗺️ Mapa de Procesos con IA (Miro)', action: 'mapper' }
 ];
 
 const handlePillClick = (pill) => {
@@ -712,7 +719,7 @@ const exportFullChat = () => {
 };
 
 const goToMapper = () => {
-  router.push('/mapa-cargos');
+  router.push('/mapa-procesos');
 };
 
 const sendQuery = async () => {
