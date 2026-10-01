@@ -373,7 +373,7 @@
                 <span class="material-symbols-outlined text-[22px]">policy</span>
               </div>
               <div>
-                <h4 class="font-label-md text-label-md font-bold text-on-surface">Marco de Gobernanza de Prometeus OS</h4>
+                <h4 class="font-label-md text-label-md font-bold text-on-surface">Marco de Gobernanza de NOVA WORK</h4>
                 <p class="font-caption text-caption text-secondary">La alteración de la memoria consciente requiere auditoría.</p>
               </div>
             </div>
