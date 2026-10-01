@@ -331,23 +331,32 @@
             </div>
 
             <div>
-              <div class="flex justify-between items-center mb-1">
+              <div class="flex justify-between items-center mb-1.5">
                 <label class="text-xs font-semibold text-secondary uppercase">Correo Corporativo *</label>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center bg-surface-container rounded-lg p-0.5 border border-surface-container-high">
                   <button 
                     type="button" 
-                    @click="suggestEmailByName" 
-                    class="text-[11px] text-primary hover:underline font-medium flex items-center gap-0.5"
-                    title="Generar correo con nombre y apellido"
+                    @click="setEmailMode('name')" 
+                    :class="[
+                      'px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer',
+                      emailMode === 'name' 
+                        ? 'bg-primary text-white shadow-xs' 
+                        : 'text-secondary hover:text-on-surface hover:bg-surface-container-high'
+                    ]"
+                    title="Generar correo corporativo usando Nombre y Apellido"
                   >
                     <span class="material-symbols-outlined text-[13px]">person</span> Por Nombre
                   </button>
-                  <span class="text-secondary text-[10px]">|</span>
                   <button 
                     type="button" 
-                    @click="suggestEmailByRole" 
-                    class="text-[11px] text-primary hover:underline font-medium flex items-center gap-0.5"
-                    title="Generar correo con el cargo seleccionado"
+                    @click="setEmailMode('role')" 
+                    :class="[
+                      'px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer',
+                      emailMode === 'role' 
+                        ? 'bg-primary text-white shadow-xs' 
+                        : 'text-secondary hover:text-on-surface hover:bg-surface-container-high'
+                    ]"
+                    title="Generar correo institucional usando el Cargo asignado"
                   >
                     <span class="material-symbols-outlined text-[13px]">badge</span> Por Cargo
                   </button>
@@ -355,11 +364,16 @@
               </div>
               <input 
                 v-model="createForm.email" 
+                @input="onEmailInput"
                 required 
                 type="email" 
-                placeholder="juan.perez@elitenutrition.com" 
+                :placeholder="emailMode === 'role' ? 'cargo@elitenutrition.com' : 'nombre.apellido@elitenutrition.com'" 
                 class="w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm font-mono text-xs focus:border-primary"
               >
+              <p v-if="emailMode === 'role' && !createForm.role_id" class="text-[11px] text-amber-600 mt-1 flex items-center gap-1 font-medium">
+                <span class="material-symbols-outlined text-[14px]">info</span>
+                Selecciona un cargo abajo para generar el correo institucional del cargo.
+              </p>
             </div>
 
             <div>
@@ -367,7 +381,10 @@
               <select 
                 v-model="createForm.role_id" 
                 @change="onRoleChange"
-                class="w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm focus:border-primary"
+                :class="[
+                  'w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm focus:border-primary transition-all',
+                  emailMode === 'role' && !createForm.role_id ? 'border-amber-400 ring-2 ring-amber-400/20' : ''
+                ]"
               >
                 <option value="">-- Sin cargo asignado aún --</option>
                 <option v-for="r in rolesList" :key="r.id" :value="r.id">
@@ -421,8 +438,28 @@
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-secondary uppercase mb-1">Correo Corporativo</label>
-              <input v-model="editForm.email" type="email" class="w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm focus:border-primary">
+              <div class="flex justify-between items-center mb-1.5">
+                <label class="text-xs font-semibold text-secondary uppercase">Correo Corporativo</label>
+                <div class="flex items-center bg-surface-container rounded-lg p-0.5 border border-surface-container-high">
+                  <button 
+                    type="button" 
+                    @click="setEditEmailMode('name')" 
+                    class="px-2 py-0.5 rounded-md text-[11px] font-semibold text-secondary hover:text-on-surface hover:bg-surface-container-high flex items-center gap-1 transition-all cursor-pointer"
+                    title="Regenerar correo por Nombre"
+                  >
+                    <span class="material-symbols-outlined text-[13px]">person</span> Por Nombre
+                  </button>
+                  <button 
+                    type="button" 
+                    @click="setEditEmailMode('role')" 
+                    class="px-2 py-0.5 rounded-md text-[11px] font-semibold text-secondary hover:text-on-surface hover:bg-surface-container-high flex items-center gap-1 transition-all cursor-pointer"
+                    title="Regenerar correo por Cargo"
+                  >
+                    <span class="material-symbols-outlined text-[13px]">badge</span> Por Cargo
+                  </button>
+                </div>
+              </div>
+              <input v-model="editForm.email" type="email" class="w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm font-mono text-xs focus:border-primary">
               <span class="text-[11px] text-secondary mt-0.5 block">Actualiza las credenciales asociadas a esta cuenta.</span>
             </div>
 
@@ -577,6 +614,7 @@ const showCreateModal = ref(false);
 const createForm = ref({ full_name: '', email: '', role_id: '', password: '' });
 const createLoading = ref(false);
 const createError = ref('');
+const emailMode = ref('name'); // 'name' | 'role' | 'manual'
 
 const showEditModal = ref(false);
 const editForm = ref({ id: '', full_name: '', email: '', role_id: '', approval_status: 'approved' });
@@ -693,38 +731,98 @@ const normalizeForEmail = (text) => {
     .replace(/^\.|\.$/g, '');
 };
 
-const onNameInput = () => {
-  if (!createForm.value.full_name.trim()) return;
-  const parts = createForm.value.full_name.trim().split(/\s+/);
+const generateEmailFromName = (fullName) => {
+  if (!fullName || !fullName.trim()) return '';
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     const first = normalizeForEmail(parts[0]);
-    const last = normalizeForEmail(parts[parts.length - 1]);
-    createForm.value.email = `${first}.${last}@elitenutrition.com`;
+    // Para 2 palabras: parts[1]. Para 3 o más palabras (ej: Karen Sofía Ávila Pareja): parts[2] es el primer apellido
+    const last = normalizeForEmail(parts.length > 2 ? parts[2] : parts[1]);
+    return `${first}.${last}@elitenutrition.com`;
   } else if (parts.length === 1) {
-    createForm.value.email = `${normalizeForEmail(parts[0])}@elitenutrition.com`;
+    return `${normalizeForEmail(parts[0])}@elitenutrition.com`;
+  }
+  return '';
+};
+
+const generateEmailFromRole = (roleName) => {
+  if (!roleName || !roleName.trim()) return '';
+  return `${normalizeForEmail(roleName)}@elitenutrition.com`;
+};
+
+const setEmailMode = (mode) => {
+  emailMode.value = mode;
+  if (mode === 'name') {
+    if (createForm.value.full_name?.trim()) {
+      createForm.value.email = generateEmailFromName(createForm.value.full_name);
+    } else {
+      createForm.value.email = '';
+    }
+  } else if (mode === 'role') {
+    if (createForm.value.role_id) {
+      const role = rolesList.value.find(r => r.id === createForm.value.role_id);
+      if (role) {
+        createForm.value.email = generateEmailFromRole(role.name);
+      }
+    } else {
+      createForm.value.email = '';
+    }
   }
 };
 
-const suggestEmailByName = () => {
-  onNameInput();
-};
-
-const suggestEmailByRole = () => {
-  if (!createForm.value.role_id) return;
-  const role = rolesList.value.find(r => r.id === createForm.value.role_id);
-  if (role) {
-    createForm.value.email = `${normalizeForEmail(role.name)}@elitenutrition.com`;
+const onNameInput = () => {
+  if (emailMode.value === 'name') {
+    if (createForm.value.full_name?.trim()) {
+      createForm.value.email = generateEmailFromName(createForm.value.full_name);
+    } else {
+      createForm.value.email = '';
+    }
   }
 };
 
 const onRoleChange = () => {
-  if (!createForm.value.email || createForm.value.email === '@elitenutrition.com') {
-    suggestEmailByRole();
+  if (emailMode.value === 'role') {
+    if (createForm.value.role_id) {
+      const role = rolesList.value.find(r => r.id === createForm.value.role_id);
+      if (role) {
+        createForm.value.email = generateEmailFromRole(role.name);
+      }
+    } else {
+      createForm.value.email = '';
+    }
+  }
+};
+
+const onEmailInput = () => {
+  emailMode.value = 'manual';
+};
+
+const suggestEmailByName = () => {
+  setEmailMode('name');
+};
+
+const suggestEmailByRole = () => {
+  setEmailMode('role');
+};
+
+const setEditEmailMode = (mode) => {
+  if (mode === 'name') {
+    if (editForm.value.full_name?.trim()) {
+      editForm.value.email = generateEmailFromName(editForm.value.full_name);
+    }
+  } else if (mode === 'role') {
+    if (editForm.value.role_id) {
+      const role = rolesList.value.find(r => r.id === editForm.value.role_id);
+      if (role) {
+        editForm.value.email = generateEmailFromRole(role.name);
+      }
+    }
   }
 };
 
 // --- CRUD USUARIOS ---
 const openCreateModal = () => {
+  emailMode.value = 'name';
   createForm.value = {
     full_name: '',
     email: '',
