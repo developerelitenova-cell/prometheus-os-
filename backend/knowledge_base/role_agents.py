@@ -64,13 +64,44 @@ class RoleAgent:
         messages = conversation_history + [{"role": "user", "content": query}]
 
         try:
+            from .oracle_tools import ORACLE_TOOLS_DEFINITIONS, execute_oracle_tool
+            import json
+
             response = self.anthropic.messages.create(
                 model=self.claude_model,
-                max_tokens=1024,
+                max_tokens=1500,
                 system=final_system_prompt,
-                messages=messages
+                messages=messages,
+                tools=ORACLE_TOOLS_DEFINITIONS
             )
-            return response.content[0].text
+
+            # Si el modelo solicita ejecutar una herramienta (Tool Use)
+            if response.stop_reason == "tool_use":
+                tool_results = []
+                for block in response.content:
+                    if block.type == "tool_use":
+                        result_data = execute_oracle_tool(block.name, block.input or {}, self.supabase)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": json.dumps(result_data, ensure_ascii=False)
+                        })
+
+                response = self.anthropic.messages.create(
+                    model=self.claude_model,
+                    max_tokens=1500,
+                    system=final_system_prompt,
+                    messages=messages + [
+                        {"role": "assistant", "content": response.content},
+                        {"role": "user", "content": tool_results}
+                    ],
+                    tools=ORACLE_TOOLS_DEFINITIONS
+                )
+
+            for block in response.content:
+                if block.type == "text":
+                    return block.text
+            return "No recibí respuesta de texto del modelo."
         except Exception as e:
             return f"Error al comunicar con Claude: {str(e)}"
 
