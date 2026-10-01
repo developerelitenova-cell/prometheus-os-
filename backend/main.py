@@ -343,7 +343,17 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
         try:
             supabase.table("profiles").update(profile_updates).eq("id", user_id).execute()
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Error actualizando perfil: {str(e)}")
+            err_msg = str(e)
+            if "contract_url" in err_msg or "signature_url" in err_msg or "schema cache" in err_msg:
+                profile_updates.pop("contract_url", None)
+                profile_updates.pop("signature_url", None)
+                if profile_updates:
+                    try:
+                        supabase.table("profiles").update(profile_updates).eq("id", user_id).execute()
+                    except Exception as retry_err:
+                        raise HTTPException(status_code=400, detail=f"Error actualizando perfil: {str(retry_err)}")
+            else:
+                raise HTTPException(status_code=400, detail=f"Error actualizando perfil: {err_msg}")
 
     return {"status": "updated", "user_id": user_id}
 

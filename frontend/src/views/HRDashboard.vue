@@ -950,17 +950,19 @@ const submitEditEmployee = async () => {
 
     let backendSuccess = false;
     try {
+      const payload = {
+        full_name: editForm.value.full_name.trim(),
+        email: editForm.value.email ? editForm.value.email.trim() : undefined,
+        role_id: editForm.value.role_id || null,
+        approval_status: editForm.value.approval_status
+      };
+      if (finalContractUrl) payload.contract_url = finalContractUrl;
+      if (finalSignatureUrl) payload.signature_url = finalSignatureUrl;
+
       const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${editForm.value.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name: editForm.value.full_name.trim(),
-          email: editForm.value.email ? editForm.value.email.trim() : undefined,
-          role_id: editForm.value.role_id || null,
-          approval_status: editForm.value.approval_status,
-          contract_url: finalContractUrl,
-          signature_url: finalSignatureUrl
-        })
+        body: JSON.stringify(payload)
       });
       if (res.ok) backendSuccess = true;
     } catch (apiErr) {
@@ -968,16 +970,29 @@ const submitEditEmployee = async () => {
     }
 
     if (!backendSuccess) {
-      const { error: supaErr } = await supabase
+      const updateData = {
+        full_name: editForm.value.full_name.trim(),
+        role_id: editForm.value.role_id || null,
+        approval_status: editForm.value.approval_status
+      };
+      if (finalContractUrl) updateData.contract_url = finalContractUrl;
+      if (finalSignatureUrl) updateData.signature_url = finalSignatureUrl;
+
+      let { error: supaErr } = await supabase
         .from('profiles')
-        .update({
-          full_name: editForm.value.full_name.trim(),
-          role_id: editForm.value.role_id || null,
-          approval_status: editForm.value.approval_status,
-          contract_url: finalContractUrl,
-          signature_url: finalSignatureUrl
-        })
+        .update(updateData)
         .eq('id', editForm.value.id);
+
+      if (supaErr && (supaErr.message?.includes('contract_url') || supaErr.message?.includes('signature_url') || supaErr.code === 'PGRST204')) {
+        delete updateData.contract_url;
+        delete updateData.signature_url;
+        const retry = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', editForm.value.id);
+        supaErr = retry.error;
+      }
+
       if (supaErr) throw supaErr;
     }
 
