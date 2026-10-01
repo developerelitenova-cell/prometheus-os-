@@ -524,7 +524,7 @@
           </div>
 
           <p class="text-xs text-secondary mb-4">
-            Nueva contraseña para: <strong class="text-on-surface">{{ passwordForm.full_name }}</strong> ({{ passwordForm.email }}).
+            Nueva contraseña para: <strong class="text-on-surface">{{ passwordForm.full_name }}</strong><span v-if="passwordForm.email"> ({{ passwordForm.email }})</span>.
           </p>
 
           <form @submit.prevent="submitResetPassword" class="flex flex-col gap-4">
@@ -569,16 +569,47 @@ const activeTab = ref('employees');
 
 const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
-const fetchWithAuth = async (url, options = {}) => {
-  const { data } = await supabase.auth.getSession();
-  const token = data?.session?.access_token;
+const fetchWithAuth = async (url, options = {}, isRetry = false) => {
+  let { data } = await supabase.auth.getSession();
+  let token = data?.session?.access_token;
   
+  // Si no hay token o la sesión está próxima a expirar, refrescar
+  if (!token || (data?.session?.expires_at && data.session.expires_at * 1000 - Date.now() < 60000)) {
+    try {
+      const refreshed = await supabase.auth.refreshSession();
+      if (refreshed?.data?.session?.access_token) {
+        token = refreshed.data.session.access_token;
+      }
+    } catch (err) {
+      console.warn('Error refreshing session pre-flight:', err);
+    }
+  }
+
   const headers = {
     ...options.headers,
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
 
-  return fetch(url, { ...options, headers });
+  const res = await fetch(url, { ...options, headers });
+
+  // Si da 401 por sesión / JWT desincronizado con GoTrue, refrescar explícitamente y reintentar una vez
+  if (res.status === 401 && !isRetry) {
+    try {
+      const refreshed = await supabase.auth.refreshSession();
+      const newToken = refreshed?.data?.session?.access_token;
+      if (newToken) {
+        const retryHeaders = {
+          ...options.headers,
+          'Authorization': `Bearer ${newToken}`
+        };
+        return await fetch(url, { ...options, headers: retryHeaders });
+      }
+    } catch (refreshErr) {
+      console.warn('Error refreshing session on 401 retry:', refreshErr);
+    }
+  }
+
+  return res;
 };
 
 // Data
