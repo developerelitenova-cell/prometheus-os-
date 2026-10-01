@@ -307,7 +307,7 @@
               <div>
                 <h3 class="company-name">ELITE NUTRITION S.A.S.</h3>
                 <p class="company-sub">SISTEMA INTEGRADO DE GESTIÓN Y RENDIMIENTO CORPORATIVO</p>
-                <p class="company-os">PROMETHEUS OS · GOBERNANZA OPERATIVA</p>
+                <p class="company-os">NOVA WORK · GOBERNANZA OPERATIVA</p>
               </div>
             </div>
             <div class="sheet-doc-meta">
@@ -547,14 +547,14 @@
               <div class="sig-line"></div>
               <p class="sig-name">{{ reportAnalystName }}</p>
               <p class="sig-role">Analista de Datos y Calidad</p>
-              <p class="sig-doc">Control de Gestión Prometheus OS</p>
+              <p class="sig-doc">Control de Gestión NOVA WORK</p>
               <p class="sig-note">"Verificado en sistema y registrado en el historial de rendimiento."</p>
             </div>
           </div>
 
           <!-- Pie de página institucional -->
           <div class="sheet-footer">
-            <span>Sistema Operativo Prometheus OS · Elite Nutrition S.A.S. · Documento Confidencial de Control Interno</span>
+            <span>Sistema Operativo NOVA WORK · Elite Nutrition S.A.S. · Documento Confidencial de Control Interno</span>
             <span>Página 1 de 1</span>
           </div>
         </div>
@@ -1513,14 +1513,14 @@ const generateAiDiagnosis = async () => {
 2. Calidad y Cero Novedades: Mitigar cuellos de botella del área, garantizando el reporte oportuno de novedades y entregables sin reprocesos.
 3. Retroalimentación Continua: Sostener reuniones breves 1 a 1 de seguimiento con el evaluador y presentar soporte documental de avances antes del siguiente corte.
 
-PRÓXIMA FECHA DE CONTROL: Siguiente corte oficial programado en Prometheus OS.`;
+PRÓXIMA FECHA DE CONTROL: Siguiente corte oficial programado en NOVA WORK.`;
 
       reportDiagnosisText.value = `${diagnosticoGeneral}${metricHighlights ? metricHighlights + '\n' : ''}\n\n${acuerdos}`;
 
     } else if (reportType.value === 'area') {
       const aname = selectedAreaObj.value?.name || 'del Área';
       reportDiagnosisText.value = `DIAGNÓSTICO TÁCTICO DEL ÁREA (${periodLabel}):
-El equipo de ${aname} registra una tasa de cumplimiento consolidada del ${areaComputedAverage.value}%, demostrando alta cohesión operativa y apego a los flujos documentados en Prometheus OS.
+El equipo de ${aname} registra una tasa de cumplimiento consolidada del ${areaComputedAverage.value}%, demostrando alta cohesión operativa y apego a los flujos documentados en NOVA WORK.
 
 ACUERDOS DE GESTIÓN Y COORDINACIÓN DEL ÁREA:
 1. Sincronización Interdepartamental: Reducir tiempos muertos en transiciones de información y cuellos de botella con áreas satélite.
@@ -1529,7 +1529,7 @@ ACUERDOS DE GESTIÓN Y COORDINACIÓN DEL ÁREA:
 
     } else {
       reportDiagnosisText.value = `INFORME EJECUTIVO GLOBAL DE LA COMPAÑÍA (${periodLabel}):
-El análisis corporativo de la compañía Elite Nutrition refleja una tasa de cumplimiento del ${companyOverallAverage.value}% a nivel global, con 14 áreas operando dentro de los estándares de gobernanza de Prometheus OS.
+El análisis corporativo de la compañía Elite Nutrition refleja una tasa de cumplimiento del ${companyOverallAverage.value}% a nivel global, con 14 áreas operando dentro de los estándares de gobernanza de NOVA WORK.
 
 DIRECTRICES Y ACUERDOS ESTRATÉGICOS:
 1. Rentabilidad y Eficiencia Operativa: Consolidar las metas comerciales y de abastecimiento con control riguroso de mermas y tiempos de entrega.
