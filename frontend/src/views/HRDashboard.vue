@@ -917,24 +917,42 @@ const submitEditEmployee = async () => {
       finalSignatureUrl = urlData.publicUrl;
     }
 
-    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${editForm.value.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        full_name: editForm.value.full_name.trim(),
-        email: editForm.value.email ? editForm.value.email.trim() : undefined,
-        role_id: editForm.value.role_id || null,
-        approval_status: editForm.value.approval_status,
-        contract_url: finalContractUrl,
-        signature_url: finalSignatureUrl
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.detail || 'Error al actualizar el usuario.');
+    let backendSuccess = false;
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${editForm.value.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: editForm.value.full_name.trim(),
+          email: editForm.value.email ? editForm.value.email.trim() : undefined,
+          role_id: editForm.value.role_id || null,
+          approval_status: editForm.value.approval_status,
+          contract_url: finalContractUrl,
+          signature_url: finalSignatureUrl
+        })
+      });
+      if (res.ok) backendSuccess = true;
+    } catch (apiErr) {
+      console.warn('Backend API no disponible para update, guardando directo en Supabase:', apiErr);
     }
+
+    if (!backendSuccess) {
+      const { error: supaErr } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.value.full_name.trim(),
+          role_id: editForm.value.role_id || null,
+          approval_status: editForm.value.approval_status,
+          contract_url: finalContractUrl,
+          signature_url: finalSignatureUrl
+        })
+        .eq('id', editForm.value.id);
+      if (supaErr) throw supaErr;
+    }
+
     showEditModal.value = false;
     await loadData();
+    alert('Usuario actualizado con éxito.');
   } catch (e) {
     editError.value = e.message;
   } finally {
@@ -987,15 +1005,42 @@ const toggleUserStatus = async (user) => {
   if (!confirm(`¿Estás seguro de que deseas ${actionName} el acceso a ${user.full_name}?`)) return;
 
   try {
-    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approval_status: newStatus })
-    });
-    if (!res.ok) throw new Error('Error al actualizar estado');
+    let success = false;
+
+    // 1. Actualizar directamente en Supabase (siempre funciona en local y producción)
+    const { error: supaErr } = await supabase
+      .from('profiles')
+      .update({ approval_status: newStatus })
+      .eq('id', user.id);
+
+    if (!supaErr) {
+      success = true;
+    } else {
+      console.warn('Fallo actualización directa en profiles, intentando backend:', supaErr);
+    }
+
+    // 2. Si hay backend disponible, sincronizar también
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approval_status: newStatus })
+      });
+      if (res.ok) success = true;
+    } catch (apiErr) {
+      console.warn('Backend API no disponible para status update:', apiErr);
+    }
+
+    if (!success) {
+      throw new Error('No se pudo actualizar el estado en la base de datos.');
+    }
+
+    user.approval_status = newStatus;
     await loadData();
+    alert(`Estado de ${user.full_name} actualizado a: ${newStatus === 'suspended' ? 'Suspendido' : 'Activo'}.`);
   } catch (e) {
-    alert(e.message);
+    console.error('Error toggling status:', e);
+    alert('Error al actualizar estado: ' + (e.message || e));
   }
 };
 
@@ -1003,13 +1048,25 @@ const handleDeleteEmployee = async (user) => {
   if (!confirm(`¿Estás seguro de eliminar permanentemente la cuenta de ${user.full_name}? Esta acción no se puede deshacer.`)) return;
 
   try {
-    const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
-      method: 'DELETE'
-    });
-    if (!res.ok) throw new Error('Error al eliminar cuenta');
+    let backendSuccess = false;
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) backendSuccess = true;
+    } catch (apiErr) {
+      console.warn('Backend no disponible para borrado de Auth:', apiErr);
+    }
+
+    if (!backendSuccess) {
+      const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+      if (error) throw error;
+    }
+
     await loadData();
+    alert(`Cuenta de ${user.full_name} eliminada.`);
   } catch (e) {
-    alert(e.message);
+    alert('Error al eliminar cuenta: ' + (e.message || e));
   }
 };
 

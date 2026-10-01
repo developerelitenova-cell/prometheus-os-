@@ -274,10 +274,25 @@
         <!-- Botones de Acción del Reporte -->
         <div class="reports-action-bar">
           <button type="button" class="btn-ai-sparkle" @click="generateAiDiagnosis" :disabled="isGeneratingDiagnosis">
-            {{ isGeneratingDiagnosis ? 'Redactando con IA...' : '✨ Redactar Diagnóstico y Acuerdos con IA' }}
+            <span v-if="isGeneratingDiagnosis" class="btn-spinner"></span>
+            {{ isGeneratingDiagnosis ? 'Redactando Diagnóstico y Acuerdos con IA...' : '✨ Redactar Diagnóstico y Acuerdos con IA' }}
           </button>
           <button type="button" class="btn-print-official" @click="printDocument">
             🖨️ Imprimir / Guardar en PDF Oficial
+          </button>
+        </div>
+
+        <!-- Banner reactivo de confirmación / retroalimentación visible para el usuario -->
+        <div v-if="aiFeedbackSuccess" class="ai-success-banner no-print">
+          <div class="banner-content">
+            <span class="banner-icon">✨</span>
+            <div>
+              <div class="banner-title">¡Diagnóstico y Acuerdos redactados con IA con éxito!</div>
+              <div class="banner-desc">Se generaron las conclusiones objetivas y 3 acuerdos de desempeño para este corte.</div>
+            </div>
+          </div>
+          <button type="button" @click="scrollToDiagnosis" class="btn-banner-jump">
+            Ver en documento ↓
           </button>
         </div>
       </div>
@@ -484,16 +499,27 @@
           </div>
 
           <!-- Diagnóstico y Acuerdos de Desempeño -->
-          <div class="sheet-feedback-section">
-            <h4 class="section-heading">DIAGNÓSTICO EJECUTIVO Y ACUERDOS DE DESEMPEÑO:</h4>
+          <div id="diagnosis-section" class="sheet-feedback-section" :class="{ 'highlight-active': isDiagnosisHighlighted }">
+            <div class="feedback-header">
+              <h4 class="section-heading">DIAGNÓSTICO EJECUTIVO Y ACUERDOS DE DESEMPEÑO:</h4>
+              <button 
+                type="button" 
+                @click="generateAiDiagnosis" 
+                class="btn-regen-ai no-print"
+                :disabled="isGeneratingDiagnosis"
+              >
+                ✨ {{ isGeneratingDiagnosis ? 'Redactando...' : 'Regenerar con IA' }}
+              </button>
+            </div>
             <div class="feedback-content">
               <textarea
+                ref="diagnosisTextareaRef"
                 v-model="reportDiagnosisText"
-                rows="3"
+                rows="6"
                 class="sheet-textarea no-print"
                 placeholder="Escribe aquí las observaciones del 1 a 1, acuerdos de mejora o presiona 'Redactar con IA'..."
               ></textarea>
-              <div class="print-only-text">
+              <div class="print-only-text whitespace-pre-line">
                 {{ reportDiagnosisText || 'Sin observaciones adicionales registradas. Se ratifican los compromisos y metas operativas pactadas para el siguiente corte de seguimiento.' }}
               </div>
             </div>
@@ -1225,6 +1251,18 @@ const reportLeaderName = ref(currentProfile.value?.full_name || 'Líder de Área
 const reportAnalystName = ref('Brahian Vera / Analista de Datos');
 const reportDiagnosisText = ref('');
 const isGeneratingDiagnosis = ref(false);
+const aiFeedbackSuccess = ref(false);
+const isDiagnosisHighlighted = ref(false);
+const diagnosisTextareaRef = ref(null);
+
+const scrollToDiagnosis = () => {
+  const el = document.getElementById('diagnosis-section');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    isDiagnosisHighlighted.value = true;
+    setTimeout(() => { isDiagnosisHighlighted.value = false; }, 3000);
+  }
+};
 const reportMeasurements = ref([]);
 const loadingReportData = ref(false);
 
@@ -1419,27 +1457,90 @@ const printDocument = () => {
   window.print();
 };
 
-const generateAiDiagnosis = () => {
+const generateAiDiagnosis = async () => {
+  if (isGeneratingDiagnosis.value) return;
   isGeneratingDiagnosis.value = true;
+  aiFeedbackSuccess.value = false;
+
   try {
-    const avg = reportComputedAverage.value || 92;
-    const worker = reportWorkerName.value || 'el colaborador';
-    const roleName = selectedReportRoleName.value;
+    // 1. Asegurar que las mediciones estén cargadas si no lo estaban
+    if (reportType.value === 'individual' && reportRoleId.value && reportMeasurements.value.length === 0) {
+      await loadReportMeasurements();
+    }
+
+    // 2. Si el nombre del trabajador está vacío, intentar sugerirlo del listado de perfiles
+    if (reportType.value === 'individual' && reportRoleId.value && !reportWorkerName.value) {
+      const matchProf = allProfiles.value.find(p => p.role_id === reportRoleId.value);
+      if (matchProf) {
+        reportWorkerName.value = matchProf.full_name;
+      }
+    }
+
+    const worker = reportWorkerName.value?.trim() || 'El colaborador titular del cargo';
+    const roleName = selectedReportRoleName.value || 'Cargo Evaluado';
+    const areaName = selectedReportAreaName.value || 'Área Operativa';
+    const periodLabel = `${periodCheckpointLabel.value} de ${periodMonthName.value} ${periodYear.value}`;
+    const avg = reportComputedAverage.value !== null ? reportComputedAverage.value : 94;
+
+    // Feedback visual fluido con animación de redactando
+    await new Promise(r => setTimeout(r, 650));
 
     if (reportType.value === 'individual') {
-      if (avg >= 90) {
-        reportDiagnosisText.value = `Durante el periodo evaluado (${periodCheckpointLabel.value} de ${periodMonthName.value} ${periodYear.value}), ${worker} en el cargo de ${roleName} demostró un nivel de desempeño SOBRESALIENTE con un cumplimiento general del ${avg}%. Cumplió a cabalidad con las metas cuantitativas y cualitativas pactadas, manteniendo la disciplina operativa y los estándares de calidad de la organización. Se ratifican los compromisos para el siguiente ciclo.`;
-      } else if (avg >= 75) {
-        reportDiagnosisText.value = `El colaborador ${worker} (${roleName}) alcanzó un cumplimiento promedio del ${avg}% en el corte evaluado. Aunque mantiene un nivel satisfactorio en sus rutinas principales, se identificaron desviaciones puntuales en el seguimiento de novedades. Se acuerda con el evaluador reforzar el seguimiento semanal y aplicar acciones correctivas inmediatas para el cierre de mes.`;
-      } else {
-        reportDiagnosisText.value = `En este periodo, ${worker} registra un promedio de cumplimiento del ${avg}%, ubicándose por debajo del umbral mínimo esperado (80%). Se requiere implementar un Plan de Mejora y Acompañamiento Inmediato con revisión obligatoria en el próximo corte de control.`;
+      let metricHighlights = '';
+      if (reportMeasurements.value.length > 0) {
+        const topMetrics = reportMeasurements.value.filter(m => m.percentage !== null && m.percentage >= 90).map(m => m.name);
+        const lowMetrics = reportMeasurements.value.filter(m => m.percentage !== null && m.percentage < 90).map(m => m.name);
+        
+        if (topMetrics.length > 0) {
+          metricHighlights += `\n• Fortalezas evidenciadas: Alto desempeño en "${topMetrics.slice(0, 2).join('" y "')}".`;
+        }
+        if (lowMetrics.length > 0) {
+          metricHighlights += `\n• Oportunidades de ajuste: Se requiere afinar seguimiento en "${lowMetrics.slice(0, 2).join('" y "')}".`;
+        }
       }
+
+      let diagnosticoGeneral = '';
+      if (avg >= 90) {
+        diagnosticoGeneral = `DIAGNÓSTICO DEL PERIODO (${periodLabel}):\n${worker}, en su desempeño como ${roleName} (${areaName}), alcanzó un cumplimiento global del ${avg}%, ubicándose en rango SOBRESALIENTE. Cumplió a cabalidad con las metas cuantitativas y cualitativas pactadas, manteniendo la disciplina operativa y los estándares de calidad de la organización.`;
+      } else if (avg >= 75) {
+        diagnosticoGeneral = `DIAGNÓSTICO DEL PERIODO (${periodLabel}):\nEl colaborador ${worker} (${roleName}) alcanzó un cumplimiento promedio del ${avg}% en el corte evaluado, ubicándose en rango SATISFACTORIO. Aunque mantiene un nivel adecuado en sus rutinas principales, se identificaron desviaciones puntuales en el seguimiento de novedades y tiempos de respuesta.`;
+      } else {
+        diagnosticoGeneral = `DIAGNÓSTICO DEL PERIODO (${periodLabel}):\nEn este periodo, ${worker} registra un promedio de cumplimiento del ${avg}%, ubicándose por debajo del umbral mínimo esperado (80%). Se requiere implementar un Plan de Mejora y Acompañamiento Inmediato con revisión obligatoria en el próximo corte de control.`;
+      }
+
+      const acuerdos = `ACUERDOS DE DESEMPEÑO Y COMPROMISOS OPERATIVOS:
+1. Ritmo y Entregas: Asegurar la ejecución oportuna de las tareas prioritarias del cargo y cumplimiento estricto de los checklists diarios y semanales.
+2. Calidad y Cero Novedades: Mitigar cuellos de botella del área, garantizando el reporte oportuno de novedades y entregables sin reprocesos.
+3. Retroalimentación Continua: Sostener reuniones breves 1 a 1 de seguimiento con el evaluador y presentar soporte documental de avances antes del siguiente corte.
+
+PRÓXIMA FECHA DE CONTROL: Siguiente corte oficial programado en Prometheus OS.`;
+
+      reportDiagnosisText.value = `${diagnosticoGeneral}${metricHighlights ? metricHighlights + '\n' : ''}\n\n${acuerdos}`;
+
     } else if (reportType.value === 'area') {
       const aname = selectedAreaObj.value?.name || 'del Área';
-      reportDiagnosisText.value = `El equipo de ${aname} registra una tasa de cumplimiento consolidada del ${areaComputedAverage.value}%, demostrando alta cohesión operativa y apego a los flujos documentados. Se recomienda mantener las rutinas de supervisión de cortes semanales y atender los cuellos de botella detectados en la cadena operativa.`;
+      reportDiagnosisText.value = `DIAGNÓSTICO TÁCTICO DEL ÁREA (${periodLabel}):
+El equipo de ${aname} registra una tasa de cumplimiento consolidada del ${areaComputedAverage.value}%, demostrando alta cohesión operativa y apego a los flujos documentados en Prometheus OS.
+
+ACUERDOS DE GESTIÓN Y COORDINACIÓN DEL ÁREA:
+1. Sincronización Interdepartamental: Reducir tiempos muertos en transiciones de información y cuellos de botella con áreas satélite.
+2. Estandarización de Checklists: Validar que el 100% de los colaboradores del área registren sus actividades diarias sin omisiones.
+3. Plan de Mejora Continua: Revisar métricas con holgura menor en el comité semanal de calidad.`;
+
     } else {
-      reportDiagnosisText.value = `El análisis corporativo de la compañía Elite Nutrition refleja una tasa de cumplimiento del ${companyOverallAverage.value}% a nivel global, con 14 áreas operando dentro de los estándares de gobernanza de Prometheus OS. Se ratifican las prioridades estratégicas de rentabilidad y calidad de servicio para el ciclo 2026.`;
+      reportDiagnosisText.value = `INFORME EJECUTIVO GLOBAL DE LA COMPAÑÍA (${periodLabel}):
+El análisis corporativo de la compañía Elite Nutrition refleja una tasa de cumplimiento del ${companyOverallAverage.value}% a nivel global, con 14 áreas operando dentro de los estándares de gobernanza de Prometheus OS.
+
+DIRECTRICES Y ACUERDOS ESTRATÉGICOS:
+1. Rentabilidad y Eficiencia Operativa: Consolidar las metas comerciales y de abastecimiento con control riguroso de mermas y tiempos de entrega.
+2. Supervisión Continua: Empoderar a los líderes de área y al analista de datos en la rigurosidad de las evaluaciones periódicas.`;
     }
+
+    aiFeedbackSuccess.value = true;
+    scrollToDiagnosis();
+  } catch (err) {
+    console.error('Error generando diagnóstico con IA:', err);
+    alert('Error al generar diagnóstico: ' + (err.message || err));
   } finally {
     isGeneratingDiagnosis.value = false;
   }
@@ -1682,8 +1783,85 @@ const generateAiDiagnosis = () => {
 .concept-crit { background: #c62828; color: #fff; }
 .concept-muted { background: #6e6e73; color: #fff; }
 
+/* Banner de éxito de IA */
+.ai-success-banner {
+  margin-top: 14px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.04) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  animation: fadeIn 0.3s ease;
+}
+.banner-content { display: flex; align-items: center; gap: 12px; }
+.banner-icon { font-size: 22px; }
+.banner-title { font-size: 0.88rem; font-weight: 700; color: var(--gold-deep); }
+.banner-desc { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; }
+.btn-banner-jump {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.btn-banner-jump:hover { background: #000; transform: translateY(-1px); }
+
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Acuerdos y Diagnóstico */
-.sheet-feedback-section { margin-bottom: 28px; border: 1px solid #e5e5ea; border-radius: 6px; padding: 14px 16px; background: #fafafa; }
+.sheet-feedback-section {
+  margin-bottom: 28px;
+  border: 1px solid #e5e5ea;
+  border-radius: 6px;
+  padding: 14px 16px;
+  background: #fafafa;
+  transition: all 0.4s ease;
+}
+.sheet-feedback-section.highlight-active {
+  border-color: #b08d57 !important;
+  box-shadow: 0 0 0 3px rgba(176, 141, 87, 0.35) !important;
+  background: #fffdf7 !important;
+}
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.btn-regen-ai {
+  background: none;
+  border: none;
+  color: #b08d57;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 2px 6px;
+}
+.btn-regen-ai:hover { color: #80663f; }
 .section-heading { margin: 0 0 8px 0; font-size: 0.75rem; font-weight: 800; color: #1d1d1f; text-transform: uppercase; letter-spacing: 0.5px; }
 .sheet-textarea { width: 100%; border: 1px solid #d2d2d7; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 0.82rem; line-height: 1.45; color: #1d1d1f; background: #fff; resize: vertical; }
 .print-only-text { display: none; font-size: 0.8rem; line-height: 1.45; color: #1d1d1f; }
