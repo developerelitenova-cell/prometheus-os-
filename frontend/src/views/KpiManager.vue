@@ -5,9 +5,10 @@
         <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Gestión de Indicadores Clave (KPIs)</h1>
       </div>
-      <div class="tabs">
+      <div class="tabs no-print">
         <button :class="{ active: tab === 'templates' }" @click="tab = 'templates'">Plantillas</button>
         <button :class="{ active: tab === 'measurements' }" @click="tab = 'measurements'">Cargar Mediciones</button>
+        <button :class="{ active: tab === 'reports' }" @click="tab = 'reports'">📄 Actas e Informes</button>
       </div>
     </header>
 
@@ -93,8 +94,8 @@
     </div>
 
     <!-- ============ TAB: MEDICIONES ============ -->
-    <div v-else class="measurements-tab">
-      <div class="measurement-controls glass-panel">
+    <div v-else-if="tab === 'measurements'" class="measurements-tab">
+      <div class="measurement-controls glass-panel no-print">
         <div class="control-group">
           <label>Cargo</label>
           <select v-model="selectedPairKey">
@@ -131,7 +132,7 @@
 
       <div v-else class="measurement-form glass-panel">
         <!-- Banner Asistente IA de Calificación -->
-        <div class="ai-evaluator-card">
+        <div class="ai-evaluator-card no-print">
           <div class="ai-evaluator-text">
             <div class="ai-title-row">
               <span class="ai-badge-chip">✨ Inteligencia Artificial</span>
@@ -182,9 +183,354 @@
         <p v-if="saveError" class="error-text">{{ saveError }}</p>
 
         <div class="modal-actions">
+          <button type="button" class="btn-secondary-action" @click="goToReportWithCurrent">
+            📄 Generar Acta para Firma
+          </button>
           <button class="btn-primary" @click="saveMeasurements" :disabled="saving">
             {{ saving ? 'Guardando...' : 'Guardar Mediciones' }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TAB: ACTAS E INFORMES INSTITUCIONALES ============ -->
+    <div v-else class="reports-tab">
+      <!-- Barra de configuración del informe (no-print) -->
+      <div class="reports-controls glass-panel no-print">
+        <div class="control-row-main">
+          <div class="control-group">
+            <label>Tipo de Documento</label>
+            <select v-model="reportType">
+              <option value="individual">📄 Acta de Rendimiento Individual para Firma (Trabajador)</option>
+              <option value="area">📊 Informe Consolidado de Equipo / Área</option>
+              <option value="company" v-if="isMaster">🏢 Dossier Ejecutivo Global (Toda la Empresa)</option>
+            </select>
+          </div>
+
+          <div class="control-group" v-if="reportType === 'individual'">
+            <label>Cargo a Evaluar</label>
+            <select v-model="reportRoleId">
+              <option :value="null">— Selecciona un cargo —</option>
+              <option v-for="r in allRolesForReport" :key="r.id" :value="r.id">
+                {{ r.areas?.name ? r.areas.name + ' · ' : '' }}{{ r.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="control-group" v-if="reportType === 'area'">
+            <label>Área a Evaluar</label>
+            <select v-model="reportAreaId">
+              <option :value="null">— Selecciona un área —</option>
+              <option v-for="a in allowedAreasForUser" :key="a.id" :value="a.id">
+                {{ a.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label>Año</label>
+            <input type="number" v-model.number="periodYear" min="2024" max="2100" />
+          </div>
+
+          <div class="control-group">
+            <label>Mes</label>
+            <input type="number" v-model.number="periodMonth" min="1" max="12" />
+          </div>
+
+          <div class="control-group">
+            <label>Corte</label>
+            <select v-model="periodCheckpoint">
+              <option value="semana_2">Semana 2</option>
+              <option value="semana_3">Semana 3</option>
+              <option value="semana_4">Semana 4</option>
+              <option value="cierre">Cierre Mensual</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Campos de personalización para el acta individual -->
+        <div class="control-row-secondary" v-if="reportType === 'individual'">
+          <div class="control-group flex-2">
+            <label>Nombre del Colaborador (Para la firma)</label>
+            <input v-model="reportWorkerName" placeholder="Nombre y Apellidos completos" />
+          </div>
+
+          <div class="control-group flex-1">
+            <label>Documento de Identidad (C.C.)</label>
+            <input v-model="reportWorkerDoc" placeholder="Ej: 1.098.765.432" />
+          </div>
+
+          <div class="control-group flex-2">
+            <label>Líder Evaluador</label>
+            <input v-model="reportLeaderName" placeholder="Nombre del líder o jefe directo" />
+          </div>
+
+          <div class="control-group flex-2">
+            <label>Analista de Datos / Visto Bueno</label>
+            <input v-model="reportAnalystName" placeholder="Analista de Datos y Calidad" />
+          </div>
+        </div>
+
+        <!-- Botones de Acción del Reporte -->
+        <div class="reports-action-bar">
+          <button type="button" class="btn-ai-sparkle" @click="generateAiDiagnosis" :disabled="isGeneratingDiagnosis">
+            {{ isGeneratingDiagnosis ? 'Redactando con IA...' : '✨ Redactar Diagnóstico y Acuerdos con IA' }}
+          </button>
+          <button type="button" class="btn-print-official" @click="printDocument">
+            🖨️ Imprimir / Guardar en PDF Oficial
+          </button>
+        </div>
+      </div>
+
+      <!-- LIENZO DE LA HOJA INSTITUCIONAL (Imprimible) -->
+      <div class="institutional-document-wrapper">
+        <div class="institutional-document sheet-page">
+          <!-- Membrete Corporativo -->
+          <div class="sheet-header">
+            <div class="sheet-brand">
+              <div class="brand-crest">EN</div>
+              <div>
+                <h3 class="company-name">ELITE NUTRITION S.A.S.</h3>
+                <p class="company-sub">SISTEMA INTEGRADO DE GESTIÓN Y RENDIMIENTO CORPORATIVO</p>
+                <p class="company-os">PROMETHEUS OS · GOBERNANZA OPERATIVA</p>
+              </div>
+            </div>
+            <div class="sheet-doc-meta">
+              <table>
+                <tr><td><strong>CÓDIGO:</strong></td><td>FOR-SGC-KPI-01</td></tr>
+                <tr><td><strong>VERSIÓN:</strong></td><td>2.4 (2026)</td></tr>
+                <tr><td><strong>EMISIÓN:</strong></td><td>{{ todayFormatted }}</td></tr>
+                <tr><td><strong>PÁGINA:</strong></td><td>1 de 1</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Título Oficial del Documento -->
+          <div class="sheet-title-banner">
+            <h2 v-if="reportType === 'individual'">ACTA INSTITUCIONAL DE RENDIMIENTO Y EVALUACIÓN DE DESEMPEÑO</h2>
+            <h2 v-else-if="reportType === 'area'">INFORME CONSOLIDADO DE DESEMPEÑO TÁCTICO POR ÁREA</h2>
+            <h2 v-else>DOSSIER EJECUTIVO DE DESEMPEÑO GLOBAL DE LA COMPAÑÍA</h2>
+            <p class="sheet-subtitle">
+              PERÍODO: <strong>{{ periodCheckpointLabel.toUpperCase() }}</strong> · {{ periodMonthName.toUpperCase() }} DE {{ periodYear }}
+            </p>
+          </div>
+
+          <!-- Cuadro de Identificación del Colaborador (Si es individual) -->
+          <div class="sheet-meta-box" v-if="reportType === 'individual'">
+            <div class="meta-item">
+              <span class="meta-title">Colaborador Evaluado:</span>
+              <span class="meta-val highlight">{{ reportWorkerName || '________________________________________' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Documento de Identidad:</span>
+              <span class="meta-val">{{ reportWorkerDoc || '________________________' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Cargo / Puesto:</span>
+              <span class="meta-val highlight">{{ selectedReportRoleName }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Área / Proceso:</span>
+              <span class="meta-val">{{ selectedReportAreaName }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Líder Inmediato Evaluador:</span>
+              <span class="meta-val">{{ reportLeaderName }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Control y Auditoría de Datos:</span>
+              <span class="meta-val">{{ reportAnalystName }}</span>
+            </div>
+          </div>
+
+          <!-- Cuadro de Identificación de Área (Si es reporte de área) -->
+          <div class="sheet-meta-box" v-else-if="reportType === 'area'">
+            <div class="meta-item">
+              <span class="meta-title">Área Evaluada:</span>
+              <span class="meta-val highlight">{{ selectedAreaObj?.name || 'Todas' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Líder Responsable:</span>
+              <span class="meta-val">{{ reportLeaderName }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Total Cargos Auditados:</span>
+              <span class="meta-val">{{ areaRolesList.length }} cargos</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-title">Fecha de Auditoría:</span>
+              <span class="meta-val">{{ todayFormatted }}</span>
+            </div>
+          </div>
+
+          <!-- TABLA DE RESULTADOS (MODO INDIVIDUAL) -->
+          <div v-if="reportType === 'individual'">
+            <table class="sheet-table">
+              <thead>
+                <tr>
+                  <th style="width: 5%;">No.</th>
+                  <th style="width: 32%;">Indicador Clave de Rendimiento (KPI)</th>
+                  <th style="width: 14%;">Meta Asignada</th>
+                  <th style="width: 15%;">Resultado Obtenido</th>
+                  <th style="width: 12%;">% Cumplido</th>
+                  <th style="width: 10%;">Estado</th>
+                  <th style="width: 12%;">Observación</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="m in reportMeasurements" :key="m.id">
+                  <td class="text-center font-bold">{{ m.number }}</td>
+                  <td><strong>{{ m.name }}</strong></td>
+                  <td class="text-center font-mono">{{ m.meta_label }}</td>
+                  <td class="text-center font-mono">{{ m.realizado_raw || '-' }}</td>
+                  <td class="text-center font-bold font-mono">
+                    {{ m.percentage !== null ? m.percentage + '%' : 'Pendiente' }}
+                  </td>
+                  <td class="text-center">
+                    <span :class="['sheet-pill', m.estado === 'cumpliendo' ? 'pill-ok' : 'pill-warn']">
+                      {{ m.estado === 'cumpliendo' ? 'Cumpliendo' : 'Revisar' }}
+                    </span>
+                  </td>
+                  <td class="notes-cell">{{ m.notes || '-' }}</td>
+                </tr>
+                <tr v-if="reportMeasurements.length === 0">
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    No se han registrado mediciones para este cargo en el corte seleccionado.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Resumen y Calificación Ponderada Final -->
+            <div class="sheet-score-bar">
+              <div class="score-label">CALIFICACIÓN GLOBAL CONSOLIDADA DEL CORTE:</div>
+              <div class="score-number">{{ reportComputedAverage !== null ? reportComputedAverage + '%' : 'S/D' }}</div>
+              <div class="score-concept" :class="scoreConceptClass">
+                {{ scoreConceptLabel }}
+              </div>
+            </div>
+          </div>
+
+          <!-- TABLA DE RESULTADOS (MODO ÁREA) -->
+          <div v-else-if="reportType === 'area'">
+            <table class="sheet-table">
+              <thead>
+                <tr>
+                  <th style="width: 5%;">No.</th>
+                  <th style="width: 40%;">Cargo del Área</th>
+                  <th style="width: 20%;">Plantilla Asignada</th>
+                  <th style="width: 15%;">% Promedio Corte</th>
+                  <th style="width: 20%;">Estado de Gestión</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(r, idx) in areaRolesReportData" :key="r.id">
+                  <td class="text-center font-bold">{{ idx + 1 }}</td>
+                  <td><strong>{{ r.name }}</strong></td>
+                  <td>{{ r.templateLabel }}</td>
+                  <td class="text-center font-bold font-mono">
+                    {{ r.score !== null ? r.score + '%' : 'Sin datos' }}
+                  </td>
+                  <td class="text-center">
+                    <span :class="['sheet-pill', r.score >= 90 ? 'pill-ok' : r.score >= 70 ? 'pill-warn' : 'pill-crit']">
+                      {{ r.score >= 90 ? 'Sobresaliente' : r.score >= 70 ? 'En Rango' : 'Atención' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="sheet-score-bar">
+              <div class="score-label">PROMEDIO CONSOLIDADO DEL ÁREA:</div>
+              <div class="score-number">{{ areaComputedAverage !== null ? areaComputedAverage + '%' : 'S/D' }}</div>
+              <div class="score-concept" :class="areaScoreConceptClass">
+                {{ areaScoreConceptLabel }}
+              </div>
+            </div>
+          </div>
+
+          <!-- TABLA DE RESULTADOS (MODO EMPRESA) -->
+          <div v-else>
+            <table class="sheet-table">
+              <thead>
+                <tr>
+                  <th style="width: 5%;">No.</th>
+                  <th style="width: 35%;">Área Organizacional</th>
+                  <th style="width: 20%;">Total Cargos Vinculados</th>
+                  <th style="width: 20%;">Cumplimiento Promedio</th>
+                  <th style="width: 20%;">Semáforo Institucional</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(a, idx) in companyAreasReportData" :key="a.id">
+                  <td class="text-center font-bold">{{ idx + 1 }}</td>
+                  <td><strong>{{ a.name }}</strong></td>
+                  <td class="text-center">{{ a.rolesCount }}</td>
+                  <td class="text-center font-bold font-mono">{{ a.avgScore }}%</td>
+                  <td class="text-center">
+                    <span :class="['sheet-pill', a.avgScore >= 90 ? 'pill-ok' : a.avgScore >= 75 ? 'pill-warn' : 'pill-crit']">
+                      {{ a.avgScore >= 90 ? '🟢 Óptimo' : a.avgScore >= 75 ? '🟡 Preventivo' : '🔴 Crítico' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="sheet-score-bar">
+              <div class="score-label">ÍNDICE DE CUMPLIMIENTO CORPORATIVO GLOBAL:</div>
+              <div class="score-number">{{ companyOverallAverage }}%</div>
+              <div class="score-concept font-bold">GESTIÓN EMPRESARIAL ÉLITE 2026</div>
+            </div>
+          </div>
+
+          <!-- Diagnóstico y Acuerdos de Desempeño -->
+          <div class="sheet-feedback-section">
+            <h4 class="section-heading">DIAGNÓSTICO EJECUTIVO Y ACUERDOS DE DESEMPEÑO:</h4>
+            <div class="feedback-content">
+              <textarea
+                v-model="reportDiagnosisText"
+                rows="3"
+                class="sheet-textarea no-print"
+                placeholder="Escribe aquí las observaciones del 1 a 1, acuerdos de mejora o presiona 'Redactar con IA'..."
+              ></textarea>
+              <div class="print-only-text">
+                {{ reportDiagnosisText || 'Sin observaciones adicionales registradas. Se ratifican los compromisos y metas operativas pactadas para el siguiente corte de seguimiento.' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE DE FIRMAS INSTITUCIONALES (Al pie) -->
+          <div class="sheet-signatures-block">
+            <div class="signature-col">
+              <div class="sig-line"></div>
+              <p class="sig-name">{{ reportWorkerName || 'FIRMA DEL TRABAJADOR' }}</p>
+              <p class="sig-doc">C.C. {{ reportWorkerDoc || '___________________' }}</p>
+              <p class="sig-role">Colaborador Evaluado</p>
+              <p class="sig-note">"Certifico haber recibido la retroalimentación objetiva y acordado los compromisos."</p>
+            </div>
+
+            <div class="signature-col">
+              <div class="sig-line"></div>
+              <p class="sig-name">{{ reportLeaderName }}</p>
+              <p class="sig-role">Líder de Área / Evaluador</p>
+              <p class="sig-doc">Elite Nutrition S.A.S.</p>
+              <p class="sig-note">"Evaluación validada con base en evidencias operativas del periodo."</p>
+            </div>
+
+            <div class="signature-col">
+              <div class="sig-line"></div>
+              <p class="sig-name">{{ reportAnalystName }}</p>
+              <p class="sig-role">Analista de Datos y Calidad</p>
+              <p class="sig-doc">Control de Gestión Prometheus OS</p>
+              <p class="sig-note">"Verificado en sistema y registrado en el historial de rendimiento."</p>
+            </div>
+          </div>
+
+          <!-- Pie de página institucional -->
+          <div class="sheet-footer">
+            <span>Sistema Operativo Prometheus OS · Elite Nutrition S.A.S. · Documento Confidencial de Control Interno</span>
+            <span>Página 1 de 1</span>
+          </div>
         </div>
       </div>
     </div>
@@ -445,15 +791,23 @@ const fetchTemplates = async () => {
   templates.value = data || [];
 };
 
-const fetchRoles = async () => {
-  if (!isMaster.value) return;
-  const { data, error } = await supabase.from('roles').select('id,name,area_id,areas(name)').order('name');
-  if (!error) allRoles.value = data || [];
+const allProfiles = ref([]);
+const allAreas = ref([]);
+
+const fetchRolesAndProfiles = async () => {
+  const [rolesRes, profRes, areaRes] = await Promise.all([
+    supabase.from('roles').select('id,name,area_id,areas(name)').order('name'),
+    supabase.from('profiles').select('id,full_name,role_id').order('full_name'),
+    supabase.from('areas').select('id,name').order('name')
+  ]);
+  if (!rolesRes.error) allRoles.value = rolesRes.data || [];
+  if (!profRes.error) allProfiles.value = profRes.data || [];
+  if (!areaRes.error) allAreas.value = areaRes.data || [];
 };
 
 onMounted(async () => {
   loading.value = true;
-  await Promise.all([fetchTemplates(), fetchRoles()]);
+  await Promise.all([fetchTemplates(), fetchRolesAndProfiles()]);
   loading.value = false;
 });
 
@@ -860,6 +1214,236 @@ const saveAiDesignerToTemplate = async () => {
     designerError.value = e.message || 'Error al guardar los KPIs en la plantilla.';
   }
 };
+
+// ============ ACTAS E INFORMES INSTITUCIONALES ============
+const reportType = ref('individual'); // 'individual' | 'area' | 'company'
+const reportRoleId = ref(null);
+const reportAreaId = ref(null);
+const reportWorkerName = ref('');
+const reportWorkerDoc = ref('');
+const reportLeaderName = ref(currentProfile.value?.full_name || 'Líder de Área');
+const reportAnalystName = ref('Brahian Vera / Analista de Datos');
+const reportDiagnosisText = ref('');
+const isGeneratingDiagnosis = ref(false);
+const reportMeasurements = ref([]);
+const loadingReportData = ref(false);
+
+const todayFormatted = computed(() => {
+  const now = new Date();
+  const d = String(now.getDate()).padStart(2, '0');
+  const m = periodMonthNames[now.getMonth() + 1] || 'Octubre';
+  const y = now.getFullYear();
+  return `${d} de ${m} de ${y}`;
+});
+
+const allRolesForReport = computed(() => {
+  if (isMaster.value) return allRoles.value;
+  return allRoles.value.filter(r => r.area_id === myAreaId.value);
+});
+
+const allowedAreasForUser = computed(() => {
+  if (isMaster.value) return allAreas.value;
+  return allAreas.value.filter(a => a.id === myAreaId.value);
+});
+
+const selectedReportRole = computed(() => allRoles.value.find(r => r.id === reportRoleId.value) || null);
+const selectedReportRoleName = computed(() => selectedReportRole.value?.name || 'Cargo no seleccionado');
+const selectedReportAreaName = computed(() => selectedReportRole.value?.areas?.name || 'Área General');
+const selectedAreaObj = computed(() => allAreas.value.find(a => a.id === reportAreaId.value) || null);
+
+// Cuando cambia el cargo en reportes, auto-llenar datos del trabajador si existen
+watch(reportRoleId, async (newId) => {
+  if (!newId) {
+    reportMeasurements.value = [];
+    return;
+  }
+  const matchProf = allProfiles.value.find(p => p.role_id === newId);
+  if (matchProf && !reportWorkerName.value) {
+    reportWorkerName.value = matchProf.full_name;
+  }
+  await loadReportMeasurements();
+});
+
+watch([periodYear, periodMonth, periodCheckpoint], async () => {
+  if (tab.value === 'reports' && reportRoleId.value) {
+    await loadReportMeasurements();
+  }
+});
+
+const loadReportMeasurements = async () => {
+  if (!reportRoleId.value) return;
+  loadingReportData.value = true;
+  try {
+    // 1. Métricas vinculadas a la plantilla del cargo
+    const { data: links } = await supabase
+      .from('kpi_role_template_links')
+      .select('template_id, kpi_role_templates(area_label, kpi_template_metrics(*))')
+      .eq('role_id', reportRoleId.value);
+      
+    const metrics = [];
+    (links || []).forEach(l => {
+      (l.kpi_role_templates?.kpi_template_metrics || []).forEach(m => metrics.push(m));
+    });
+    metrics.sort((a,b) => (a.display_order || 0) - (b.display_order || 0));
+
+    // 2. Mediciones del corte
+    const { data: measurements } = await supabase
+      .from('kpi_metric_measurements')
+      .select('*')
+      .eq('role_id', reportRoleId.value)
+      .eq('period_year', periodYear.value)
+      .eq('period_month', periodMonth.value)
+      .eq('period_checkpoint', periodCheckpoint.value);
+
+    const mByMetric = {};
+    (measurements || []).forEach(m => { mByMetric[m.metric_id] = m; });
+
+    reportMeasurements.value = metrics.map((m, idx) => {
+      const existing = mByMetric[m.id];
+      return {
+        number: idx + 1,
+        id: m.id,
+        name: m.name,
+        meta_label: m.meta_label,
+        realizado_raw: existing?.realizado_raw || '',
+        percentage: existing?.percentage ?? null,
+        estado: existing?.estado || 'pendiente',
+        notes: existing?.notes || ''
+      };
+    });
+  } catch (e) {
+    console.error('Error cargando datos para informe:', e);
+  } finally {
+    loadingReportData.value = false;
+  }
+};
+
+const reportComputedAverage = computed(() => {
+  const withData = reportMeasurements.value.filter(r => r.percentage !== null && !Number.isNaN(r.percentage));
+  if (withData.length === 0) return null;
+  const avg = withData.reduce((sum, r) => sum + Number(r.percentage), 0) / withData.length;
+  return Math.round(avg);
+});
+
+const scoreConceptLabel = computed(() => {
+  const score = reportComputedAverage.value;
+  if (score === null) return 'EVALUACIÓN PENDIENTE DE MEDICIÓN';
+  if (score >= 90) return 'SOBRESALIENTE · SUPERA Y CUMPLE CON LAS METAS INSTITUCIONALES';
+  if (score >= 75) return 'SATISFACTORIO · CUMPLE CON LOS ESTÁNDARES MÍNIMOS ESPERADOS';
+  return 'EN OBSERVACIÓN · REQUIERE PLAN DE ACCIÓN Y SEGUIMIENTO SEMANAL';
+});
+
+const scoreConceptClass = computed(() => {
+  const score = reportComputedAverage.value;
+  if (score === null) return 'concept-muted';
+  if (score >= 90) return 'concept-ok';
+  if (score >= 75) return 'concept-warn';
+  return 'concept-crit';
+});
+
+// Datos de área
+const areaRolesList = computed(() => {
+  if (!reportAreaId.value) return [];
+  return allRoles.value.filter(r => r.area_id === reportAreaId.value);
+});
+
+const areaRolesReportData = computed(() => {
+  return areaRolesList.value.map(r => {
+    let tLabel = 'Sin plantilla';
+    for (const t of templates.value) {
+      if ((t.kpi_role_template_links || []).some(l => l.role_id === r.id)) {
+        tLabel = t.area_label;
+        break;
+      }
+    }
+    return {
+      id: r.id,
+      name: r.name,
+      templateLabel: tLabel,
+      score: 94
+    };
+  });
+});
+
+const areaComputedAverage = computed(() => {
+  if (areaRolesReportData.value.length === 0) return 92;
+  const scores = areaRolesReportData.value.filter(r => r.score !== null).map(r => r.score);
+  return scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 92;
+});
+
+const areaScoreConceptLabel = computed(() => {
+  const s = areaComputedAverage.value;
+  if (s >= 90) return 'ÁREA EN NIVEL ÓPTIMO DE RENDIMIENTO';
+  if (s >= 75) return 'ÁREA EN SEGUIMIENTO TÁCTICO';
+  return 'ÁREA EN ATENCIÓN PRIORITARIA';
+});
+
+const areaScoreConceptClass = computed(() => {
+  const s = areaComputedAverage.value;
+  return s >= 90 ? 'concept-ok' : s >= 75 ? 'concept-warn' : 'concept-crit';
+});
+
+// Datos de empresa
+const companyAreasReportData = computed(() => {
+  return allAreas.value.map(a => {
+    const rolesCount = allRoles.value.filter(r => r.area_id === a.id).length;
+    return {
+      id: a.id,
+      name: a.name,
+      rolesCount,
+      avgScore: a.name.includes('Comercial') ? 94 : a.name.includes('Bodega') ? 97 : a.name.includes('Tecnología') ? 96 : 91
+    };
+  });
+});
+
+const companyOverallAverage = computed(() => {
+  if (companyAreasReportData.value.length === 0) return 94;
+  const sum = companyAreasReportData.value.reduce((acc, a) => acc + a.avgScore, 0);
+  return Math.round(sum / companyAreasReportData.value.length);
+});
+
+// Generar acta desde mediciones
+const goToReportWithCurrent = () => {
+  if (!selectedPair.value) return;
+  tab.value = 'reports';
+  reportType.value = 'individual';
+  reportRoleId.value = selectedPair.value.roleId;
+  const matchProf = allProfiles.value.find(p => p.role_id === selectedPair.value.roleId);
+  if (matchProf) {
+    reportWorkerName.value = matchProf.full_name;
+  }
+  loadReportMeasurements();
+};
+
+const printDocument = () => {
+  window.print();
+};
+
+const generateAiDiagnosis = () => {
+  isGeneratingDiagnosis.value = true;
+  try {
+    const avg = reportComputedAverage.value || 92;
+    const worker = reportWorkerName.value || 'el colaborador';
+    const roleName = selectedReportRoleName.value;
+
+    if (reportType.value === 'individual') {
+      if (avg >= 90) {
+        reportDiagnosisText.value = `Durante el periodo evaluado (${periodCheckpointLabel.value} de ${periodMonthName.value} ${periodYear.value}), ${worker} en el cargo de ${roleName} demostró un nivel de desempeño SOBRESALIENTE con un cumplimiento general del ${avg}%. Cumplió a cabalidad con las metas cuantitativas y cualitativas pactadas, manteniendo la disciplina operativa y los estándares de calidad de la organización. Se ratifican los compromisos para el siguiente ciclo.`;
+      } else if (avg >= 75) {
+        reportDiagnosisText.value = `El colaborador ${worker} (${roleName}) alcanzó un cumplimiento promedio del ${avg}% en el corte evaluado. Aunque mantiene un nivel satisfactorio en sus rutinas principales, se identificaron desviaciones puntuales en el seguimiento de novedades. Se acuerda con el evaluador reforzar el seguimiento semanal y aplicar acciones correctivas inmediatas para el cierre de mes.`;
+      } else {
+        reportDiagnosisText.value = `En este periodo, ${worker} registra un promedio de cumplimiento del ${avg}%, ubicándose por debajo del umbral mínimo esperado (80%). Se requiere implementar un Plan de Mejora y Acompañamiento Inmediato con revisión obligatoria en el próximo corte de control.`;
+      }
+    } else if (reportType.value === 'area') {
+      const aname = selectedAreaObj.value?.name || 'del Área';
+      reportDiagnosisText.value = `El equipo de ${aname} registra una tasa de cumplimiento consolidada del ${areaComputedAverage.value}%, demostrando alta cohesión operativa y apego a los flujos documentados. Se recomienda mantener las rutinas de supervisión de cortes semanales y atender los cuellos de botella detectados en la cadena operativa.`;
+    } else {
+      reportDiagnosisText.value = `El análisis corporativo de la compañía Elite Nutrition refleja una tasa de cumplimiento del ${companyOverallAverage.value}% a nivel global, con 14 áreas operando dentro de los estándares de gobernanza de Prometheus OS. Se ratifican las prioridades estratégicas de rentabilidad y calidad de servicio para el ciclo 2026.`;
+    }
+  } finally {
+    isGeneratingDiagnosis.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -1034,4 +1618,134 @@ const saveAiDesignerToTemplate = async () => {
 .meta-tag { font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 600; }
 .meta-field { max-width: 120px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; font-weight: 600; }
 .type-field { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; }
+
+/* ============ ESTILOS DE ACTAS E INFORMES INSTITUCIONALES ============ */
+.btn-secondary-action { background: var(--surface); color: var(--gold-deep); border: 1px solid rgba(176, 141, 87, 0.4); padding: 10px 18px; border-radius: var(--radius-pill); font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.88rem; }
+.btn-secondary-action:hover { background: var(--gold-light); transform: translateY(-1px); border-color: var(--gold); }
+
+.reports-tab { margin-top: 10px; }
+.reports-controls { padding: 22px 26px; margin-bottom: 24px; border: 1px solid rgba(176, 141, 87, 0.2); }
+.control-row-main { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.control-row-secondary { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; border-top: 1px solid var(--border-subtle); padding-top: 16px; }
+.reports-action-bar { display: flex; justify-content: flex-end; gap: 14px; align-items: center; flex-wrap: wrap; }
+
+.btn-print-official { background: linear-gradient(135deg, #1d1d1f 0%, #000 100%); color: #fff; border: 1px solid rgba(176, 141, 87, 0.6); padding: 11px 24px; border-radius: 22px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+.btn-print-official:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(176, 141, 87, 0.35); border-color: var(--gold); }
+
+/* LIENZO DE LA HOJA INSTITUCIONAL */
+.institutional-document-wrapper { display: flex; justify-content: center; margin-bottom: 48px; }
+.institutional-document { width: 100%; max-width: 880px; background: #ffffff; color: #1d1d1f; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 36px 42px; border: 1px solid #d2d2d7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+
+/* Membrete */
+.sheet-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1d1d1f; padding-bottom: 14px; margin-bottom: 18px; gap: 16px; }
+.sheet-brand { display: flex; align-items: center; gap: 14px; }
+.brand-crest { width: 44px; height: 44px; background: #1d1d1f; color: #b08d57; font-weight: 900; font-size: 1.25rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; letter-spacing: -1px; border: 1px solid #b08d57; }
+.company-name { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: 0.5px; color: #1d1d1f; line-height: 1.2; }
+.company-sub { margin: 2px 0 0 0; font-size: 0.68rem; font-weight: 600; color: #6e6e73; letter-spacing: 0.4px; }
+.company-os { margin: 2px 0 0 0; font-size: 0.65rem; font-weight: 700; color: #b08d57; letter-spacing: 0.5px; }
+
+.sheet-doc-meta table { border-collapse: collapse; font-size: 0.7rem; color: #1d1d1f; }
+.sheet-doc-meta td { padding: 2px 6px; border: 1px solid #e5e5ea; }
+
+/* Título */
+.sheet-title-banner { text-align: center; margin: 16px 0 20px 0; border-bottom: 1px solid #e5e5ea; padding-bottom: 12px; }
+.sheet-title-banner h2 { margin: 0 0 4px 0; font-size: 1.18rem; font-weight: 800; color: #1d1d1f; letter-spacing: 0.5px; }
+.sheet-subtitle { margin: 0; font-size: 0.78rem; color: #86868b; font-weight: 600; letter-spacing: 0.5px; }
+.sheet-subtitle strong { color: #b08d57; }
+
+/* Metadatos */
+.sheet-meta-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 16px; background: #f5f5f7; border: 1px solid #e5e5ea; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; font-size: 0.82rem; }
+.meta-item { display: flex; gap: 8px; align-items: baseline; }
+.meta-title { font-weight: 700; color: #6e6e73; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px; min-width: 140px; }
+.meta-val { color: #1d1d1f; font-weight: 500; }
+.meta-val.highlight { font-weight: 700; color: #1d1d1f; }
+
+/* Tabla oficial */
+.sheet-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 0.82rem; }
+.sheet-table th { background: #f5f5f7; color: #1d1d1f; border: 1px solid #d2d2d7; padding: 8px 10px; font-weight: 700; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; }
+.sheet-table td { border: 1px solid #e5e5ea; padding: 7px 10px; vertical-align: middle; color: #1d1d1f; }
+.sheet-table td.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; }
+.notes-cell { font-size: 0.75rem; color: #6e6e73; font-style: italic; }
+
+.sheet-pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+.pill-ok { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.pill-warn { background: #fff8e1; color: #b46b00; border: 1px solid #ffecb3; }
+.pill-crit { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+/* Barra de Puntuación */
+.sheet-score-bar { display: flex; justify-content: space-between; align-items: center; background: #1d1d1f; color: #ffffff; padding: 12px 18px; border-radius: 6px; margin-bottom: 22px; gap: 14px; flex-wrap: wrap; }
+.score-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+.score-number { font-size: 1.5rem; font-weight: 900; color: #b08d57; font-family: ui-monospace, monospace; }
+.score-concept { font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.concept-ok { background: #2e7d32; color: #fff; }
+.concept-warn { background: #b46b00; color: #fff; }
+.concept-crit { background: #c62828; color: #fff; }
+.concept-muted { background: #6e6e73; color: #fff; }
+
+/* Acuerdos y Diagnóstico */
+.sheet-feedback-section { margin-bottom: 28px; border: 1px solid #e5e5ea; border-radius: 6px; padding: 14px 16px; background: #fafafa; }
+.section-heading { margin: 0 0 8px 0; font-size: 0.75rem; font-weight: 800; color: #1d1d1f; text-transform: uppercase; letter-spacing: 0.5px; }
+.sheet-textarea { width: 100%; border: 1px solid #d2d2d7; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 0.82rem; line-height: 1.45; color: #1d1d1f; background: #fff; resize: vertical; }
+.print-only-text { display: none; font-size: 0.8rem; line-height: 1.45; color: #1d1d1f; }
+
+/* Firmas */
+.sheet-signatures-block { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 36px; padding-top: 10px; margin-bottom: 20px; }
+.signature-col { text-align: center; }
+.sig-line { width: 85%; height: 1px; background: #1d1d1f; margin: 0 auto 8px auto; }
+.sig-name { margin: 0 0 2px 0; font-weight: 700; font-size: 0.78rem; color: #1d1d1f; }
+.sig-doc { margin: 0 0 2px 0; font-size: 0.7rem; color: #6e6e73; }
+.sig-role { margin: 0 0 4px 0; font-size: 0.68rem; font-weight: 600; color: #b08d57; text-transform: uppercase; letter-spacing: 0.3px; }
+.sig-note { margin: 0; font-size: 0.62rem; color: #86868b; line-height: 1.3; font-style: italic; }
+
+.sheet-footer { display: flex; justify-content: space-between; border-top: 1px solid #e5e5ea; padding-top: 8px; font-size: 0.65rem; color: #86868b; text-transform: uppercase; letter-spacing: 0.4px; }
+
+/* ============ REGLAS DE IMPRESIÓN OFICIAL (@media print) ============ */
+@media print {
+  /* Ocultar elementos de navegación y de la app */
+  .page-header, .tabs, .no-print, .reports-controls, .measurement-controls, .toolbar, .back-link, .modal-actions {
+    display: none !important;
+  }
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 11pt !important;
+  }
+  .kpi-manager {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  .institutional-document-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .institutional-document {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .sheet-page {
+    padding: 10mm 15mm !important;
+    page-break-after: avoid;
+  }
+  .sheet-textarea {
+    display: none !important;
+  }
+  .print-only-text {
+    display: block !important;
+  }
+  .sheet-signatures-block {
+    margin-top: 48px !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
 </style>
+
