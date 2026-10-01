@@ -26,6 +26,10 @@
               </div>
               
               <div class="flex items-center gap-space-sm self-start lg:self-end shrink-0">
+                <button v-if="canManageKpis" @click="router.push('/kpis')" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container border border-[#b08d57]/40 hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm" type="button">
+                  <span class="material-symbols-outlined text-[#8a6d3d] text-[18px]">analytics</span>
+                  <span>Módulo KPIs & Actas</span>
+                </button>
                 <button @click="router.push('/workspace')" class="group inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-lowest border border-surface-container-high hover:border-outline-variant text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm" type="button">
                   <span class="material-symbols-outlined text-primary text-[18px] transition-transform group-hover:scale-110">monitoring</span>
                   <span>Ver Mis KPIs</span>
@@ -785,9 +789,10 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { supabase } from '@/api/supabase';
 import { useRouter } from 'vue-router';
 import { getLatestRoleKpiScore } from '@/api/kpi';
-import { signOut } from '@/api/auth';
+import { signOut, canAccessKpis } from '@/api/auth';
 
 const router = useRouter();
+const canManageKpis = computed(() => canAccessKpis());
 
 const handleSignOut = async () => {
   await signOut();

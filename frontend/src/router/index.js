@@ -172,7 +172,7 @@ const routes = [
     path: '/kpis',
     name: 'KpiManager',
     component: () => import('../views/KpiManager.vue'),
-    meta: { leaderOnly: true }
+    meta: { kpiAccessOnly: true }
   },
   {
     path: '/:catchAll(.*)',
@@ -232,6 +232,17 @@ router.beforeEach(async (to) => {
 
   if (to.meta.managerOnly && !profile.is_master_admin && !(profile.roles && profile.roles.access_level === 1)) {
     return { path: '/workspace' }
+  }
+
+  if (to.meta.kpiAccessOnly) {
+    const isMaster = !!profile.is_master_admin;
+    const roleName = (profile.roles?.name || '').toLowerCase();
+    const level = profile.roles?.access_level;
+    const isCEO = level === 1 || roleName.includes('ceo') || roleName.includes('director general') || roleName.includes('gerente general');
+    const isDataAnalyst = roleName.includes('datos') || roleName.includes('analista de datos') || roleName.includes('especialista de datos');
+    if (!isMaster && !isCEO && !isDataAnalyst) {
+      return { path: '/workspace' };
+    }
   }
 
   if (to.meta.mapperRoute && !profile.is_master_admin) {

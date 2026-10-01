@@ -74,6 +74,23 @@
             </div>
           </div>
 
+          <!-- Acceso Especial KPI (Master, CEO, Analista de Datos) -->
+          <div v-if="canManageKpis" class="bg-gradient-to-r from-[#1d1d1f] to-[#2c2c2e] text-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-[#b08d57]/20 border border-[#b08d57]/40 flex items-center justify-center text-[#e8d9b5]">
+                <span class="material-symbols-outlined text-[22px]">analytics</span>
+              </div>
+              <div>
+                <h4 class="text-[13px] font-bold text-white">Módulo de KPIs & Actas</h4>
+                <p class="text-[11px] text-[#e8d9b5]/80">Evaluación con IA y Actas Oficiales</p>
+              </div>
+            </div>
+            <button @click="router.push('/kpis')" class="px-3 py-1.5 bg-[#b08d57] hover:bg-[#80663f] text-white text-[12px] font-semibold rounded-lg transition-colors flex items-center gap-1 shadow">
+              <span>Abrir</span>
+              <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </button>
+          </div>
+
           <!-- KPI de Productividad (IA) -->
           <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6 relative overflow-hidden">
             <div class="flex items-center justify-between mb-4">
@@ -415,11 +432,13 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../api/supabase';
-import { currentProfile as authProfile, loadCurrentProfile, signOut } from '../api/auth';
+import { currentProfile as authProfile, loadCurrentProfile, signOut, canAccessKpis } from '../api/auth';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { getPeriodKey } from '../utils/taskPeriods';
 import { getRoleKpiDetail } from '../api/kpi';
+
+const canManageKpis = computed(() => canAccessKpis());
 
 // ── Motor de Tiempo ──────────────────────────────────────────
 const today = new Date();

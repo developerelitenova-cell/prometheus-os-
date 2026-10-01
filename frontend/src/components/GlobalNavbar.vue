@@ -64,6 +64,16 @@
           <span class="material-symbols-outlined text-[15px]">key</span> Cuentas & Accesos
         </router-link>
 
+        <!-- KPIs & Actas: Exclusivo Admin Maestro, CEO y Analista de Datos -->
+        <router-link
+          v-if="isLoggedIn && isKpiUser"
+          to="/kpis"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/kpis'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+        >
+          <span class="material-symbols-outlined text-[15px]">analytics</span> KPIs & Actas
+        </router-link>
+
         <router-link
           v-if="isMasterUser"
           to="/master"
@@ -186,6 +196,9 @@
             <router-link v-if="canManageAccounts" to="/cuentas" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">key</span> Cuentas & Accesos
             </router-link>
+            <router-link v-if="isKpiUser" to="/kpis" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">analytics</span> KPIs & Actas
+            </router-link>
             <router-link v-if="isMasterUser" to="/master" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-bold text-[#8a6d3d] bg-amber-50/50 hover:bg-amber-50">
               <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span> Auditoría Master
             </router-link>
@@ -208,7 +221,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '../api/supabase'
-import { currentProfile, loadCurrentProfile, isMasterAdmin, isManager, signOut } from '../api/auth'
+import { currentProfile, loadCurrentProfile, isMasterAdmin, isManager, canAccessKpis, signOut } from '../api/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -226,6 +239,7 @@ const closeMobileMenu = () => {
 }
 const isControlUser = computed(() => isMasterAdmin() || isManager())
 const isMasterUser = computed(() => isMasterAdmin())
+const isKpiUser = computed(() => canAccessKpis())
 const canManageAccounts = computed(() => {
   if (!currentProfile.value) return false
   if (isMasterAdmin()) return true

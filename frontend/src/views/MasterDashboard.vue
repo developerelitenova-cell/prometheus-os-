@@ -25,10 +25,16 @@
             <p class="text-lg text-secondary mt-2">Consolidado métrico, financiero y operativo del Holding.</p>
           </div>
           
-          <button @click="refreshData" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-surface-container-high hover:border-[#b08d57] text-[#1d1d1f] font-semibold text-sm transition-all shadow-sm group">
-            <span class="material-symbols-outlined text-[20px] text-[#b08d57] group-hover:rotate-180 transition-transform duration-500">sync</span>
-            Forzar Sincronización
-          </button>
+          <div class="flex items-center gap-3">
+            <button @click="router.push('/kpis')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1d1d1f] hover:bg-[#8a6d3d] text-white font-semibold text-sm transition-all shadow-sm">
+              <span class="material-symbols-outlined text-[20px] text-[#e8d9b5]">analytics</span>
+              Gestión de KPIs & Actas
+            </button>
+            <button @click="refreshData" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-surface-container-high hover:border-[#b08d57] text-[#1d1d1f] font-semibold text-sm transition-all shadow-sm group">
+              <span class="material-symbols-outlined text-[20px] text-[#b08d57] group-hover:rotate-180 transition-transform duration-500">sync</span>
+              Forzar Sincronización
+            </button>
+          </div>
         </div>
 
         <!-- Telemetría Global (Bento Grid) -->
@@ -381,7 +387,7 @@ const activeFlows = ref([
 
 const auditSteps = ref([
   { completed: false, title: 'Revisar Alertas de Cuellos de Botella', desc: 'Hay 2 equipos superando el tiempo límite de SLA operativo.', action: 'Ver Centro de Control', link: '/team' },
-  { completed: false, title: 'Auditar Gastos y CapEx', desc: 'Existen presupuestos de Q4 pendientes de firma final.', action: 'Ver Presupuestos', link: '/kpis' },
+  { completed: false, title: 'Gestión de KPIs y Actas de Rendimiento', desc: 'Evaluar cumplimiento con IA, generar actas institucionales y firmas.', action: 'Abrir KPIs & Actas', link: '/kpis' },
   { completed: false, title: 'Monitorear Riesgos de Compliance', desc: 'Revisar matriz de perfiles para detectar accesos no autorizados.', action: 'Ver Gobernanza', link: '/roles' },
   { completed: false, title: 'Sincronizar Inteligencia Corporativa', desc: 'El oráculo ha detectado 3 desviaciones en manuales operativos.', action: 'Hablar con Oráculo', link: '/oracle' }
 ]);

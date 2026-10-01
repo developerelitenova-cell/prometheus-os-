@@ -73,6 +73,22 @@ export const accessLevel = () => currentProfile.value?.roles?.access_level ?? nu
 export const isLeader = () => [1, 2].includes(accessLevel())
 export const isManager = () => accessLevel() === 1
 
+export const canAccessKpis = () => {
+  if (!currentProfile.value) return false
+  if (isMasterAdmin()) return true
+  const roleName = (currentProfile.value.roles?.name || '').toLowerCase()
+  const level = accessLevel()
+  // 1. CEO / Director General / Level 1
+  if (level === 1 || roleName.includes('ceo') || roleName.includes('director general') || roleName.includes('gerente general')) {
+    return true
+  }
+  // 2. Analista de Datos / Especialista de Datos
+  if (roleName.includes('datos') || roleName.includes('analista de datos') || roleName.includes('especialista de datos')) {
+    return true
+  }
+  return false
+}
+
 supabase.auth.onAuthStateChange((_event, session) => {
   if (!session) {
     currentProfile.value = null
