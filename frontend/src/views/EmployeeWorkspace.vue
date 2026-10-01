@@ -206,13 +206,26 @@
             <ul class="divide-y divide-[#f5f5f7]">
               <li v-for="task in activeDmTaskList" :key="task.id"
                   class="px-5 py-3 hover:bg-[#f5f5f7]/60 transition-colors flex items-start gap-3.5">
-                <button @click="toggleDmTask(task)"
-                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    task.completed ? 'bg-[#34c759] border-[#34c759]' : 'border-[#d1d1d6] hover:border-[#34c759]']">
-                  <span v-if="task.completed" class="material-symbols-outlined text-white text-[13px]">check</span>
+                <button @click="openEvidenceModal(task, 'daily_management')"
+                  :title="task.status === 'unfulfilled' ? 'Ver motivo de no ejecución' : (task.completed || task.status === 'completed') ? 'Ver evidencia registrada' : 'Marcar tarea con evidencia'"
+                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer',
+                    task.status === 'unfulfilled' ? 'bg-[#ff3b30] border-[#ff3b30]' :
+                    (task.completed || task.status === 'completed') ? 'bg-[#34c759] border-[#34c759]' : 'border-[#d1d1d6] hover:border-[#34c759]']">
+                  <span v-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-white text-[13px]">close</span>
+                  <span v-else-if="task.completed || task.status === 'completed'" class="material-symbols-outlined text-white text-[13px]">check</span>
                 </button>
-                <div class="flex-1 min-w-0">
-                  <p :class="['text-[13px] font-medium leading-snug', task.completed ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</p>
+                <div class="flex-1 min-w-0 cursor-pointer" @click="openEvidenceModal(task, 'daily_management')">
+                  <div class="flex items-center justify-between gap-2">
+                    <p :class="['text-[13px] font-medium leading-snug',
+                      task.status === 'unfulfilled' ? 'text-[#ff3b30] font-semibold' :
+                      (task.completed || task.status === 'completed') ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</p>
+                    <span v-if="task.status === 'unfulfilled'" class="text-[10px] font-bold text-[#ff3b30] bg-[#fff0f0] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                      <span class="material-symbols-outlined text-[12px]">cancel</span> No ejecutado
+                    </span>
+                    <span v-else-if="task.completed || task.status === 'completed'" class="text-[10px] font-bold text-[#34c759] bg-[#e8f8ed] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                      <span class="material-symbols-outlined text-[12px]">photo_camera</span> Con Evidencia
+                    </span>
+                  </div>
                   <div class="flex items-center gap-2 mt-1">
                     <span class="text-[10px] text-[#86868b] flex items-center gap-1 bg-[#f5f5f7] px-1.5 py-0.5 rounded">
                       <span class="material-symbols-outlined text-[11px]">autorenew</span> Recurrente
@@ -246,7 +259,7 @@
               </div>
               <span v-if="pendingDayTasks.length > 0"
                 class="text-[11px] font-bold bg-[#b08d57] text-white px-2 py-0.5 rounded-full">
-                {{ pendingDayTasks.filter(t => t.status !== 'completed').length }} pendientes
+                {{ pendingDayTasks.filter(t => t.status === 'pending' && !t.completed).length }} pendientes
               </span>
             </div>
             <!-- Atrasadas primero -->
@@ -258,13 +271,26 @@
               <ul class="divide-y divide-[#ffebee]">
                 <li v-for="task in overdueTasks" :key="'od-'+task.id"
                     class="px-5 py-3 flex items-start gap-3.5">
-                  <button @click="toggleTaskStatus(task)"
-                    :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                      task.status === 'completed' ? 'bg-[#c62828] border-[#c62828]' : 'border-[#c62828] hover:bg-[#ffebee]']">
-                    <span v-if="task.status === 'completed'" class="material-symbols-outlined text-white text-[13px]">check</span>
+                  <button @click="openEvidenceModal(task, 'task')"
+                    :title="task.status === 'unfulfilled' ? 'Ver motivo de no ejecución' : task.status === 'completed' ? 'Ver evidencia registrada' : 'Marcar pendiente con evidencia'"
+                    :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer',
+                      task.status === 'unfulfilled' ? 'bg-[#ff3b30] border-[#ff3b30]' :
+                      task.status === 'completed' ? 'bg-[#34c759] border-[#34c759]' : 'border-[#c62828] hover:bg-[#ffebee]']">
+                    <span v-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-white text-[13px]">close</span>
+                    <span v-else-if="task.status === 'completed'" class="material-symbols-outlined text-white text-[13px]">check</span>
                   </button>
-                  <div class="flex-1 min-w-0">
-                    <p :class="['text-[13px] font-medium', task.status === 'completed' ? 'line-through text-[#86868b]' : 'text-[#1d1d1f]']">{{ task.title }}</p>
+                  <div class="flex-1 min-w-0 cursor-pointer" @click="openEvidenceModal(task, 'task')">
+                    <div class="flex items-center justify-between gap-2">
+                      <p :class="['text-[13px] font-medium',
+                        task.status === 'unfulfilled' ? 'text-[#ff3b30] font-semibold' :
+                        task.status === 'completed' ? 'line-through text-[#86868b]' : 'text-[#1d1d1f]']">{{ task.title }}</p>
+                      <span v-if="task.status === 'unfulfilled'" class="text-[10px] font-bold text-[#ff3b30] bg-[#fff0f0] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                        <span class="material-symbols-outlined text-[12px]">cancel</span> No ejecutado
+                      </span>
+                      <span v-else-if="task.status === 'completed'" class="text-[10px] font-bold text-[#34c759] bg-[#e8f8ed] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                        <span class="material-symbols-outlined text-[12px]">photo_camera</span> Con Evidencia
+                      </span>
+                    </div>
                     <span class="text-[10px] bg-[#ffebee] text-[#c62828] font-bold px-1.5 py-0.5 rounded mt-1 inline-block">
                       Venció: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}
                     </span>
@@ -276,15 +302,27 @@
             <ul class="divide-y divide-[#f5f5f7]">
               <li v-for="task in todayPendingTasks" :key="task._key || task.id"
                   class="px-5 py-3 hover:bg-[#f5f5f7]/60 transition-colors flex items-start gap-3.5">
-                <button @click="task._isScheduled ? toggleScheduledTask(task) : toggleTaskStatus(task)"
-                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    task.status === 'completed' || task.completed ? 'bg-[#b08d57] border-[#b08d57]' : 'border-[#d1d1d6] hover:border-[#b08d57]']">
-                  <span v-if="task.status === 'completed' || task.completed" class="material-symbols-outlined text-white text-[13px]">check</span>
+                <button @click="openEvidenceModal(task, task._isScheduled ? 'scheduled' : 'task')"
+                  :title="task.status === 'unfulfilled' ? 'Ver motivo de no ejecución' : (task.status === 'completed' || task.completed) ? 'Ver evidencia registrada' : 'Marcar pendiente con evidencia'"
+                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer',
+                    task.status === 'unfulfilled' ? 'bg-[#ff3b30] border-[#ff3b30]' :
+                    (task.status === 'completed' || task.completed) ? 'bg-[#34c759] border-[#34c759]' : 'border-[#d1d1d6] hover:border-[#b08d57]']">
+                  <span v-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-white text-[13px]">close</span>
+                  <span v-else-if="task.status === 'completed' || task.completed" class="material-symbols-outlined text-white text-[13px]">check</span>
                 </button>
-                <div class="flex-1 min-w-0">
-                  <p :class="['text-[13px] font-medium leading-snug',
-                    task.status === 'completed' || task.completed ? 'line-through text-[#86868b]' : 'text-[#1d1d1f]']"
-                  >{{ task.title }}</p>
+                <div class="flex-1 min-w-0 cursor-pointer" @click="openEvidenceModal(task, task._isScheduled ? 'scheduled' : 'task')">
+                  <div class="flex items-center justify-between gap-2">
+                    <p :class="['text-[13px] font-medium leading-snug',
+                      task.status === 'unfulfilled' ? 'text-[#ff3b30] font-semibold' :
+                      (task.status === 'completed' || task.completed) ? 'line-through text-[#86868b]' : 'text-[#1d1d1f]']"
+                    >{{ task.title }}</p>
+                    <span v-if="task.status === 'unfulfilled'" class="text-[10px] font-bold text-[#ff3b30] bg-[#fff0f0] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                      <span class="material-symbols-outlined text-[12px]">cancel</span> No ejecutado
+                    </span>
+                    <span v-else-if="task.status === 'completed' || task.completed" class="text-[10px] font-bold text-[#34c759] bg-[#e8f8ed] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                      <span class="material-symbols-outlined text-[12px]">photo_camera</span> Con Evidencia
+                    </span>
+                  </div>
                   <div class="flex flex-wrap items-center gap-1.5 mt-1">
                     <!-- Badge programado -->
                     <span v-if="task._isScheduled"
@@ -425,6 +463,15 @@
 
       </div>
     </main>
+    <!-- Modal de Evidencia y Trazabilidad de Tareas -->
+    <TaskEvidenceModal
+      v-model="showEvidenceModal"
+      :task="selectedTaskForEvidence"
+      :task-type="selectedTaskType"
+      :read-only="isAuditMode"
+      @save="handleEvidenceSave"
+      @reopen="handleTaskReopen"
+    />
   </div>
 </template>
 
@@ -437,6 +484,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { getPeriodKey } from '../utils/taskPeriods';
 import { getRoleKpiDetail } from '../api/kpi';
+import TaskEvidenceModal from '@/components/TaskEvidenceModal.vue';
 
 const canManageKpis = computed(() => canAccessKpis());
 
@@ -444,19 +492,27 @@ const canManageKpis = computed(() => canAccessKpis());
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// Tareas atrasadas: vencidas SIN completar (de `tasks` ad-hoc o asignadas)
+// Tareas atrasadas: vencidas y aún pendientes (ni completadas ni justificadas)
 const overdueTasks = computed(() => {
   const all = allTasks.value || [];
-  return all.filter(t => t.status !== 'completed' && t.due_date && new Date(t.due_date) < today);
+  return all.filter(t => t.status === 'pending' && t.due_date && new Date(t.due_date) < today);
 });
 
-// Pendientes de HOY: tasks asignadas con due_date >= hoy (o sin fecha) + programados que activan hoy
+// Pendientes de HOY: tasks asignadas con due_date >= hoy (o marcadas hoy) + programados de hoy
 const todayPendingTasks = computed(() => {
   const all = allTasks.value || [];
-  const adHoc = all.filter(t => t.status !== 'completed' && (!t.due_date || new Date(t.due_date) >= today));
-  // Programados que activan HOY (se inyectan como pendientes)
+  const adHoc = all.filter(t => {
+    const isDueTodayOrFuture = !t.due_date || new Date(t.due_date) >= today;
+    if (t.status === 'pending') return isDueTodayOrFuture;
+    if (t.completed_at) {
+      const compDate = new Date(t.completed_at);
+      return compDate.toDateString() === new Date().toDateString();
+    }
+    return isDueTodayOrFuture;
+  });
+  // Programados que activan HOY (incluyendo los completados/gestionados hoy)
   const fromScheduled = scheduledDeliveries.value
-    .filter(sd => sd._triggersToday && !sd.completed)
+    .filter(sd => sd._triggersToday)
     .map(sd => ({ ...sd, _isScheduled: true, _key: 'sd-' + sd.id }));
   return [...fromScheduled, ...adHoc];
 });
@@ -951,24 +1007,169 @@ const fetchChecklists = async (profileId) => {
   }
 };
 
-const toggleTaskStatus = async (task) => {
-  const newStatus = task.status === 'completed' ? 'pending' : 'completed';
-  const oldStatus = task.status;
-  task.status = newStatus; // Optimistic update
+// ── Modal de Evidencia y Trazabilidad ─────────────────────────
+const showEvidenceModal = ref(false);
+const selectedTaskForEvidence = ref(null);
+const selectedTaskType = ref('task'); // 'task', 'daily_management', 'scheduled'
+
+const openEvidenceModal = (task, type = 'task') => {
+  selectedTaskForEvidence.value = task;
+  selectedTaskType.value = type;
+  showEvidenceModal.value = true;
+};
+
+const handleEvidenceSave = async (payload) => {
+  const { task, taskType, status, evidence_text, evidence_photo, cancellation_reason, completed_at } = payload;
+  const isDone = (status === 'completed');
 
   try {
-    await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id);
-  } catch (e) {
-    task.status = oldStatus; // Revert on fail
-    console.error(e);
+    if (taskType === 'task') {
+      const updateData = {
+        status,
+        evidence_text,
+        evidence_photo,
+        cancellation_reason,
+        completed_at
+      };
+      const { error } = await supabase.from('tasks').update(updateData).eq('id', task.id);
+      if (error) {
+        console.warn('Update en tasks falló, reintentando:', error);
+        await supabase.from('tasks').update({ status }).eq('id', task.id);
+      }
+
+      task.status = status;
+      task.completed = isDone;
+      task.evidence_text = evidence_text;
+      task.evidence_photo = evidence_photo;
+      task.cancellation_reason = cancellation_reason;
+      task.completed_at = completed_at;
+    } else if (taskType === 'daily_management') {
+      const completionPayload = {
+        task_template_id: task.id,
+        profile_id: currentProfile.value.id,
+        period_key: task.periodKey,
+        status,
+        evidence_text,
+        evidence_photo,
+        cancellation_reason,
+        completed_at
+      };
+
+      const { error } = await supabase
+        .from('task_completions')
+        .upsert(completionPayload, { onConflict: 'task_template_id,profile_id,period_key' });
+
+      if (error) {
+        console.warn('Upsert completo de task_completions falló, usando básico:', error);
+        await supabase
+          .from('task_completions')
+          .upsert({
+            task_template_id: task.id,
+            profile_id: currentProfile.value.id,
+            period_key: task.periodKey
+          }, { onConflict: 'task_template_id,profile_id,period_key' });
+      }
+
+      task.status = status;
+      task.completed = isDone;
+      task.evidence_text = evidence_text;
+      task.evidence_photo = evidence_photo;
+      task.cancellation_reason = cancellation_reason;
+      task.completed_at = completed_at;
+    } else if (taskType === 'scheduled') {
+      const scheduledPayload = {
+        delivery_id: task.id,
+        profile_id: currentProfile.value.id,
+        period_key: task._periodKey,
+        status,
+        evidence_text,
+        evidence_photo,
+        cancellation_reason,
+        completed_at
+      };
+
+      const { error } = await supabase
+        .from('scheduled_delivery_completions')
+        .upsert(scheduledPayload, { onConflict: 'delivery_id,profile_id,period_key' });
+
+      if (error) {
+        console.warn('Upsert scheduled falló, usando básico:', error);
+        await supabase
+          .from('scheduled_delivery_completions')
+          .upsert({
+            delivery_id: task.id,
+            profile_id: currentProfile.value.id,
+            period_key: task._periodKey
+          }, { onConflict: 'delivery_id,profile_id,period_key' });
+      }
+
+      task.status = status;
+      task.completed = isDone;
+      task.evidence_text = evidence_text;
+      task.evidence_photo = evidence_photo;
+      task.cancellation_reason = cancellation_reason;
+      task.completed_at = completed_at;
+    }
+  } catch (err) {
+    console.error('Error guardando trazabilidad:', err);
+    alert('Error al registrar la evidencia: ' + (err.message || 'Error en base de datos'));
   }
 };
 
-// Gestión Diaria: actividades recurrentes y estándar del cargo. Viven en la
-// memoria del cargo (role_task_templates) y el marcado de cada persona se
-// guarda en task_completions con la llave del período actual (día/semana/mes),
-// así la casilla vuelve a verse vacía en el siguiente período sin perder el
-// historial de cumplimiento.
+const handleTaskReopen = async (payload) => {
+  const { task, taskType } = payload;
+  try {
+    if (taskType === 'task') {
+      await supabase.from('tasks').update({
+        status: 'pending',
+        evidence_text: null,
+        evidence_photo: null,
+        cancellation_reason: null,
+        completed_at: null
+      }).eq('id', task.id);
+
+      task.status = 'pending';
+      task.completed = false;
+      task.evidence_text = null;
+      task.evidence_photo = null;
+      task.cancellation_reason = null;
+      task.completed_at = null;
+    } else if (taskType === 'daily_management') {
+      await supabase
+        .from('task_completions')
+        .delete()
+        .eq('task_template_id', task.id)
+        .eq('profile_id', currentProfile.value.id)
+        .eq('period_key', task.periodKey);
+
+      task.status = 'pending';
+      task.completed = false;
+      task.evidence_text = null;
+      task.evidence_photo = null;
+      task.cancellation_reason = null;
+      task.completed_at = null;
+    } else if (taskType === 'scheduled') {
+      await supabase
+        .from('scheduled_delivery_completions')
+        .delete()
+        .eq('delivery_id', task.id)
+        .eq('profile_id', currentProfile.value.id)
+        .eq('period_key', task._periodKey);
+
+      task.status = 'pending';
+      task.completed = false;
+      task.evidence_text = null;
+      task.evidence_photo = null;
+      task.cancellation_reason = null;
+      task.completed_at = null;
+    }
+  } catch (err) {
+    console.error('Error reabriendo tarea:', err);
+    alert('No fue posible reabrir la tarea: ' + (err.message || 'Error'));
+  }
+};
+
+// Gestión Diaria: actividades recurrentes y estándar del cargo.
 const fetchDailyManagement = async (roleId, profileId) => {
   try {
     const { data: templates, error: templatesError } = await supabase
@@ -979,22 +1180,45 @@ const fetchDailyManagement = async (roleId, profileId) => {
       .order('created_at', { ascending: true });
     if (templatesError) throw templatesError;
 
-    const { data: completions, error: completionsError } = await supabase
+    let completions = [];
+    const { data: compData, error: completionsError } = await supabase
       .from('task_completions')
-      .select('task_template_id, period_key')
+      .select('task_template_id, period_key, status, evidence_text, evidence_photo, cancellation_reason, completed_at')
       .eq('profile_id', profileId);
-    if (completionsError) throw completionsError;
 
-    const completedKeys = new Set((completions || []).map(c => `${c.task_template_id}::${c.period_key}`));
+    if (completionsError) {
+      const { data: fallbackComp } = await supabase
+        .from('task_completions')
+        .select('task_template_id, period_key')
+        .eq('profile_id', profileId);
+      completions = fallbackComp || [];
+    } else {
+      completions = compData || [];
+    }
+
+    const compMap = new Map();
+    (completions || []).forEach(c => {
+      compMap.set(`${c.task_template_id}::${c.period_key}`, c);
+    });
 
     const withStatus = (frequency) =>
       (templates || [])
         .filter(t => t.frequency === frequency)
-        .map(t => ({
-          ...t,
-          periodKey: getPeriodKey(frequency),
-          completed: completedKeys.has(`${t.id}::${getPeriodKey(frequency)}`)
-        }));
+        .map(t => {
+          const pKey = getPeriodKey(frequency);
+          const c = compMap.get(`${t.id}::${pKey}`);
+          const isComp = !!c;
+          return {
+            ...t,
+            periodKey: pKey,
+            completed: isComp && (c?.status !== 'unfulfilled'),
+            status: c ? (c.status || 'completed') : 'pending',
+            evidence_text: c?.evidence_text || null,
+            evidence_photo: c?.evidence_photo || null,
+            cancellation_reason: c?.cancellation_reason || null,
+            completed_at: c?.completed_at || null
+          };
+        });
 
     dmDailyTasks.value = withStatus('daily');
     dmWeeklyTasks.value = withStatus('weekly');
@@ -1053,14 +1277,12 @@ const daysUntilNextTrigger = (sd) => {
 
 const fetchScheduledDeliveries = async (role, profile) => {
   try {
-    // Traer todos los programados activos
     const { data: all, error } = await supabase
       .from('scheduled_deliveries')
       .select('*')
       .eq('active', true);
     if (error) throw error;
 
-    // Filtrar los que aplican a este usuario
     const applicable = (all || []).filter(sd => {
       if (sd.target_type === 'all') return true;
       if (sd.target_type === 'profile' && sd.target_profile_ids?.includes(profile.id)) return true;
@@ -1070,56 +1292,52 @@ const fetchScheduledDeliveries = async (role, profile) => {
       return false;
     });
 
-    // Traer completados de este usuario para calcular estado
     const deliveryIds = applicable.map(sd => sd.id);
-    let completedKeys = new Set();
+    let comps = [];
     if (deliveryIds.length > 0) {
-      const { data: comps } = await supabase
+      const { data: compData, error: compErr } = await supabase
         .from('scheduled_delivery_completions')
-        .select('delivery_id, period_key')
+        .select('delivery_id, period_key, status, evidence_text, evidence_photo, cancellation_reason, completed_at')
         .eq('profile_id', profile.id)
         .in('delivery_id', deliveryIds);
-      completedKeys = new Set((comps || []).map(c => `${c.delivery_id}::${c.period_key}`));
+
+      if (compErr) {
+        const { data: fallbackComp } = await supabase
+          .from('scheduled_delivery_completions')
+          .select('delivery_id, period_key')
+          .eq('profile_id', profile.id)
+          .in('delivery_id', deliveryIds);
+        comps = fallbackComp || [];
+      } else {
+        comps = compData || [];
+      }
     }
 
-    // Enriquecer con estado y días restantes
+    const compMap = new Map();
+    comps.forEach(c => {
+      compMap.set(`${c.delivery_id}::${c.period_key}`, c);
+    });
+
     scheduledDeliveries.value = applicable.map(sd => {
       const days = daysUntilNextTrigger(sd);
       const periodKey = getScheduledPeriodKey(sd);
+      const c = compMap.get(`${sd.id}::${periodKey}`);
+      const isComp = !!c;
       return {
         ...sd,
         _daysUntil: days,
         _triggersToday: days === 0,
         _periodKey: periodKey,
-        completed: completedKeys.has(`${sd.id}::${periodKey}`)
+        completed: isComp && (c?.status !== 'unfulfilled'),
+        status: c ? (c.status || 'completed') : 'pending',
+        evidence_text: c?.evidence_text || null,
+        evidence_photo: c?.evidence_photo || null,
+        cancellation_reason: c?.cancellation_reason || null,
+        completed_at: c?.completed_at || null
       };
     });
   } catch (e) {
     console.error('Error fetching scheduled deliveries:', e);
-  }
-};
-
-const toggleScheduledTask = async (sd) => {
-  const wasCompleted = sd.completed;
-  sd.completed = !wasCompleted; // Optimistic
-  try {
-    if (wasCompleted) {
-      await supabase
-        .from('scheduled_delivery_completions')
-        .delete()
-        .eq('delivery_id', sd.id)
-        .eq('profile_id', currentProfile.value.id)
-        .eq('period_key', sd._periodKey);
-    } else {
-      await supabase.from('scheduled_delivery_completions').insert({
-        delivery_id: sd.id,
-        profile_id: currentProfile.value.id,
-        period_key: sd._periodKey
-      });
-    }
-  } catch (e) {
-    sd.completed = wasCompleted; // Revertir
-    console.error('Error toggling scheduled delivery:', e);
   }
 };
 
@@ -1129,34 +1347,6 @@ const scheduledRecurrenceLabel = (sd) => {
   if (sd.recurrence_type === 'weekly_day') return `Cada ${days[sd.recurrence_value] || '?'}`;
   if (sd.due_date) return `Una vez: ${new Date(sd.due_date).toLocaleDateString('es-CO')}`;
   return 'Programado';
-};
-
-
-const toggleDmTask = async (task) => {
-  const wasCompleted = task.completed;
-  task.completed = !wasCompleted; // Optimistic update
-
-  try {
-    if (wasCompleted) {
-      const { error } = await supabase
-        .from('task_completions')
-        .delete()
-        .eq('task_template_id', task.id)
-        .eq('profile_id', currentProfile.value.id)
-        .eq('period_key', task.periodKey);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase.from('task_completions').insert({
-        task_template_id: task.id,
-        profile_id: currentProfile.value.id,
-        period_key: task.periodKey
-      });
-      if (error) throw error;
-    }
-  } catch (e) {
-    task.completed = wasCompleted; // Revert on fail
-    console.error(e);
-  }
 };
 
 const fetchRoleData = async (roleId) => {
