@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import { embedText } from './_lib/voyage.js';
+import { ORACLE_TOOLS_DECLARATIONS, executeOracleTool } from './_lib/oracleTools.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 // La clave de servicio va primero: 'embed' escribe en corporate_memory, lo que requiere
@@ -104,13 +105,19 @@ export default async function handler(req, res) {
 
       // 4. Prompt del sistema combinando personalidad, memoria y contexto RAG
       const stableSystemText = `${rolePrompt}
-Tu rol es asistir a los líderes y empleados de la empresa respondiendo de forma inteligente, analítica y fluida a sus consultas.
+Tu rol es asistir a los líderes y empleados de la empresa respondiendo de forma inteligente, analítica, ejecutiva y precisa a sus consultas.
+
+CAPACIDADES DE AUDITORÍA E INSPECCIÓN:
+Tienes acceso a herramientas en tiempo real para auditar e inspeccionar la base de datos viva de NOVA WORK:
+- 'audit_corporate_knowledge': DEBES usarla obligatoriamente cuando te pidan auditar la información, saber cuántos roles/manuales/KPIs existen, o el estado global de la empresa.
+- 'get_area_audit': DEBES usarla cuando te pregunten por el estado de documentación de un área específica.
+- 'get_role_details': DEBES usarla cuando pregunten por los detalles, tareas o KPIs de un cargo concreto.
 
 REGLAS DE ORO:
 1. Responde de forma natural, inteligente y fluida. No suenes robótico.
 2. NUNCA digas qué proveedor de IA te desarrolló. Tú eres NOVA WORK.
-3. Basa tus respuestas principalmente en el contexto proporcionado. Si no sabes algo, sugieres consultar con el área encargada.
-4. Puedes formatear tu respuesta con negritas y listas para hacerla fácil de leer.
+3. Si el usuario te pide auditar la empresa o información corporativa, INVOCA de inmediato la herramienta adecuada para consultar los números y porcentajes reales antes de redactar tu informe. NUNCA inventes estadísticas ni respondas con teorías genéricas si tienes datos vivos disponibles.
+4. Presenta tus respuestas con formato ejecutivo impecable: negritas, listas ordenadas y porcentajes exactos cuando corresponda.
 
 ${userMemoryStr}`;
 
@@ -126,8 +133,8 @@ ${userMemoryStr}`;
       }));
       messages.push({ role: 'user', content: query });
 
-      // 6. Generar respuesta con Claude
-      const response = await anthropic.messages.create({
+      // 6. Generar respuesta con Claude (Turno 1 con Tools)
+      let response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 2048,
         system: [
@@ -135,7 +142,38 @@ ${userMemoryStr}`;
           { type: 'text', text: volatileContextText },
         ],
         messages,
+        tools: ORACLE_TOOLS_DECLARATIONS
       });
+
+      // 7. Si Claude decide invocar herramientas (Tool Use), ejecutarlas y hacer Turno 2
+      if (response.stop_reason === 'tool_use') {
+        const toolUseBlocks = response.content.filter((b) => b.type === 'tool_use');
+        const toolResults = await Promise.all(
+          toolUseBlocks.map(async (toolUse) => {
+            const resultData = await executeOracleTool(toolUse.name, toolUse.input || {}, supabase);
+            return {
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: JSON.stringify(resultData)
+            };
+          })
+        );
+
+        response = await anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 2048,
+          system: [
+            { type: 'text', text: stableSystemText, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: volatileContextText },
+          ],
+          messages: [
+            ...messages,
+            { role: 'assistant', content: response.content },
+            { role: 'user', content: toolResults }
+          ],
+          tools: ORACLE_TOOLS_DECLARATIONS
+        });
+      }
 
       const textBlock = response.content.find((block) => block.type === 'text');
       return res.status(200).json({
