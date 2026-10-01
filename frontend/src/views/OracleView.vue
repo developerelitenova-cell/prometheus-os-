@@ -129,9 +129,12 @@
               </div>
               <!-- Action tools -->
               <div class="flex items-center gap-2">
-                <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors">
-                  <span class="material-symbols-outlined text-[16px] text-secondary">picture_as_pdf</span>
-                  <span class="hidden md:inline">Exportar (.PDF)</span>
+                <button 
+                  @click="exportFullChat" 
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors cursor-pointer" 
+                  title="Descargar registro de auditoría">
+                  <span class="material-symbols-outlined text-[16px] text-primary">download</span>
+                  <span class="hidden md:inline">Descargar Informe (.md)</span>
                 </button>
               </div>
             </div>
@@ -169,21 +172,39 @@
                         <span class="material-symbols-outlined text-[13px]">verified</span> Respaldo Corporativo
                       </div>
                     </div>
-                    
-                    <div class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-[0_4px_16px_rgba(0,0,0,0.03)] bg-gradient-to-br from-surface-container-lowest to-surface-container-low/40 flex flex-col gap-space-md">
+                     <div class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-[0_4px_16px_rgba(0,0,0,0.03)] bg-gradient-to-br from-surface-container-lowest to-surface-container-low/40 flex flex-col gap-space-md">
                       
                       <!-- Markdown Rendered Content -->
                       <div class="text-on-surface font-body-md text-body-md leading-relaxed markdown-body" v-html="DOMPurify.sanitize(formatMessage(msg.text))"></div>
                       
                       <!-- Action Footer inside Card -->
                       <div class="pt-3 flex flex-wrap items-center justify-between gap-space-sm border-t border-surface-container-low mt-2">
-                        <div class="flex items-center gap-1">
-                          <button class="p-1.5 rounded-lg hover:bg-surface-container-low text-secondary hover:text-primary transition-colors" title="Respuesta útil">
-                            <span class="material-symbols-outlined text-[18px]">thumb_up</span>
+                        <div class="flex items-center gap-1.5">
+                          <button 
+                            @click="copyMessage(msg.text, index)" 
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-surface-container text-secondary hover:text-primary transition-all text-caption cursor-pointer" 
+                            :title="copiedIndex === index ? '¡Copiado al portapapeles!' : 'Copiar texto'">
+                            <span class="material-symbols-outlined text-[16px]">{{ copiedIndex === index ? 'check' : 'content_copy' }}</span>
+                            <span class="text-[12px] font-medium">{{ copiedIndex === index ? 'Copiado' : 'Copiar' }}</span>
                           </button>
-                          <button class="p-1.5 rounded-lg hover:bg-surface-container-low text-secondary hover:text-error transition-colors" title="Reportar inconsistencia">
-                            <span class="material-symbols-outlined text-[18px]">thumb_down</span>
+                          <button 
+                            @click="exportSingleMessage(msg.text, index)" 
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-surface-container text-secondary hover:text-primary transition-all text-caption cursor-pointer" 
+                            title="Descargar este análisis en Markdown">
+                            <span class="material-symbols-outlined text-[16px]">file_download</span>
+                            <span class="text-[12px] font-medium hidden sm:inline">Exportar</span>
                           </button>
+                          <button 
+                            @click="goToMapper" 
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#b08d57]/10 hover:bg-[#b08d57]/20 text-primary transition-all text-caption font-semibold cursor-pointer" 
+                            title="Ver en el Mapa de Procesos interactivo tipo Miro">
+                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
+                            <span class="text-[12px]">Ver en Mapa</span>
+                          </button>
+                        </div>
+                        <div class="flex items-center gap-1 text-secondary font-caption text-[11px]">
+                          <span class="material-symbols-outlined text-[13px] text-primary">security</span>
+                          <span>Auditado con Supabase DB</span>
                         </div>
                       </div>
                     </div>
@@ -191,18 +212,30 @@
                 </div>
               </div>
 
-              <!-- TYPING INDICATOR -->
+              <!-- DYNAMIC REASONING INDICATOR -->
               <div v-if="loading" class="flex justify-start w-full">
                 <div class="max-w-3xl flex items-start gap-space-md">
-                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#ffdea3] to-[#af8e4c] flex items-center justify-center text-on-primary shrink-0 shadow-sm mt-1">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#ffdea3] to-[#af8e4c] flex items-center justify-center text-on-primary shrink-0 shadow-sm mt-1 animate-pulse">
                     <span class="material-symbols-outlined text-[18px]">neurology</span>
                   </div>
-                  <div class="flex flex-col justify-center h-10 px-4 bg-surface-container-lowest rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
-                    <span class="flex gap-1">
-                      <span class="w-2 h-2 rounded-full bg-surface-container-highest animate-bounce" style="animation-delay: 0s;"></span>
-                      <span class="w-2 h-2 rounded-full bg-surface-container-highest animate-bounce" style="animation-delay: 0.2s;"></span>
-                      <span class="w-2 h-2 rounded-full bg-surface-container-highest animate-bounce" style="animation-delay: 0.4s;"></span>
-                    </span>
+                  <div class="bg-surface-container-lowest border border-surface-container-low rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col gap-2 min-w-[280px] sm:min-w-[360px]">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[18px] animate-spin">sync</span>
+                        <span class="text-xs font-semibold text-primary uppercase tracking-wider">Razonamiento en Vivo</span>
+                      </div>
+                      <div class="flex gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
+                      </div>
+                    </div>
+                    <p class="text-sm font-medium text-on-surface transition-all duration-300 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-secondary text-[16px]">database</span>
+                      <span>{{ reasoningSteps[currentReasoningIndex] }}</span>
+                    </p>
+                    <div class="w-full bg-surface-container-low h-1 rounded-full overflow-hidden">
+                      <div class="bg-gradient-to-r from-primary to-[#ffdea3] h-full w-2/3 animate-pulse"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -210,8 +243,20 @@
 
             <!-- FLOATING INPUT AREA (Bottom Anchor) -->
             <div class="p-space-md lg:p-space-lg bg-surface-container-lowest/95 backdrop-blur-md mt-auto shadow-[0_-4px_16px_rgba(0,0,0,0.02)] shrink-0 z-20">
-              <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-2.5">
                 
+                <!-- Quick Action Pills (1-Click Audits & Process Mapper) -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                  <button 
+                    v-for="(pill, pIdx) in quickPills" 
+                    :key="pIdx"
+                    @click="handlePillClick(pill)"
+                    :disabled="loading"
+                    class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low hover:bg-surface-container border border-surface-container-high/40 text-on-surface font-label-sm text-[12px] shadow-xs hover:border-primary/40 hover:text-primary transition-all disabled:opacity-50 cursor-pointer active:scale-95">
+                    <span>{{ pill.label }}</span>
+                  </button>
+                </div>
+
                 <!-- Main Input Field Capsule -->
                 <div class="relative flex items-center bg-surface-container-low rounded-2xl p-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-within:ring-2 focus-within:ring-primary-container focus-within:bg-surface-container-lowest transition-all">
                   <input 
@@ -224,9 +269,9 @@
                   />
                   <!-- Send Action Button -->
                   <button 
-                    @click="sendQuery"
+                    @click="sendQuery" 
                     :disabled="loading || !currentQuery.trim()"
-                    class="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 active:scale-95 disabled:opacity-50 text-on-primary flex items-center justify-center transition-transform shadow-[0_2px_8px_rgba(176,141,87,0.3)]" 
+                    class="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 active:scale-95 disabled:opacity-50 text-on-primary flex items-center justify-center transition-transform shadow-[0_2px_8px_rgba(176,141,87,0.3)] cursor-pointer" 
                     title="Enviar Consulta">
                     <span class="material-symbols-outlined text-[22px]">arrow_upward</span>
                   </button>
@@ -234,7 +279,7 @@
                 
                 <div class="flex items-center justify-center gap-1.5 text-secondary font-caption text-caption text-center px-4">
                   <span class="material-symbols-outlined text-[13px] text-primary">verified_user</span>
-                  <span>El Oráculo IA responde exclusivamente con base en la documentación oficial aprobada.</span>
+                  <span>El Oráculo IA audita en tiempo real los flujos de trabajo, manuales y gobernanza aprobada.</span>
                 </div>
               </div>
             </div>
@@ -576,6 +621,100 @@ const scrollToBottom = () => {
   });
 };
 
+const quickPills = [
+  { label: '📊 Auditoría General', prompt: 'Realiza una auditoría exhaustiva del conocimiento corporativo de toda la empresa con métricas de cobertura y cuellos de botella detectados.' },
+  { label: '🏢 Área Comercial', prompt: 'Audita detalladamente el área Comercial: muestra los cargos existentes, cuáles tienen flujos mapeados, manuales y qué cuellos de botella presentan.' },
+  { label: '🔺 Pentágono', prompt: 'Audita el área Pentágono: desglosa sus cargos, funciones mapeadas y vacíos de documentación identificados.' },
+  { label: '⚠️ Cargos sin Documentar', prompt: 'Lista todos los cargos que actualmente no tienen mapeo de procesos ni manuales de funciones en la corporación.' },
+  { label: '🗺️ Abrir Mapa de Procesos', action: 'mapper' }
+];
+
+const handlePillClick = (pill) => {
+  if (pill.action === 'mapper') {
+    goToMapper();
+    return;
+  }
+  if (loading.value) return;
+  currentQuery.value = pill.prompt;
+  sendQuery();
+};
+
+const reasoningSteps = [
+  'Inspeccionando 122 cargos y áreas en Supabase...',
+  'Verificando flujogramas de trabajo y manuales...',
+  'Auditando cobertura de KPIs y cuellos de botella...',
+  'Sintetizando análisis con respaldo corporativo...'
+];
+const currentReasoningIndex = ref(0);
+let reasoningInterval = null;
+
+const startReasoningAnimation = () => {
+  currentReasoningIndex.value = 0;
+  if (reasoningInterval) clearInterval(reasoningInterval);
+  reasoningInterval = setInterval(() => {
+    currentReasoningIndex.value = (currentReasoningIndex.value + 1) % reasoningSteps.length;
+  }, 1900);
+};
+
+const stopReasoningAnimation = () => {
+  if (reasoningInterval) {
+    clearInterval(reasoningInterval);
+    reasoningInterval = null;
+  }
+};
+
+const copiedIndex = ref(null);
+const copyMessage = async (text, index) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    copiedIndex.value = index;
+    setTimeout(() => {
+      if (copiedIndex.value === index) copiedIndex.value = null;
+    }, 2000);
+  } catch (err) {
+    console.error('Error al copiar:', err);
+  }
+};
+
+const exportSingleMessage = (text, index) => {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const blob = new Blob([
+    `# Informe Oráculo NOVA WORK - Respuesta #${index + 1}\n\n**Fecha:** ${new Date().toLocaleString()}\n\n---\n\n${text}`
+  ], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `auditoria_oraculo_item_${timestamp}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const exportFullChat = () => {
+  if (!messages.value.length) return;
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  let md = `# Registro de Auditoría y Consultas - Oráculo NOVA WORK\n\n`;
+  md += `**Fecha de Exportación:** ${new Date().toLocaleString()}\n`;
+  md += `**Total de Interacciones:** ${messages.value.length}\n\n`;
+  md += `---\n\n`;
+
+  messages.value.forEach((m, idx) => {
+    const roleLabel = m.role === 'user' ? '👤 Usuario' : '🧠 Oráculo IA (Respaldo Corporativo)';
+    md += `### ${idx + 1}. ${roleLabel}\n\n${m.text}\n\n---\n\n`;
+  });
+
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `auditoria_completa_oraculo_${timestamp}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const goToMapper = () => {
+  router.push('/mapa-cargos');
+};
+
 const sendQuery = async () => {
   const query = currentQuery.value.trim();
   if (!query) return;
@@ -583,6 +722,7 @@ const sendQuery = async () => {
   messages.value.push({ role: 'user', text: query });
   currentQuery.value = '';
   loading.value = true;
+  startReasoningAnimation();
   scrollToBottom();
 
   try {
@@ -611,6 +751,7 @@ const sendQuery = async () => {
     console.error('Error querying Oracle:', e);
     messages.value.push({ role: 'ai', text: 'Lo siento, ha ocurrido un error al conectar con la base de conocimiento vectorial. Verifica la consola para más detalles.' });
   } finally {
+    stopReasoningAnimation();
     loading.value = false;
     scrollToBottom();
   }
@@ -630,16 +771,24 @@ const formatMessage = (text) => {
 </script>
 
 <style scoped>
-/* Markdown Styling overrides */
+/* Markdown Styling overrides for Miro-like visual clarity */
 .markdown-body :deep(h1), 
 .markdown-body :deep(h2), 
 .markdown-body :deep(h3) {
-  font-weight: 600;
-  margin-top: 1rem;
+  font-weight: 700;
+  margin-top: 1.25rem;
   margin-bottom: 0.5rem;
+  color: var(--color-on-surface);
+  letter-spacing: -0.01em;
+}
+.markdown-body :deep(h3) {
+  font-size: 1.05rem;
+  border-bottom: 1px solid var(--color-surface-container);
+  padding-bottom: 0.25rem;
 }
 .markdown-body :deep(p) {
   margin-bottom: 0.75rem;
+  line-height: 1.65;
 }
 .markdown-body :deep(ul) {
   list-style-type: disc;
@@ -652,23 +801,65 @@ const formatMessage = (text) => {
   margin-bottom: 1rem;
 }
 .markdown-body :deep(li) {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 .markdown-body :deep(strong) {
   font-weight: 600;
-  color: var(--color-primary);
+  color: #b08d57;
 }
 .markdown-body :deep(table) {
   width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 1rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 0.75rem;
+  margin-bottom: 1.25rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-surface-container-high);
 }
 .markdown-body :deep(th), .markdown-body :deep(td) {
-  border: 1px solid var(--color-surface-container-high);
-  padding: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--color-surface-container-high);
+  text-align: left;
+  font-size: 0.875rem;
 }
 .markdown-body :deep(th) {
   background-color: var(--color-surface-container-low);
   font-weight: 600;
+  color: var(--color-on-surface);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+.markdown-body :deep(tr:last-child td) {
+  border-bottom: none;
+}
+.markdown-body :deep(blockquote) {
+  border-left: 4px solid #b08d57;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-surface-container-low);
+  border-radius: 0 8px 8px 0;
+  margin: 1rem 0;
+  font-style: italic;
+}
+.markdown-body :deep(code) {
+  background-color: var(--color-surface-container);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: monospace;
+}
+.markdown-body :deep(pre) {
+  background-color: #1e1e24;
+  color: #e0e0e0;
+  padding: 1rem;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.markdown-body :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
 }
 </style>
