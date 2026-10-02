@@ -123,15 +123,40 @@
             </div>
           </div>
 
-          <!-- Section Bar: Title & Search/Filter Strip -->
+          <!-- Section Bar: Title, View Switcher & Search/Filter Strip -->
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-            <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Directorio del Equipo</h2>
+            <div class="flex flex-wrap items-center gap-3">
+              <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">
+                {{ currentLeaderView === 'directory' ? 'Directorio del Equipo' : 'Cronograma Operativo del Equipo' }}
+              </h2>
+              <!-- Selector de Vista: Directorio vs Cronograma -->
+              <div class="flex items-center bg-surface-container rounded-xl p-1 border border-surface-container-high shadow-xs">
+                <button 
+                  type="button"
+                  @click="currentLeaderView = 'directory'"
+                  :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer',
+                    currentLeaderView === 'directory' ? 'bg-surface-container-lowest text-on-surface shadow-xs' : 'text-secondary hover:text-on-surface']"
+                >
+                  <span class="material-symbols-outlined text-[16px]">badge</span>
+                  <span>Directorio & Métricas</span>
+                </button>
+                <button 
+                  type="button"
+                  @click="currentLeaderView = 'calendar'"
+                  :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer',
+                    currentLeaderView === 'calendar' ? 'bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white shadow-xs' : 'text-secondary hover:text-on-surface']"
+                >
+                  <span class="material-symbols-outlined text-[16px]">calendar_month</span>
+                  <span>Cronograma del Equipo</span>
+                </button>
+              </div>
+            </div>
             
-            <div class="flex flex-wrap items-center gap-space-sm">
+            <div class="flex flex-wrap items-center gap-space-sm" v-if="currentLeaderView === 'directory'">
               <div class="flex items-center bg-surface-container-lowest rounded-xl p-1 shadow-sm border border-surface-container-high">
                 <button v-for="period in ['Diario', 'Semanal', 'Mensual', 'Trimestral', 'Semestral', 'Anual']" :key="period"
                         @click="selectedPeriod = period"
-                        :class="['px-3 py-1.5 rounded-lg font-label-sm text-label-sm transition-colors', 
+                        :class="['px-3 py-1.5 rounded-lg font-label-sm text-label-sm transition-colors cursor-pointer', 
                                 selectedPeriod === period ? 'bg-primary/10 text-primary font-semibold' : 'text-secondary hover:bg-surface-container-low']">
                   {{ period }}
                 </button>
@@ -140,7 +165,7 @@
           </div>
 
           <!-- Compact Executive Master-Detail Split Layout -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+          <div v-if="currentLeaderView === 'directory'" class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
             
             <!-- Left Master List (Compact Directory) -->
             <div class="lg:col-span-8 flex flex-col gap-space-xs">
@@ -159,7 +184,10 @@
                     <span v-else class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-surface-container-lowest"></span>
                   </div>
                   <div class="flex flex-col">
-                    <h3 class="font-label-lg text-label-lg text-on-surface font-semibold leading-tight">{{ member.full_name }}</h3>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h3 class="font-label-lg text-label-lg text-on-surface font-semibold leading-tight">{{ member.full_name }}</h3>
+                      <span v-if="member.is_leader" class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-md">👑 Líder / Gerente</span>
+                    </div>
                     <span class="font-caption text-caption text-secondary">{{ member.roles?.name || 'Sin cargo' }}</span>
                   </div>
                 </div>
@@ -202,7 +230,10 @@
                     {{ selectedMember.full_name.charAt(0) }}
                   </div>
                   <div class="flex-1 min-w-0">
-                    <h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate">{{ selectedMember.full_name }}</h4>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate">{{ selectedMember.full_name }}</h4>
+                      <span v-if="selectedMember.is_leader" class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">👑 Líder / Gerente</span>
+                    </div>
                     <span class="font-caption text-caption text-secondary block mb-1 truncate">{{ selectedMember.roles?.name }}</span>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-low font-caption text-caption text-on-surface-variant border border-surface-container">
                       <span class="w-1.5 h-1.5 rounded-full" :class="selectedMember.overdue_tasks_count > 0 ? 'bg-danger' : 'bg-success'"></span>
@@ -326,6 +357,246 @@
               <div v-else class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-surface-container-high flex flex-col items-center justify-center text-center min-h-[300px]">
                 <span class="material-symbols-outlined text-5xl text-surface-container-high mb-2">person_search</span>
                 <p class="font-body-md text-body-md text-secondary">Selecciona un colaborador del directorio para ver sus detalles y métricas.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               VISTA: CRONOGRAMA OPERATIVO DEL EQUIPO (CALENDARIO)
+          ════════════════════════════════════════════════════════════════ -->
+          <div v-else-if="currentLeaderView === 'calendar'" class="space-y-6">
+            <!-- Header del Cronograma: Selector de Mes, Navegación y Resumen -->
+            <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4b06a] to-[#8a6d3d] text-white flex items-center justify-center shadow-xs">
+                  <span class="material-symbols-outlined text-[22px]">calendar_month</span>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-on-surface capitalize">{{ calendarMonthName }}</h3>
+                  <p class="text-xs text-secondary">Cronograma de cumplimiento, evidencias y justificaciones del equipo</p>
+                </div>
+              </div>
+
+              <!-- Controles de Navegación del Calendario -->
+              <div class="flex items-center gap-2">
+                <button 
+                  type="button" 
+                  @click="prevCalendarMonth" 
+                  class="w-9 h-9 rounded-xl border border-surface-container-high bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface transition-colors cursor-pointer"
+                  title="Mes anterior"
+                >
+                  <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+                </button>
+                <button 
+                  type="button" 
+                  @click="setCalendarToday" 
+                  class="px-3 py-1.5 rounded-xl border border-surface-container-high bg-surface-container-low hover:bg-surface-container text-xs font-bold text-primary transition-colors cursor-pointer"
+                >
+                  Mes Actual / Hoy
+                </button>
+                <button 
+                  type="button" 
+                  @click="nextCalendarMonth" 
+                  class="w-9 h-9 rounded-xl border border-surface-container-high bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface transition-colors cursor-pointer"
+                  title="Mes siguiente"
+                >
+                  <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+                </button>
+              </div>
+
+              <!-- Resumen del Mes -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                  {{ calendarMonthStats.totalCompleted }} listas
+                </span>
+                <span v-if="calendarMonthStats.totalWithPhoto > 0" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">photo_camera</span>
+                  {{ calendarMonthStats.totalWithPhoto }} días con foto
+                </span>
+                <span v-if="calendarMonthStats.totalUnfulfilled > 0" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200 text-xs font-semibold flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-rose-600"></span>
+                  {{ calendarMonthStats.totalUnfulfilled }} no cumplidas
+                </span>
+              </div>
+            </div>
+
+            <!-- Grilla Mensual del Calendario -->
+            <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-sm overflow-hidden">
+              <!-- Días de la semana -->
+              <div class="grid grid-cols-7 border-b border-surface-container-high bg-surface-container-low/60 text-center py-2.5 text-xs font-bold uppercase tracking-wider text-secondary">
+                <span>Lun</span>
+                <span>Mar</span>
+                <span>Mié</span>
+                <span>Jue</span>
+                <span>Vie</span>
+                <span class="text-amber-700">Sáb</span>
+                <span class="text-rose-700">Dom</span>
+              </div>
+
+              <!-- Celdas de días -->
+              <div class="grid grid-cols-7 divide-x divide-y divide-surface-container-high">
+                <div 
+                  v-for="(day, idx) in calendarDays" 
+                  :key="idx"
+                  @click="selectCalendarDay(day)"
+                  :class="[
+                    'min-h-[105px] p-2 flex flex-col justify-between transition-all cursor-pointer relative',
+                    !day.isCurrentMonth ? 'bg-surface-container-low/20 opacity-40' : 'bg-surface-container-lowest hover:bg-surface-container-low/40',
+                    day.isSelected ? 'ring-2 ring-primary ring-inset bg-primary/5' : '',
+                    day.isToday ? 'bg-[#b08d57]/5' : ''
+                  ]"
+                >
+                  <div class="flex items-center justify-between">
+                    <span 
+                      :class="[
+                        'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
+                        day.isToday ? 'bg-primary text-white shadow-xs' : day.isSelected ? 'bg-surface-container-high text-primary font-black' : 'text-on-surface'
+                      ]"
+                    >
+                      {{ day.dayNumber }}
+                    </span>
+                    <span v-if="day.isToday" class="text-[9px] font-bold text-primary uppercase">Hoy</span>
+                  </div>
+
+                  <!-- Badges de tareas del día -->
+                  <div class="flex flex-col gap-1 mt-1">
+                    <!-- Completadas -->
+                    <span 
+                      v-if="day.completedCount > 0" 
+                      class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-between"
+                      :title="`${day.completedCount} tareas realizadas`"
+                    >
+                      <span>✓ {{ day.completedCount }}</span>
+                      <span v-if="day.hasPhotos" class="text-[11px]" title="Tiene fotos de evidencia">📷</span>
+                    </span>
+                    <!-- No cumplidas con justificación -->
+                    <span 
+                      v-if="day.unfulfilledCount > 0" 
+                      class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200 flex items-center justify-between"
+                      :title="`${day.unfulfilledCount} no ejecutadas con motivo`"
+                    >
+                      <span>⚠️ {{ day.unfulfilledCount }}</span>
+                    </span>
+                    <!-- Pendientes -->
+                    <span 
+                      v-if="day.pendingCount > 0" 
+                      class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200"
+                      :title="`${day.pendingCount} pendientes`"
+                    >
+                      ⏳ {{ day.pendingCount }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inspector de Actividades del Día Seleccionado -->
+            <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-container-high">
+                <div>
+                  <h4 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[18px]">event_note</span>
+                    Actividades del Día: <span class="text-primary font-black">{{ selectedCalendarDate }}</span>
+                  </h4>
+                  <p class="text-xs text-secondary mt-0.5">
+                    Detalle de trazabilidad, fotos de soporte y justificaciones registradas por el equipo
+                  </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    @click="dailyReportDate = selectedCalendarDate; openDailyReportModal()"
+                    class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 hover:brightness-105 cursor-pointer"
+                  >
+                    <span class="material-symbols-outlined text-[16px]">assignment_turned_in</span>
+                    <span>Generar Informe Diario de Esta Fecha</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Lista de Actividades del Día -->
+              <div v-if="selectedCalendarDayActivities.length === 0" class="py-8 text-center text-xs text-secondary">
+                No hay actividades registradas en el cronograma para el día {{ selectedCalendarDate }}.
+              </div>
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div 
+                  v-for="act in selectedCalendarDayActivities" 
+                  :key="act.id"
+                  class="p-3.5 rounded-xl border flex flex-col justify-between bg-surface-container-low/40 border-surface-container transition-all hover:bg-surface-container-low"
+                >
+                  <div class="space-y-2">
+                    <!-- Header de la Actividad: Colaborador + Estado -->
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-7 h-7 rounded-lg bg-surface-container-high text-[#8a6d3d] font-bold text-xs flex items-center justify-center shrink-0">
+                          {{ act.member?.full_name?.charAt(0) || 'U' }}
+                        </div>
+                        <div class="min-w-0">
+                          <p class="text-xs font-bold text-on-surface truncate flex items-center gap-1">
+                            <span>{{ act.member?.full_name }}</span>
+                            <span v-if="act.member?.is_leader" class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded">👑</span>
+                          </p>
+                          <p class="text-[10px] text-secondary truncate">{{ act.member?.roles?.name }}</p>
+                        </div>
+                      </div>
+
+                      <span 
+                        :class="[
+                          'px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shrink-0',
+                          act.status === 'completed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                          act.status === 'unfulfilled' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                          'bg-amber-100 text-amber-800 border border-amber-300'
+                        ]"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full" :class="act.status === 'completed' ? 'bg-emerald-600' : act.status === 'unfulfilled' ? 'bg-rose-600' : 'bg-amber-600'"></span>
+                        {{ act.status === 'completed' ? 'Realizado' : act.status === 'unfulfilled' ? 'No Cumplido' : 'Pendiente' }}
+                      </span>
+                    </div>
+
+                    <!-- Título de la Tarea -->
+                    <div>
+                      <p class="text-xs font-bold text-on-surface">{{ act.title }}</p>
+                      <p v-if="act.description" class="text-[11px] text-secondary mt-0.5 line-clamp-2">{{ act.description }}</p>
+                    </div>
+
+                    <!-- Evidencia de Texto -->
+                    <div v-if="act.evidence_text" class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200 text-[11px] text-emerald-950">
+                      <span class="font-bold flex items-center gap-1 text-[10px] text-emerald-800 uppercase tracking-wider mb-0.5">
+                        <span class="material-symbols-outlined text-[13px]">check_circle</span>
+                        Evidencia Registrada:
+                      </span>
+                      <p class="whitespace-pre-wrap">{{ act.evidence_text }}</p>
+                    </div>
+
+                    <!-- Motivo de No Cumplimiento -->
+                    <div v-if="act.cancellation_reason" class="p-2 rounded-lg bg-rose-50/70 border border-rose-200 text-[11px] text-rose-950">
+                      <span class="font-bold flex items-center gap-1 text-[10px] text-rose-800 uppercase tracking-wider mb-0.5">
+                        <span class="material-symbols-outlined text-[13px]">warning</span>
+                        Motivo de No Ejecución:
+                      </span>
+                      <p class="whitespace-pre-wrap">{{ act.cancellation_reason }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Footer: Miniatura de Foto y Hora -->
+                  <div class="mt-2 pt-2 border-t border-surface-container flex items-center justify-between">
+                    <span class="text-[10px] text-secondary">
+                      {{ act.completed_at ? 'Hora: ' + formatActivityTime(act.completed_at) : 'Pendiente' }}
+                    </span>
+
+                    <button 
+                      v-if="act.evidence_photo"
+                      type="button"
+                      @click="reportZoomPhoto = act.evidence_photo"
+                      class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">photo_camera</span>
+                      <span>Ver Foto</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -648,7 +919,7 @@
             <div class="inline-flex items-center gap-2 mb-1">
               <span class="material-symbols-outlined text-[#8a6d3d] text-[20px]">monitoring</span>
               <span class="text-xs font-bold uppercase tracking-wider text-[#8a6d3d]">
-                {{ isMaster ? 'Supervisión Global' : 'Panel de Gerencia' }} • {{ leaderArea?.name || 'Equipo' }}
+                {{ isMaster && selectedAreaFilter === 'all' ? 'Supervisión Global • Toda la Empresa' : `Supervisión del Equipo • ${leaderArea?.name || 'Mi Equipo'}` }}
               </span>
             </div>
             <h2 class="text-xl font-bold text-on-surface">Resultados y Control de Presión del Equipo</h2>
@@ -740,7 +1011,7 @@
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
                 <span class="material-symbols-outlined text-[18px] text-primary">groups</span>
-                Rendimiento Individual del Equipo ({{ teamMembers.length }} colaboradores)
+                Rendimiento Individual del Equipo ({{ teamMembers.length }} integrantes: Gerente y colaboradores a cargo)
               </h3>
               <span class="text-xs text-secondary font-medium">Período evaluado: <strong>{{ selectedPeriod }}</strong></span>
             </div>
@@ -773,7 +1044,10 @@
                           {{ m.full_name.charAt(0) }}
                         </div>
                         <div class="min-w-0">
-                          <p class="font-bold text-on-surface truncate">{{ m.full_name }}</p>
+                          <p class="font-bold text-on-surface truncate flex items-center gap-1.5">
+                            <span>{{ m.full_name }}</span>
+                            <span v-if="m.is_leader" class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded shrink-0">👑 Líder / Gerente</span>
+                          </p>
                           <p class="text-[10px] text-secondary truncate">{{ getMemberCorporateEmail(m) }}</p>
                         </div>
                       </div>
@@ -1313,7 +1587,10 @@
                     {{ act.memberName.charAt(0) }}
                   </div>
                   <div>
-                    <h4 class="font-bold text-xs text-on-surface leading-tight">{{ act.memberName }}</h4>
+                    <h4 class="font-bold text-xs text-on-surface leading-tight flex items-center gap-1.5">
+                      <span>{{ act.memberName }}</span>
+                      <span v-if="teamMembers.find(m => m.id === act.memberId)?.is_leader" class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded shrink-0">👑 Líder / Gerente</span>
+                    </h4>
                     <span class="text-[10px] text-secondary">{{ act.memberRole }} • {{ act.memberArea }}</span>
                   </div>
                 </div>
@@ -1484,6 +1761,7 @@ import { supabase } from '@/api/supabase';
 import { useRouter } from 'vue-router';
 import { getLatestRoleKpiScore } from '@/api/kpi';
 import { signOut, canAccessKpis } from '@/api/auth';
+import { getPeriodKey } from '@/utils/taskPeriods';
 
 const router = useRouter();
 const canManageKpis = computed(() => canAccessKpis());
@@ -1510,6 +1788,156 @@ const showTeamKpiModal = ref(false);
 const taskAssigneeSearch = ref('');
 const isSendingPressure = ref(false);
 const pressuredMembers = ref(new Set());
+
+// ── Vista Alterna: Directorio vs Cronograma (Calendario) ──────
+const currentLeaderView = ref('directory'); // 'directory' | 'calendar'
+const calendarCurrentDate = ref(new Date());
+const selectedCalendarDate = ref(new Date().toISOString().split('T')[0]);
+
+// ── Métodos del Cronograma / Calendario del Equipo ───────────
+const calendarMonthName = computed(() => {
+  const d = calendarCurrentDate.value;
+  const monthNames = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+  ];
+  return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+});
+
+const prevCalendarMonth = () => {
+  const d = new Date(calendarCurrentDate.value);
+  d.setMonth(d.getMonth() - 1);
+  calendarCurrentDate.value = d;
+};
+
+const nextCalendarMonth = () => {
+  const d = new Date(calendarCurrentDate.value);
+  d.setMonth(d.getMonth() + 1);
+  calendarCurrentDate.value = d;
+};
+
+const setCalendarToday = () => {
+  calendarCurrentDate.value = new Date();
+  selectedCalendarDate.value = new Date().toISOString().split('T')[0];
+};
+
+const buildCalendarDayObj = (d, dateStr, isCurrentMonth, todayStr) => {
+  const dayActivities = [];
+  teamMembers.value.forEach(m => {
+    (m.all_tasks || []).forEach(t => {
+      const compDate = t.completed_at ? t.completed_at.split('T')[0] : null;
+      const dueDate = t.due_date ? t.due_date.split('T')[0] : null;
+      
+      let belongsToDay = false;
+      if (compDate === dateStr) {
+        belongsToDay = true;
+      } else if (dueDate === dateStr) {
+        belongsToDay = true;
+      } else if (t.frequency === 'daily' && dateStr === todayStr) {
+        belongsToDay = true;
+      }
+      
+      if (belongsToDay) {
+        dayActivities.push({
+          ...t,
+          member: m
+        });
+      }
+    });
+  });
+
+  const completed = dayActivities.filter(a => a.status === 'completed');
+  const unfulfilled = dayActivities.filter(a => a.status === 'unfulfilled');
+  const pending = dayActivities.filter(a => a.status === 'pending');
+  const hasPhotos = completed.some(a => !!a.evidence_photo);
+
+  return {
+    date: d,
+    dateStr,
+    dayNumber: d.getDate(),
+    isCurrentMonth,
+    isToday: dateStr === todayStr,
+    isSelected: selectedCalendarDate.value === dateStr,
+    activities: dayActivities,
+    completedCount: completed.length,
+    unfulfilledCount: unfulfilled.length,
+    pendingCount: pending.length,
+    hasPhotos
+  };
+};
+
+const calendarDays = computed(() => {
+  const curr = calendarCurrentDate.value;
+  const year = curr.getFullYear();
+  const month = curr.getMonth();
+  
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  
+  let firstDayIndex = firstDayOfMonth.getDay() - 1;
+  if (firstDayIndex === -1) firstDayIndex = 6;
+  
+  const days = [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  // Días previos (mes anterior)
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const d = new Date(year, month - 1, prevMonthLastDay - i);
+    const dateStr = d.toISOString().split('T')[0];
+    days.push(buildCalendarDayObj(d, dateStr, false, todayStr));
+  }
+  
+  // Días del mes actual
+  for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
+    const d = new Date(year, month, i);
+    const dateStr = d.toISOString().split('T')[0];
+    days.push(buildCalendarDayObj(d, dateStr, true, todayStr));
+  }
+  
+  // Días posteriores (mes siguiente)
+  const remaining = (7 - (days.length % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    const d = new Date(year, month + 1, i);
+    const dateStr = d.toISOString().split('T')[0];
+    days.push(buildCalendarDayObj(d, dateStr, false, todayStr));
+  }
+  
+  return days;
+});
+
+const selectedCalendarDayActivities = computed(() => {
+  const targetDate = selectedCalendarDate.value;
+  if (!targetDate) return [];
+  const found = calendarDays.value.find(d => d.dateStr === targetDate);
+  return found ? found.activities : [];
+});
+
+const selectCalendarDay = (day) => {
+  selectedCalendarDate.value = day.dateStr;
+};
+
+const calendarMonthStats = computed(() => {
+  let totalCompleted = 0;
+  let totalWithPhoto = 0;
+  let totalUnfulfilled = 0;
+  let totalPending = 0;
+
+  calendarDays.value.filter(d => d.isCurrentMonth).forEach(d => {
+    totalCompleted += d.completedCount;
+    if (d.hasPhotos) totalWithPhoto++;
+    totalUnfulfilled += d.unfulfilledCount;
+    totalPending += d.pendingCount;
+  });
+
+  return {
+    totalCompleted,
+    totalWithPhoto,
+    totalUnfulfilled,
+    totalPending,
+    total: totalCompleted + totalUnfulfilled + totalPending
+  };
+});
 
 // ── Estado del Informe Diario de Operaciones ─────────────────
 const showDailyReportModal = ref(false);
@@ -1704,16 +2132,19 @@ const loadDailyReportData = async () => {
       });
     }
 
-    // 2. Gestión Diaria (task_completions)
+    // 2. Gestión Diaria (task_completions) y tareas pendientes del cargo
     try {
       const { data: compData } = await supabase
         .from('task_completions')
-        .select('*, role_task_templates(title, task_type, description)')
+        .select('*, role_task_templates(id, title, frequency, description, priority)')
         .in('profile_id', memberIds)
         .eq('period_key', selectedDay);
 
+      const completedTemplateMap = new Set();
+
       if (compData) {
         compData.forEach(c => {
+          completedTemplateMap.add(`${c.profile_id}::${c.task_template_id}`);
           const member = teamMembers.value.find(m => m.id === c.profile_id);
           activities.push({
             id: 'tc-' + c.id,
@@ -1723,7 +2154,7 @@ const loadDailyReportData = async () => {
             title: c.role_task_templates?.title || 'Gestión periódica',
             description: c.role_task_templates?.description || null,
             deliverable: null,
-            priority: 'medium',
+            priority: c.role_task_templates?.priority || 'medium',
             status: c.status || 'completed',
             evidence_text: c.evidence_text,
             evidence_photo: c.evidence_photo,
@@ -1737,6 +2168,49 @@ const loadDailyReportData = async () => {
             memberArea: member?.roles?.areas?.name || leaderArea.value?.name || 'Área'
           });
         });
+      }
+
+      // Añadir tareas diarias del cargo que NO han sido completadas/gestionadas aún para este día
+      const roleIds = teamMembers.value.map(m => m.roles?.id || m.role_id).filter(Boolean);
+      if (roleIds.length > 0) {
+        const { data: dailyTemplates } = await supabase
+          .from('role_task_templates')
+          .select('id, role_id, title, description, priority, frequency')
+          .in('role_id', roleIds)
+          .eq('frequency', 'daily')
+          .eq('active', true);
+
+        if (dailyTemplates) {
+          teamMembers.value.forEach(m => {
+            const mRoleId = m.roles?.id || m.role_id;
+            const mDailyTemplates = dailyTemplates.filter(t => t.role_id === mRoleId);
+            mDailyTemplates.forEach(t => {
+              if (!completedTemplateMap.has(`${m.id}::${t.id}`)) {
+                activities.push({
+                  id: `tc-pending-${m.id}-${t.id}`,
+                  rawId: t.id,
+                  origin: 'daily_management',
+                  typeName: 'Gestión Diaria',
+                  title: t.title,
+                  description: t.description,
+                  deliverable: null,
+                  priority: t.priority || 'medium',
+                  status: 'pending',
+                  evidence_text: null,
+                  evidence_photo: null,
+                  cancellation_reason: null,
+                  completed_at: null,
+                  due_date: selectedDay,
+                  created_at: selectedDay,
+                  memberId: m.id,
+                  memberName: m.full_name || 'Colaborador',
+                  memberRole: m.roles?.name || 'Cargo',
+                  memberArea: m.roles?.areas?.name || leaderArea.value?.name || 'Área'
+                });
+              }
+            });
+          });
+        }
       }
     } catch (e) {
       console.warn('Error fetching task_completions:', e);
@@ -2170,15 +2644,30 @@ const calculateTimeDifferenceHours = (start, end) => {
 const filterTasksByPeriod = (tasks, periodStr) => {
   if (!tasks || tasks.length === 0) return [];
   const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
   
   return tasks.filter(t => {
+    // 1. Tareas de rol o programadas con frecuencia definida
+    if (t.frequency) {
+      if (periodStr === 'Diario') return t.frequency === 'daily';
+      if (periodStr === 'Semanal') return t.frequency === 'daily' || t.frequency === 'weekly';
+      if (periodStr === 'Mensual') return t.frequency === 'daily' || t.frequency === 'weekly' || t.frequency === 'monthly';
+      return true;
+    }
+    
+    // 2. Tareas ad-hoc asignadas (tabla tasks)
     const dueStr = t.due_date ? t.due_date.split('T')[0] : null;
     const createdStr = t.created_at ? t.created_at.split('T')[0] : null;
     const completedStr = t.completed_at ? t.completed_at.split('T')[0] : null;
-    const todayStr = now.toISOString().split('T')[0];
 
     if (periodStr === 'Diario') {
-      return dueStr === todayStr || completedStr === todayStr || createdStr === todayStr;
+      // Si fue completada/gestionada hoy
+      if (completedStr === todayStr) return true;
+      // Si vence hoy
+      if (dueStr === todayStr) return true;
+      // Si está activa/pendiente y fue creada hoy o vence hoy/futuro
+      if (t.status === 'pending' && (!dueStr || dueStr >= todayStr)) return true;
+      return false;
     }
     
     const refDate = new Date(t.due_date || t.completed_at || t.created_at);
@@ -2206,30 +2695,36 @@ const onAreaFilterChange = async () => {
 
 const enrichAndSetTeam = async (profilesPool, userId) => {
   let members = [];
-  if (isMaster.value) {
-    if (selectedAreaFilter.value === 'all') {
-      members = (profilesPool || []).filter(p => !p.is_master_admin || p.id !== userId);
-      leaderArea.value = { name: 'Global / Todas las áreas' };
-    } else {
-      members = (profilesPool || []).filter(p => p.roles?.area_id === selectedAreaFilter.value);
-      const a = availableAreas.value.find(area => area.id === selectedAreaFilter.value);
-      leaderArea.value = a || { name: 'Área' };
+  
+  // Priorizar el área asignada del usuario si existe y no se ha cambiado manualmente a 'all'
+  let targetAreaId = selectedAreaFilter.value;
+  if (currentUser.value?.roles?.area_id && (!targetAreaId || targetAreaId === 'all') && !isMaster.value) {
+    targetAreaId = currentUser.value.roles.area_id;
+    selectedAreaFilter.value = targetAreaId;
+  }
+
+  const isLeaderProfile = (p) => {
+    if (p.id === userId && isLeader.value) return true;
+    const rName = (p.roles?.name || '').toLowerCase();
+    const lvl = p.roles?.access_level;
+    return [1, 2].includes(lvl) || rName.includes('gerente') || rName.includes('director') || rName.includes('lider') || rName.includes('líder') || rName.includes('coordinador');
+  };
+
+  if (targetAreaId && targetAreaId !== 'all') {
+    const a = availableAreas.value.find(area => area.id === targetAreaId);
+    leaderArea.value = a || currentUser.value?.roles?.areas || { name: 'Mi Equipo' };
+    
+    // Obtener todos los colaboradores que pertenecen a esta área
+    members = (profilesPool || []).filter(p => p.roles?.area_id === targetAreaId);
+    
+    // Si currentUser pertenece a esta área pero no está en la lista filtrada, agregarlo
+    if (currentUser.value && currentUser.value.roles?.area_id === targetAreaId && !members.some(m => m.id === userId)) {
+      members.unshift(currentUser.value);
     }
   } else {
-    // Gerente de Área
-    const userAreaId = currentUser.value?.roles?.area_id;
-    if (userAreaId) {
-      const a = availableAreas.value.find(area => area.id === userAreaId);
-      leaderArea.value = a || currentUser.value?.roles?.areas || { name: 'Mi Equipo' };
-      members = (profilesPool || []).filter(p => p.roles?.area_id === userAreaId && p.id !== userId);
-      // Si no hay otros colaboradores en esa área, mostrarse a sí mismo para que no quede vacía
-      if (members.length === 0) {
-        members = (profilesPool || []).filter(p => p.roles?.area_id === userAreaId);
-      }
-    } else {
-      leaderArea.value = { name: 'Mi Equipo' };
-      members = (profilesPool || []).filter(p => p.id !== userId);
-    }
+    // Modo Global (Toda la empresa)
+    leaderArea.value = { name: 'Global / Todas las áreas' };
+    members = (profilesPool || []).filter(p => !p.is_master_admin || p.id !== userId);
   }
 
   // Si por alguna razón el filtro da 0 pero hay perfiles, fallback al conjunto de perfiles
@@ -2237,23 +2732,165 @@ const enrichAndSetTeam = async (profilesPool, userId) => {
     members = profilesPool.filter(p => p.id !== userId);
   }
 
+  // Marcar líderes y ordenar para que el líder aparezca en primer lugar
+  members.forEach(m => {
+    m.is_leader = isLeaderProfile(m);
+  });
+  members.sort((a, b) => {
+    if (a.is_leader && !b.is_leader) return -1;
+    if (!a.is_leader && b.is_leader) return 1;
+    return (a.full_name || '').localeCompare(b.full_name || '');
+  });
+
+  const memberIds = members.map(m => m.id);
+  const roleIds = members.map(m => m.roles?.id || m.role_id).filter(Boolean);
+
+  // 1. Tareas ad-hoc asignadas directamente en `tasks`
+  const { data: rawTasks } = await supabase
+    .from('tasks')
+    .select('id, title, description, deliverable, category, priority, status, evidence_text, evidence_photo, cancellation_reason, created_at, started_at, completed_at, due_date, assigned_to')
+    .in('assigned_to', memberIds);
+
+  // 2. Plantillas de tareas por cargo (Gestión Diaria / Semanal / Mensual)
+  let allRoleTemplates = [];
+  if (roleIds.length > 0) {
+    const { data: rTemplates } = await supabase
+      .from('role_task_templates')
+      .select('id, role_id, title, description, frequency, priority, active')
+      .in('role_id', roleIds)
+      .eq('active', true);
+    allRoleTemplates = rTemplates || [];
+  }
+
+  // 3. Completaciones de tareas por cargo en task_completions
+  let allTaskCompletions = [];
+  if (memberIds.length > 0) {
+    const { data: tCompletions } = await supabase
+      .from('task_completions')
+      .select('task_template_id, profile_id, period_key, status, evidence_text, evidence_photo, cancellation_reason, completed_at, created_at')
+      .in('profile_id', memberIds);
+    allTaskCompletions = tCompletions || [];
+  }
+
+  // 4. Entregas programadas (scheduled_deliveries)
+  let allSchedDeliveries = [];
+  let allSchedCompletions = [];
+  try {
+    const { data: sDeliveries } = await supabase
+      .from('scheduled_deliveries')
+      .select('*')
+      .eq('active', true);
+    allSchedDeliveries = sDeliveries || [];
+
+    if (memberIds.length > 0) {
+      const { data: sCompletions } = await supabase
+        .from('scheduled_delivery_completions')
+        .select('*')
+        .in('profile_id', memberIds);
+      allSchedCompletions = sCompletions || [];
+    }
+  } catch (e) {
+    console.warn('Error fetching scheduled deliveries:', e);
+  }
+
+  const completionMap = new Map();
+  allTaskCompletions.forEach(c => {
+    completionMap.set(`${c.profile_id}::${c.task_template_id}::${c.period_key}`, c);
+  });
+
+  const schedCompletionMap = new Map();
+  allSchedCompletions.forEach(c => {
+    schedCompletionMap.set(`${c.profile_id}::${c.delivery_id}::${c.period_key}`, c);
+  });
+
   const enrichedMembers = await Promise.all(members.map(async (m) => {
     let latestScore = 0;
-    if (m.roles?.id) {
+    const roleId = m.roles?.id || m.role_id;
+    if (roleId) {
       try {
-        latestScore = await getLatestRoleKpiScore(m.roles.id);
+        latestScore = await getLatestRoleKpiScore(roleId);
       } catch (kpiErr) {
-        console.warn('Error fetching kpi score for role:', m.roles?.id, kpiErr);
+        console.warn('Error fetching kpi score for role:', roleId, kpiErr);
       }
     }
 
-    const { data: tasks } = await supabase.from('tasks')
-      .select('id, title, description, deliverable, category, priority, status, evidence_text, evidence_photo, cancellation_reason, created_at, started_at, completed_at, due_date')
-      .eq('assigned_to', m.id);
-      
-    m.all_tasks = tasks || [];
+    // A. Tareas asignadas ad-hoc
+    const memberAdHoc = (rawTasks || []).filter(t => t.assigned_to === m.id).map(t => ({
+      ...t,
+      frequency: null,
+      origin: 'task'
+    }));
+
+    // B. Tareas del cargo (Gestión Diaria / Semanal / Mensual)
+    const memberRoleTemplates = allRoleTemplates.filter(t => t.role_id === roleId);
+    const memberCargoTasks = memberRoleTemplates.map(t => {
+      const pKey = getPeriodKey(t.frequency);
+      const comp = completionMap.get(`${m.id}::${t.id}::${pKey}`);
+      return {
+        id: 'rt-' + t.id,
+        rawId: t.id,
+        title: t.title,
+        description: t.description,
+        frequency: t.frequency, // 'daily', 'weekly', 'monthly'
+        task_type: t.frequency,
+        category: 'Gestión del Cargo',
+        priority: t.priority || 'medium',
+        status: comp ? (comp.status || 'completed') : 'pending',
+        evidence_text: comp?.evidence_text || null,
+        evidence_photo: comp?.evidence_photo || null,
+        cancellation_reason: comp?.cancellation_reason || null,
+        completed_at: comp?.completed_at || null,
+        created_at: comp?.completed_at || new Date().toISOString(),
+        due_date: new Date().toISOString(),
+        is_role_task: true,
+        origin: 'daily_management'
+      };
+    });
+
+    // C. Entregas programadas aplicables
+    const memberSchedTasks = allSchedDeliveries
+      .filter(sd => {
+        if (sd.target_type === 'all') return true;
+        if (sd.target_type === 'profile' && sd.target_profile_ids?.includes(m.id)) return true;
+        if (sd.target_type === 'role' && sd.target_role_ids?.includes(roleId)) return true;
+        if (sd.target_type === 'area' && sd.target_area_id === m.roles?.area_id) return true;
+        return false;
+      })
+      .map(sd => {
+        let pKey = '';
+        const now = new Date();
+        if (sd.recurrence_type === 'monthly_day') {
+          pKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        } else if (sd.recurrence_type === 'weekly_day') {
+          const jan1 = new Date(now.getFullYear(), 0, 1);
+          const week = Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+          pKey = `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
+        } else {
+          pKey = sd.due_date || now.toISOString().split('T')[0];
+        }
+        const sComp = schedCompletionMap.get(`${m.id}::${sd.id}::${pKey}`);
+        return {
+          id: 'sd-' + sd.id,
+          rawId: sd.id,
+          title: sd.title,
+          description: sd.description,
+          frequency: sd.recurrence_type === 'weekly_day' ? 'weekly' : (sd.recurrence_type === 'monthly_day' ? 'monthly' : 'daily'),
+          category: 'Entrega Programada',
+          priority: sd.priority || 'medium',
+          status: sComp ? (sComp.status || 'completed') : 'pending',
+          evidence_text: sComp?.evidence_text || null,
+          evidence_photo: sComp?.evidence_photo || null,
+          cancellation_reason: sComp?.cancellation_reason || null,
+          completed_at: sComp?.completed_at || null,
+          created_at: sComp?.completed_at || new Date().toISOString(),
+          due_date: sd.due_date || new Date().toISOString(),
+          is_scheduled: true,
+          origin: 'scheduled'
+        };
+      });
+
+    m.all_tasks = [...memberCargoTasks, ...memberSchedTasks, ...memberAdHoc];
     m.latest_score = latestScore || 0;
-    
     return m;
   }));
 
@@ -2302,6 +2939,13 @@ const fetchData = async () => {
   isMaster.value = !!profile?.is_master_admin;
   isLeader.value = isMaster.value || isLvlLeader || isNamedLeader;
 
+  // Si el perfil tiene un área en su cargo, inicializar el filtro en esa área
+  if (profile?.roles?.area_id) {
+    selectedAreaFilter.value = profile.roles.area_id;
+  } else if (isMaster.value) {
+    selectedAreaFilter.value = 'all';
+  }
+
   if (isLeader.value) {
     const { data: rawProfiles, error: profsError } = await supabase
       .from('profiles')
@@ -2333,16 +2977,17 @@ const updateMetrics = () => {
     let timedTasksCount = 0;
     
     periodTasks.forEach(t => {
-      // Overdue logic: not completed AND due_date is in the past
-      if (t.status !== 'completed' && t.due_date && new Date(t.due_date) < now) {
-        overdue++;
-      } else if (t.status === 'completed') {
+      // Overdue logic: not completed AND due_date is in the past, o unfulfilled
+      if (t.status === 'completed') {
         completed++;
-        // Time tracking math
         if (t.started_at && t.completed_at) {
           totalHours += calculateTimeDifferenceHours(t.started_at, t.completed_at);
           timedTasksCount++;
         }
+      } else if (t.status === 'unfulfilled') {
+        overdue++;
+      } else if (t.due_date && new Date(t.due_date) < now) {
+        overdue++;
       } else {
         pending++;
       }
