@@ -472,6 +472,30 @@
       @save="handleEvidenceSave"
       @reopen="handleTaskReopen"
     />
+
+    <!-- Toast Flotante de Confirmación de Evidencia Guardada -->
+    <transition
+      enter-active-class="transform ease-out duration-300 transition"
+      enter-from-class="translate-y-4 opacity-0 sm:translate-y-0 sm:scale-95"
+      enter-to-class="translate-y-0 opacity-100 sm:scale-100"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="showEvidenceSuccessToast" class="fixed bottom-6 right-6 z-[130] max-w-md bg-[#1d1d1f] text-white p-4 rounded-2xl shadow-2xl border border-white/10 flex items-start gap-3 backdrop-blur-md">
+        <div class="w-8 h-8 rounded-full bg-[#34c759]/20 text-[#34c759] flex items-center justify-center shrink-0 mt-0.5">
+          <span class="material-symbols-outlined text-[20px]">verified</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-[13px] font-bold text-white">Registro Confirmado</h4>
+          <p class="text-[12px] text-gray-300 mt-0.5 leading-snug">{{ evidenceToastMessage }}</p>
+          <span class="text-[10px] text-[#b08d57] font-semibold mt-1 block">Disponible de inmediato en el informe del gerente</span>
+        </div>
+        <button @click="showEvidenceSuccessToast = false" class="text-gray-400 hover:text-white p-1 rounded-lg shrink-0">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -498,15 +522,24 @@ const overdueTasks = computed(() => {
   return all.filter(t => t.status === 'pending' && t.due_date && new Date(t.due_date) < today);
 });
 
+// Helper para comprobar si una fecha corresponde al día de hoy
+const isSameDayAsToday = (dateStr) => {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  return d.toDateString() === new Date().toDateString();
+};
+
 // Pendientes de HOY: tasks asignadas con due_date >= hoy (o marcadas hoy) + programados de hoy
 const todayPendingTasks = computed(() => {
   const all = allTasks.value || [];
   const adHoc = all.filter(t => {
+    // Si fue gestionada hoy (completada o no cumplida hoy), SIEMPRE debe permanecer visible hoy
+    if (t.completed_at && isSameDayAsToday(t.completed_at)) return true;
+    
     const isDueTodayOrFuture = !t.due_date || new Date(t.due_date) >= today;
     if (t.status === 'pending') return isDueTodayOrFuture;
-    if (t.completed_at) {
-      const compDate = new Date(t.completed_at);
-      return compDate.toDateString() === new Date().toDateString();
+    if (t.status === 'completed' || t.status === 'unfulfilled') {
+      return !t.due_date || isSameDayAsToday(t.due_date);
     }
     return isDueTodayOrFuture;
   });
@@ -1012,6 +1045,20 @@ const showEvidenceModal = ref(false);
 const selectedTaskForEvidence = ref(null);
 const selectedTaskType = ref('task'); // 'task', 'daily_management', 'scheduled'
 
+// Notificaciones Toast Reactivas
+const showEvidenceSuccessToast = ref(false);
+const evidenceToastMessage = ref('');
+let toastTimeoutId = null;
+
+const showToast = (message) => {
+  evidenceToastMessage.value = message;
+  showEvidenceSuccessToast.value = true;
+  if (toastTimeoutId) clearTimeout(toastTimeoutId);
+  toastTimeoutId = setTimeout(() => {
+    showEvidenceSuccessToast.value = false;
+  }, 4500);
+};
+
 const openEvidenceModal = (task, type = 'task') => {
   selectedTaskForEvidence.value = task;
   selectedTaskType.value = type;
@@ -1021,6 +1068,7 @@ const openEvidenceModal = (task, type = 'task') => {
 const handleEvidenceSave = async (payload) => {
   const { task, taskType, status, evidence_text, evidence_photo, cancellation_reason, completed_at } = payload;
   const isDone = (status === 'completed');
+  const finalCompletedAt = completed_at || new Date().toISOString();
 
   try {
     if (taskType === 'task') {
@@ -1029,7 +1077,7 @@ const handleEvidenceSave = async (payload) => {
         evidence_text,
         evidence_photo,
         cancellation_reason,
-        completed_at
+        completed_at: finalCompletedAt
       };
       const { error } = await supabase.from('tasks').update(updateData).eq('id', task.id);
       if (error) {
@@ -1042,7 +1090,7 @@ const handleEvidenceSave = async (payload) => {
       task.evidence_text = evidence_text;
       task.evidence_photo = evidence_photo;
       task.cancellation_reason = cancellation_reason;
-      task.completed_at = completed_at;
+      task.completed_at = finalCompletedAt;
     } else if (taskType === 'daily_management') {
       const completionPayload = {
         task_template_id: task.id,
@@ -1052,7 +1100,7 @@ const handleEvidenceSave = async (payload) => {
         evidence_text,
         evidence_photo,
         cancellation_reason,
-        completed_at
+        completed_at: finalCompletedAt
       };
 
       const { error } = await supabase
@@ -1075,7 +1123,7 @@ const handleEvidenceSave = async (payload) => {
       task.evidence_text = evidence_text;
       task.evidence_photo = evidence_photo;
       task.cancellation_reason = cancellation_reason;
-      task.completed_at = completed_at;
+      task.completed_at = finalCompletedAt;
     } else if (taskType === 'scheduled') {
       const scheduledPayload = {
         delivery_id: task.id,
@@ -1085,7 +1133,7 @@ const handleEvidenceSave = async (payload) => {
         evidence_text,
         evidence_photo,
         cancellation_reason,
-        completed_at
+        completed_at: finalCompletedAt
       };
 
       const { error } = await supabase
@@ -1108,8 +1156,15 @@ const handleEvidenceSave = async (payload) => {
       task.evidence_text = evidence_text;
       task.evidence_photo = evidence_photo;
       task.cancellation_reason = cancellation_reason;
-      task.completed_at = completed_at;
+      task.completed_at = finalCompletedAt;
     }
+
+    // Feedback claro e inmediato al empleado
+    showToast(
+      isDone
+        ? '✅ Tarea marcada como cumplida. Evidencia fotográfica y justificación guardadas con éxito.'
+        : '⚠️ Pendiente reportado como no ejecutado. Motivo registrado para revisión gerencial.'
+    );
   } catch (err) {
     console.error('Error guardando trazabilidad:', err);
     alert('Error al registrar la evidencia: ' + (err.message || 'Error en base de datos'));
@@ -1163,6 +1218,8 @@ const handleTaskReopen = async (payload) => {
       task.cancellation_reason = null;
       task.completed_at = null;
     }
+
+    showToast('ℹ️ Tarea reabierta. Vuelve a figurar como pendiente para ejecución.');
   } catch (err) {
     console.error('Error reabriendo tarea:', err);
     alert('No fue posible reabrir la tarea: ' + (err.message || 'Error'));

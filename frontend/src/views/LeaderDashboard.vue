@@ -49,6 +49,11 @@
                   <span class="material-symbols-outlined text-primary text-[18px] transition-transform group-hover:scale-110">monitoring</span>
                   <span>Ver Mis KPIs (Resultados del Equipo)</span>
                 </button>
+                <!-- Botón: Informe Diario de Operaciones (Consolidado de tareas del día, fotos de soporte y motivos) -->
+                <button @click="openDailyReportModal" class="group inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-lowest border border-[#34c759]/60 hover:border-[#34c759] text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm cursor-pointer" type="button" title="Generar informe diario de tareas ejecutadas, fotos de soporte y motivos">
+                  <span class="material-symbols-outlined text-[#34c759] text-[18px] transition-transform group-hover:scale-110">assignment_turned_in</span>
+                  <span>Informe Diario</span>
+                </button>
                 <button @click="openScheduledModal" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm">
                   <span class="material-symbols-outlined text-[#0071e3] text-[18px]">event_repeat</span>
                   <span>Orden Programada</span>
@@ -250,6 +255,50 @@
                       <span class="text-emerald-700 font-medium">{{ selectedMember.completed_tasks_count }} Listas</span>
                       <span class="text-amber-700 font-medium">{{ selectedMember.pending_tasks_count }} Pend.</span>
                       <span class="text-danger font-medium">{{ selectedMember.overdue_tasks_count }} Venc.</span>
+                    </div>
+                  </div>
+
+                  <!-- Entregas y Evidencias de Hoy del Colaborador -->
+                  <div class="bg-surface-container-low rounded-xl p-space-sm border border-surface-container mt-1 space-y-2">
+                    <div class="flex items-center justify-between font-caption text-caption">
+                      <span class="text-secondary font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[15px] text-[#34c759]">today</span> Actividades de Hoy
+                      </span>
+                      <button @click="openDailyReportWithMember(selectedMember.id)" class="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer">
+                        Ver en Informe <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                      </button>
+                    </div>
+
+                    <div v-if="selectedMemberTodayTasks.length === 0" class="text-center py-2.5 text-[11px] text-secondary italic bg-surface-container-lowest rounded-lg border border-surface-container/60">
+                      Sin registros de hoy todavía para este colaborador.
+                    </div>
+                    <div v-else class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      <div v-for="t in selectedMemberTodayTasks" :key="t.id"
+                           class="p-2 rounded-lg bg-surface-container-lowest border border-surface-container text-xs flex flex-col gap-1 shadow-2xs">
+                        <div class="flex items-start justify-between gap-1.5">
+                          <span class="font-medium text-on-surface line-clamp-1 flex-1">{{ t.title }}</span>
+                          <span v-if="t.status === 'completed'" class="text-[10px] font-bold text-[#34c759] bg-[#e8f8ed] px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                            <span class="material-symbols-outlined text-[11px]">photo_camera</span> Listo
+                          </span>
+                          <span v-else-if="t.status === 'unfulfilled'" class="text-[10px] font-bold text-[#ff3b30] bg-[#fff0f0] px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                            <span class="material-symbols-outlined text-[11px]">cancel</span> No ejecutó
+                          </span>
+                          <span v-else class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded shrink-0">
+                            Pendiente
+                          </span>
+                        </div>
+                        <p v-if="t.evidence_text" class="text-[11px] text-secondary line-clamp-1 italic">
+                          "{{ t.evidence_text }}"
+                        </p>
+                        <p v-else-if="t.cancellation_reason" class="text-[11px] text-[#ff3b30] line-clamp-1 italic">
+                          Motivo: {{ t.cancellation_reason }}
+                        </p>
+                        <div v-if="t.evidence_photo" class="flex items-center gap-2 mt-0.5">
+                          <button type="button" @click="reportZoomPhoto = t.evidence_photo" class="inline-flex items-center gap-1 text-[10px] font-bold text-[#0071e3] hover:underline bg-[#e8f0fe] px-2 py-0.5 rounded cursor-pointer">
+                            <span class="material-symbols-outlined text-[12px]">visibility</span> Ver captura
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1094,6 +1143,338 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════
+         MODAL: INFORME DIARIO DE OPERACIONES & EVIDENCIAS
+    ════════════════════════════════════════════════════════════════ -->
+    <div v-if="showDailyReportModal" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div id="printableDailyReportContainer" class="bg-surface-container-lowest rounded-2xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-surface-container">
+        
+        <!-- Header del Modal -->
+        <div class="px-6 py-4 border-b border-surface-container flex items-center justify-between bg-surface-container-low shrink-0 print:border-b-2 print:border-black">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#34c759]/10 text-[#34c759] flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[24px]">assignment_turned_in</span>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-on-surface leading-tight flex items-center gap-2">
+                <span>Informe Diario de Operaciones</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-container text-secondary">
+                  {{ leaderArea?.name || 'Mi Equipo' }}
+                </span>
+              </h2>
+              <p class="text-xs text-secondary mt-0.5">
+                Consolidado de cumplimiento, evidencia gráfica y justificaciones de tareas del día
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 print:hidden">
+            <button @click="copyDailyReportSummary" class="px-3 py-1.5 rounded-xl border border-surface-container-high bg-surface-container-lowest hover:bg-surface-container text-xs font-semibold text-on-surface transition-colors flex items-center gap-1.5 cursor-pointer" :title="dailyReportCopySuccess ? 'Copiado' : 'Copiar resumen para WhatsApp o correo'">
+              <span class="material-symbols-outlined text-[16px] text-primary">{{ dailyReportCopySuccess ? 'check' : 'content_copy' }}</span>
+              <span>{{ dailyReportCopySuccess ? '¡Copiado!' : 'Copiar Resumen' }}</span>
+            </button>
+            <button @click="printDailyReport" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer" title="Imprimir informe oficial o guardar en PDF">
+              <span class="material-symbols-outlined text-[16px]">print</span>
+              <span>Imprimir / PDF</span>
+            </button>
+            <button @click="showDailyReportModal = false" class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-secondary hover:text-on-surface cursor-pointer">
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de Filtros y Selector de Fecha -->
+        <div class="px-6 py-3 bg-surface-container-lowest border-b border-surface-container flex flex-wrap items-center justify-between gap-3 shrink-0 print:hidden">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Selector de Fecha -->
+            <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1.5 rounded-xl border border-surface-container">
+              <span class="material-symbols-outlined text-[18px] text-secondary">calendar_today</span>
+              <span class="text-xs font-semibold text-secondary">Fecha:</span>
+              <input 
+                type="date" 
+                v-model="dailyReportDate" 
+                @change="loadDailyReportData"
+                class="bg-transparent text-xs font-bold text-on-surface outline-none cursor-pointer" 
+              />
+              <button 
+                type="button" 
+                @click="setDailyReportToday" 
+                class="text-[11px] font-bold text-primary hover:underline ml-1 px-1.5 py-0.5 rounded bg-surface-container cursor-pointer"
+              >
+                Hoy
+              </button>
+              <button 
+                type="button" 
+                @click="setDailyReportYesterday" 
+                class="text-[11px] font-medium text-secondary hover:text-on-surface px-1.5 py-0.5 rounded hover:bg-surface-container cursor-pointer"
+              >
+                Ayer
+              </button>
+            </div>
+
+            <!-- Filtro de Colaborador -->
+            <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1.5 rounded-xl border border-surface-container">
+              <span class="material-symbols-outlined text-[18px] text-secondary">person</span>
+              <select v-model="dailyReportMemberFilter" class="bg-transparent text-xs font-semibold text-on-surface outline-none cursor-pointer">
+                <option value="all">👥 Todo el Equipo ({{ teamMembers.length }})</option>
+                <option v-for="m in teamMembers" :key="m.id" :value="m.id">
+                  {{ m.full_name }} ({{ m.roles?.name || 'Colaborador' }})
+                </option>
+              </select>
+            </div>
+
+            <!-- Filtro de Estado -->
+            <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1.5 rounded-xl border border-surface-container">
+              <span class="material-symbols-outlined text-[18px] text-secondary">tune</span>
+              <select v-model="dailyReportStatusFilter" class="bg-transparent text-xs font-semibold text-on-surface outline-none cursor-pointer">
+                <option value="all">Todos los Estados</option>
+                <option value="completed">🟢 Realizados con Evidencia</option>
+                <option value="unfulfilled">🔴 No Cumplidos (con Justificación)</option>
+                <option value="pending">⏳ Pendientes sin Gestionar</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Búsqueda en el reporte -->
+          <div class="relative min-w-[200px]">
+            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-secondary">search</span>
+            <input 
+              type="text" 
+              v-model="dailyReportSearch" 
+              placeholder="Buscar tarea o evidencia..." 
+              class="w-full pl-8 pr-3 py-1.5 rounded-xl bg-surface-container-low border border-surface-container text-xs outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+
+        <!-- Banner Imprimible (Solo visible al imprimir) -->
+        <div class="hidden print:block p-6 bg-white border-b-2 border-black">
+          <div class="flex justify-between items-center">
+            <div>
+              <h1 class="text-2xl font-black text-black">INFORME DIARIO DE OPERACIONES</h1>
+              <p class="text-sm text-gray-700">Sistema PROMETHEUS OS • Gestión y Trazabilidad Operativa</p>
+            </div>
+            <div class="text-right text-xs text-gray-800">
+              <p><strong>Fecha Reportada:</strong> {{ dailyReportDate }}</p>
+              <p><strong>Área / Gerencia:</strong> {{ leaderArea?.name || 'Mi Equipo' }}</p>
+              <p><strong>Generado por:</strong> {{ currentUser?.full_name || 'Gerente' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen Ejecutivo en Bento Strip -->
+        <div class="px-6 py-4 bg-surface-container-low border-b border-surface-container shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3 print:grid-cols-4 print:bg-white print:border-black">
+          <div class="p-3 bg-surface-container-lowest rounded-xl border border-surface-container flex flex-col justify-between print:border-gray-300">
+            <span class="text-[11px] font-semibold text-secondary uppercase tracking-wider">Total Registros</span>
+            <span class="text-xl font-bold text-on-surface mt-1">{{ dailyReportKpis.total }} Actividades</span>
+          </div>
+          <div class="p-3 bg-surface-container-lowest rounded-xl border border-surface-container flex flex-col justify-between print:border-gray-300">
+            <span class="text-[11px] font-semibold text-[#2e7d32] uppercase tracking-wider">Cumplidas con Éxito</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-xl font-bold text-[#2e7d32]">{{ dailyReportKpis.completed }}</span>
+              <span class="text-xs font-semibold text-[#2e7d32]">({{ dailyReportKpis.completedRate }}%)</span>
+            </div>
+          </div>
+          <div class="p-3 bg-surface-container-lowest rounded-xl border border-surface-container flex flex-col justify-between print:border-gray-300">
+            <span class="text-[11px] font-semibold text-danger uppercase tracking-wider">No Cumplidas / Bloqueadas</span>
+            <span class="text-xl font-bold text-danger mt-1">{{ dailyReportKpis.unfulfilled }}</span>
+          </div>
+          <div class="p-3 bg-surface-container-lowest rounded-xl border border-surface-container flex flex-col justify-between print:border-gray-300">
+            <span class="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Pendientes por Responder</span>
+            <span class="text-xl font-bold text-amber-600 mt-1">{{ dailyReportKpis.pending }}</span>
+          </div>
+        </div>
+
+        <!-- Cuerpo del Reporte: Lista Detallada de Actividades -->
+        <div class="overflow-y-auto flex-1 px-6 py-5 space-y-4 print:overflow-visible print:p-0">
+          
+          <div v-if="dailyReportLoading" class="py-12 text-center text-secondary flex flex-col items-center justify-center gap-2">
+            <span class="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></span>
+            <p class="text-xs font-semibold">Consolidando registros de tareas, evidencias y justificaciones...</p>
+          </div>
+
+          <div v-else-if="filteredDailyActivities.length === 0" class="py-12 text-center text-secondary flex flex-col items-center justify-center gap-2 bg-surface-container-low rounded-2xl border border-dashed border-surface-container">
+            <span class="material-symbols-outlined text-4xl text-secondary opacity-60">fact_check</span>
+            <p class="text-sm font-semibold text-on-surface">No se encontraron actividades registradas para esta fecha y filtros.</p>
+            <p class="text-xs text-secondary">Prueba seleccionando otra fecha en el calendario o cambiando los filtros.</p>
+          </div>
+
+          <!-- Actividades Listadas -->
+          <div v-else class="space-y-3">
+            <div 
+              v-for="act in filteredDailyActivities" 
+              :key="act.id" 
+              class="p-4 rounded-2xl bg-surface-container-lowest border transition-all duration-200 shadow-sm print:border-gray-300 print:shadow-none print:break-inside-avoid"
+              :class="act.status === 'completed' ? 'border-[#34c759]/30 hover:border-[#34c759]' : act.status === 'unfulfilled' ? 'border-[#ff3b30]/30 hover:border-[#ff3b30] bg-[#fffbfb]' : 'border-surface-container hover:border-surface-container-high'"
+            >
+              <!-- Fila Superior: Colaborador + Tipo + Estado -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-surface-container/60">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                    {{ act.memberName.charAt(0) }}
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-xs text-on-surface leading-tight">{{ act.memberName }}</h4>
+                    <span class="text-[10px] text-secondary">{{ act.memberRole }} • {{ act.memberArea }}</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <!-- Tag de Origen / Tipo -->
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-container text-secondary">
+                    {{ act.typeName }}
+                  </span>
+
+                  <!-- Status Badge -->
+                  <span v-if="act.status === 'completed'" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#2e7d32] bg-[#e8f5e9] px-2.5 py-0.5 rounded-full border border-[#c8e6c9]">
+                    <span class="material-symbols-outlined text-[14px]">check_circle</span> Realizado con Evidencia
+                  </span>
+                  <span v-else-if="act.status === 'unfulfilled'" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#c62828] bg-[#ffebee] px-2.5 py-0.5 rounded-full border border-[#ffcdd2]">
+                    <span class="material-symbols-outlined text-[14px]">cancel</span> No Ejecutado
+                  </span>
+                  <span v-else class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    <span class="material-symbols-outlined text-[14px]">schedule</span> Pendiente
+                  </span>
+
+                  <!-- Hora de registro -->
+                  <span v-if="act.completed_at" class="text-[10px] text-secondary font-medium hidden sm:inline">
+                    {{ formatActivityTime(act.completed_at) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Título y Descripción de la Tarea -->
+              <div class="mt-2.5">
+                <h5 class="text-sm font-bold text-on-surface leading-snug">{{ act.title }}</h5>
+                <p v-if="act.description" class="text-xs text-secondary mt-0.5">{{ act.description }}</p>
+              </div>
+
+              <!-- Bloque de Evidencia (Si es Realizado) -->
+              <div v-if="act.status === 'completed'" class="mt-3 p-3 rounded-xl bg-[#f0fdf4]/70 border border-[#34c759]/20 space-y-2">
+                <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#248a3d]">
+                  <span class="material-symbols-outlined text-[15px]">verified</span>
+                  <span>Evidencia y Trazabilidad Registrada:</span>
+                </div>
+                <p class="text-xs text-[#1d1d1f] whitespace-pre-wrap leading-relaxed">
+                  {{ act.evidence_text || 'Sin texto de justificación reportado.' }}
+                </p>
+
+                <!-- Foto adjunta / Pantallazo -->
+                <div v-if="act.evidence_photo" class="flex items-center gap-3 pt-1">
+                  <div 
+                    @click="reportZoomPhoto = act.evidence_photo" 
+                    class="relative w-24 h-16 rounded-lg overflow-hidden border border-[#34c759]/30 bg-black/5 cursor-pointer group shrink-0 print:w-48 print:h-32"
+                    title="Clic para ver pantallazo en tamaño completo"
+                  >
+                    <img :src="act.evidence_photo" alt="Evidencia" class="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white print:hidden">
+                      <span class="material-symbols-outlined text-[18px]">zoom_in</span>
+                    </div>
+                  </div>
+                  <div class="print:hidden">
+                    <button 
+                      type="button" 
+                      @click="reportZoomPhoto = act.evidence_photo" 
+                      class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">photo_camera</span> Ver Captura / Pantallazo
+                    </button>
+                    <span class="text-[10px] text-secondary block mt-0.5">Soporte gráfico verificado por el empleado</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bloque de Justificación de No Ejecución (Si es No Cumplido) -->
+              <div v-else-if="act.status === 'unfulfilled'" class="mt-3 p-3 rounded-xl bg-[#fff0f0] border border-[#ff3b30]/20 space-y-2">
+                <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#d70015]">
+                  <span class="material-symbols-outlined text-[15px]">report_problem</span>
+                  <span>Motivo / Causa de No Ejecución:</span>
+                </div>
+                <p class="text-xs text-[#1d1d1f] whitespace-pre-wrap leading-relaxed font-medium">
+                  "{{ act.cancellation_reason || 'Sin motivo reportado por el colaborador.' }}"
+                </p>
+
+                <!-- Foto adjunta opcional -->
+                <div v-if="act.evidence_photo" class="flex items-center gap-3 pt-1">
+                  <div 
+                    @click="reportZoomPhoto = act.evidence_photo" 
+                    class="relative w-24 h-16 rounded-lg overflow-hidden border border-[#ff3b30]/30 bg-black/5 cursor-pointer group shrink-0"
+                  >
+                    <img :src="act.evidence_photo" alt="Soporte" class="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                  </div>
+                  <button 
+                    type="button" 
+                    @click="reportZoomPhoto = act.evidence_photo" 
+                    class="text-xs font-semibold text-danger hover:underline flex items-center gap-1 print:hidden cursor-pointer"
+                  >
+                    <span class="material-symbols-outlined text-[14px]">image</span> Ver soporte adjunto
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bloque de Tarea Pendiente -->
+              <div v-else class="mt-2.5 text-xs text-secondary flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>Asignada para este día. A la espera de ejecución y carga de evidencia por parte del colaborador.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pie de Firma Imprimible -->
+          <div class="hidden print:block pt-12 mt-8 border-t border-gray-400">
+            <div class="grid grid-cols-2 gap-12 text-center text-xs text-gray-800">
+              <div>
+                <div class="border-b border-black w-48 mx-auto mb-2"></div>
+                <p class="font-bold">{{ currentUser?.full_name || 'Gerente / Líder' }}</p>
+                <p class="text-gray-600">Supervisor de Área</p>
+              </div>
+              <div>
+                <div class="border-b border-black w-48 mx-auto mb-2"></div>
+                <p class="font-bold">Gerencia General / Auditoría</p>
+                <p class="text-gray-600">Visto Bueno y Control</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer del Modal -->
+        <div class="px-6 py-3.5 bg-surface-container-low border-t border-surface-container flex items-center justify-between shrink-0 print:hidden">
+          <div class="text-xs text-secondary">
+            Mostrando <strong>{{ filteredDailyActivities.length }}</strong> de <strong>{{ dailyReportActivities.length }}</strong> registros de la fecha.
+          </div>
+          <div class="flex items-center gap-2">
+            <button 
+              @click="showDailyReportModal = false" 
+              class="px-4 py-2 rounded-xl border border-surface-container-high text-xs font-semibold hover:bg-surface-container transition-colors cursor-pointer"
+            >
+              Cerrar
+            </button>
+            <button 
+              @click="printDailyReport" 
+              class="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold shadow hover:brightness-105 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[16px]">print</span>
+              <span>Imprimir Informe</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Lightbox de Ampliación de Fotos / Pantallazos de Evidencia -->
+    <div v-if="reportZoomPhoto" class="fixed inset-0 z-[140] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in" @click="reportZoomPhoto = null">
+      <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center" @click.stop>
+        <button 
+          @click="reportZoomPhoto = null" 
+          class="absolute -top-10 right-0 text-white/80 hover:text-white flex items-center gap-1 text-xs font-semibold cursor-pointer"
+        >
+          <span class="material-symbols-outlined text-[20px]">close</span> Cerrar
+        </button>
+        <img :src="reportZoomPhoto" alt="Evidencia en tamaño completo" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/20 bg-black/40" />
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -1129,6 +1510,283 @@ const showTeamKpiModal = ref(false);
 const taskAssigneeSearch = ref('');
 const isSendingPressure = ref(false);
 const pressuredMembers = ref(new Set());
+
+// ── Estado del Informe Diario de Operaciones ─────────────────
+const showDailyReportModal = ref(false);
+const dailyReportDate = ref(new Date().toISOString().split('T')[0]);
+const dailyReportMemberFilter = ref('all');
+const dailyReportStatusFilter = ref('all');
+const dailyReportSearch = ref('');
+const dailyReportLoading = ref(false);
+const dailyReportActivities = ref([]);
+const dailyReportCopySuccess = ref(false);
+const reportZoomPhoto = ref(null);
+
+const setDailyReportToday = () => {
+  dailyReportDate.value = new Date().toISOString().split('T')[0];
+  loadDailyReportData();
+};
+
+const setDailyReportYesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  dailyReportDate.value = d.toISOString().split('T')[0];
+  loadDailyReportData();
+};
+
+const openDailyReportModal = () => {
+  if (!dailyReportDate.value) {
+    dailyReportDate.value = new Date().toISOString().split('T')[0];
+  }
+  showDailyReportModal.value = true;
+  loadDailyReportData();
+};
+
+const openDailyReportWithMember = (memberId) => {
+  dailyReportMemberFilter.value = memberId;
+  openDailyReportModal();
+};
+
+const formatActivityTime = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
+const selectedMemberTodayTasks = computed(() => {
+  if (!selectedMember.value?.all_tasks) return [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  return selectedMember.value.all_tasks.filter(t => {
+    const compDay = t.completed_at ? t.completed_at.split('T')[0] : null;
+    const dueDay = t.due_date ? t.due_date.split('T')[0] : null;
+    return compDay === todayStr || dueDay === todayStr;
+  });
+});
+
+const filteredDailyActivities = computed(() => {
+  let list = dailyReportActivities.value || [];
+  if (dailyReportMemberFilter.value !== 'all') {
+    list = list.filter(a => a.memberId === dailyReportMemberFilter.value);
+  }
+  if (dailyReportStatusFilter.value !== 'all') {
+    list = list.filter(a => a.status === dailyReportStatusFilter.value);
+  }
+  if (dailyReportSearch.value.trim()) {
+    const q = dailyReportSearch.value.toLowerCase().trim();
+    list = list.filter(a => 
+      a.title?.toLowerCase().includes(q) ||
+      a.memberName?.toLowerCase().includes(q) ||
+      a.memberRole?.toLowerCase().includes(q) ||
+      a.evidence_text?.toLowerCase().includes(q) ||
+      a.cancellation_reason?.toLowerCase().includes(q)
+    );
+  }
+  return list;
+});
+
+const dailyReportKpis = computed(() => {
+  const list = dailyReportActivities.value || [];
+  const total = list.length;
+  const completed = list.filter(a => a.status === 'completed').length;
+  const unfulfilled = list.filter(a => a.status === 'unfulfilled').length;
+  const pending = list.filter(a => a.status === 'pending').length;
+  const completedRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return { total, completed, unfulfilled, pending, completedRate };
+});
+
+const printDailyReport = () => {
+  window.print();
+};
+
+const copyDailyReportSummary = async () => {
+  const dateFormatted = new Date(dailyReportDate.value + 'T12:00:00').toLocaleDateString('es-CO', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const kpis = dailyReportKpis.value;
+  const areaName = leaderArea.value?.name || 'Mi Equipo';
+  const managerName = currentUser.value?.full_name || 'Gerencia';
+
+  let text = `📊 *INFORME DIARIO DE OPERACIONES*\n`;
+  text += `🏢 *Área:* ${areaName}\n`;
+  text += `📅 *Fecha:* ${dateFormatted}\n`;
+  text += `👤 *Supervisor:* ${managerName}\n`;
+  text += `─────────────────────────\n`;
+  text += `📈 *RESUMEN EJECUTIVO:*\n`;
+  text += `• Total Actividades: ${kpis.total}\n`;
+  text += `• ✅ Cumplidas con Evidencia: ${kpis.completed} (${kpis.completedRate}%)\n`;
+  text += `• ⚠️ No Ejecutadas (con motivo): ${kpis.unfulfilled}\n`;
+  text += `• ⏳ Pendientes por Responder: ${kpis.pending}\n`;
+  text += `─────────────────────────\n`;
+  text += `📋 *DETALLE POR COLABORADOR:*\n\n`;
+
+  const grouped = {};
+  filteredDailyActivities.value.forEach(a => {
+    if (!grouped[a.memberName]) grouped[a.memberName] = [];
+    grouped[a.memberName].push(a);
+  });
+
+  Object.entries(grouped).forEach(([name, list]) => {
+    text += `👤 *${name}* (${list[0]?.memberRole || 'Cargo'}):\n`;
+    list.forEach(item => {
+      if (item.status === 'completed') {
+        text += `  ✅ *${item.title}*: ${item.evidence_text || 'Evidencia cargada'}${item.evidence_photo ? ' 📷 [Foto adjunta]' : ''}\n`;
+      } else if (item.status === 'unfulfilled') {
+        text += `  🔴 *${item.title}* [NO EJECUTADA]: Motivo: ${item.cancellation_reason || 'Sin motivo'}\n`;
+      } else {
+        text += `  ⏳ *${item.title}* [PENDIENTE]\n`;
+      }
+    });
+    text += `\n`;
+  });
+
+  try {
+    await navigator.clipboard.writeText(text);
+    dailyReportCopySuccess.value = true;
+    setTimeout(() => { dailyReportCopySuccess.value = false; }, 3000);
+  } catch (err) {
+    alert('No se pudo copiar automáticamente. Por favor selecciona y copia manualmente.');
+  }
+};
+
+const loadDailyReportData = async () => {
+  dailyReportLoading.value = true;
+  try {
+    const memberIds = teamMembers.value.map(m => m.id);
+    if (memberIds.length === 0) {
+      dailyReportActivities.value = [];
+      dailyReportLoading.value = false;
+      return;
+    }
+
+    const selectedDay = dailyReportDate.value; // 'YYYY-MM-DD'
+    const activities = [];
+
+    // 1. Tareas de la tabla tasks (Ad-Hoc / asignadas por líder)
+    const { data: tasksData, error: tasksErr } = await supabase
+      .from('tasks')
+      .select('id, title, description, deliverable, category, priority, status, evidence_text, evidence_photo, cancellation_reason, created_at, started_at, completed_at, due_date, assigned_to')
+      .in('assigned_to', memberIds);
+
+    if (!tasksErr && tasksData) {
+      tasksData.forEach(t => {
+        const completedDay = t.completed_at ? t.completed_at.split('T')[0] : null;
+        const dueDay = t.due_date ? t.due_date.split('T')[0] : null;
+        const createdDay = t.created_at ? t.created_at.split('T')[0] : null;
+
+        if (completedDay === selectedDay || dueDay === selectedDay || (t.status === 'pending' && createdDay === selectedDay)) {
+          const member = teamMembers.value.find(m => m.id === t.assigned_to);
+          activities.push({
+            id: 'task-' + t.id,
+            rawId: t.id,
+            origin: 'task',
+            typeName: 'Pendiente Asignado',
+            title: t.title,
+            description: t.description,
+            deliverable: t.deliverable,
+            priority: t.priority,
+            status: t.status,
+            evidence_text: t.evidence_text,
+            evidence_photo: t.evidence_photo,
+            cancellation_reason: t.cancellation_reason,
+            completed_at: t.completed_at,
+            due_date: t.due_date,
+            created_at: t.created_at,
+            memberId: t.assigned_to,
+            memberName: member?.full_name || 'Colaborador',
+            memberRole: member?.roles?.name || 'Cargo',
+            memberArea: member?.roles?.areas?.name || leaderArea.value?.name || 'Área'
+          });
+        }
+      });
+    }
+
+    // 2. Gestión Diaria (task_completions)
+    try {
+      const { data: compData } = await supabase
+        .from('task_completions')
+        .select('*, role_task_templates(title, task_type, description)')
+        .in('profile_id', memberIds)
+        .eq('period_key', selectedDay);
+
+      if (compData) {
+        compData.forEach(c => {
+          const member = teamMembers.value.find(m => m.id === c.profile_id);
+          activities.push({
+            id: 'tc-' + c.id,
+            rawId: c.id,
+            origin: 'daily_management',
+            typeName: 'Gestión Diaria',
+            title: c.role_task_templates?.title || 'Gestión periódica',
+            description: c.role_task_templates?.description || null,
+            deliverable: null,
+            priority: 'medium',
+            status: c.status || 'completed',
+            evidence_text: c.evidence_text,
+            evidence_photo: c.evidence_photo,
+            cancellation_reason: c.cancellation_reason,
+            completed_at: c.completed_at || c.created_at,
+            due_date: selectedDay,
+            created_at: c.created_at,
+            memberId: c.profile_id,
+            memberName: member?.full_name || 'Colaborador',
+            memberRole: member?.roles?.name || 'Cargo',
+            memberArea: member?.roles?.areas?.name || leaderArea.value?.name || 'Área'
+          });
+        });
+      }
+    } catch (e) {
+      console.warn('Error fetching task_completions:', e);
+    }
+
+    // 3. Entregas Programadas (scheduled_delivery_completions)
+    try {
+      const { data: schedData } = await supabase
+        .from('scheduled_delivery_completions')
+        .select('*, scheduled_deliveries(title, deliverable, description)')
+        .in('profile_id', memberIds)
+        .eq('period_key', selectedDay);
+
+      if (schedData) {
+        schedData.forEach(s => {
+          const member = teamMembers.value.find(m => m.id === s.profile_id);
+          activities.push({
+            id: 'sdc-' + s.id,
+            rawId: s.id,
+            origin: 'scheduled',
+            typeName: 'Entrega Programada',
+            title: s.scheduled_deliveries?.title || 'Entrega programada',
+            description: s.scheduled_deliveries?.description || null,
+            deliverable: s.scheduled_deliveries?.deliverable || null,
+            priority: 'high',
+            status: s.status || 'completed',
+            evidence_text: s.evidence_text,
+            evidence_photo: s.evidence_photo,
+            cancellation_reason: s.cancellation_reason,
+            completed_at: s.completed_at || s.created_at,
+            due_date: selectedDay,
+            created_at: s.created_at,
+            memberId: s.profile_id,
+            memberName: member?.full_name || 'Colaborador',
+            memberRole: member?.roles?.name || 'Cargo',
+            memberArea: member?.roles?.areas?.name || leaderArea.value?.name || 'Área'
+          });
+        });
+      }
+    } catch (e) {
+      console.warn('Error fetching scheduled completions:', e);
+    }
+
+    dailyReportActivities.value = activities;
+  } catch (err) {
+    console.error('Error cargando informe diario:', err);
+  } finally {
+    dailyReportLoading.value = false;
+  }
+};
 
 const getMemberById = (id) => teamMembers.value.find(m => m.id === id);
 
@@ -1590,7 +2248,7 @@ const enrichAndSetTeam = async (profilesPool, userId) => {
     }
 
     const { data: tasks } = await supabase.from('tasks')
-      .select('id, title, status, created_at, started_at, completed_at, due_date')
+      .select('id, title, description, deliverable, category, priority, status, evidence_text, evidence_photo, cancellation_reason, created_at, started_at, completed_at, due_date')
       .eq('assigned_to', m.id);
       
     m.all_tasks = tasks || [];
@@ -1845,3 +2503,31 @@ onMounted(() => {
   fetchData();
 });
 </script>
+
+<style scoped>
+@media print {
+  /* Ocultar elementos de fondo y barras de navegación */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  #printableDailyReportContainer,
+  #printableDailyReportContainer * {
+    visibility: visible !important;
+  }
+
+  #printableDailyReportContainer {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+}
+</style>
