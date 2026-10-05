@@ -598,6 +598,16 @@ def create_task(task: TaskCreate, user=Depends(verify_jwt)):
     t = task_manager.create_task(task.role_id, task.title, task.description, task.estimated_hours)
     return {"status": "created", "task": t}
 
+class TaskStatusUpdate(BaseModel):
+    status: str
+
+@app.put("/api/v1/tasks/{task_id}/status")
+def update_task_status(task_id: str, body: TaskStatusUpdate, user=Depends(verify_jwt)):
+    t = task_manager.update_task_status(task_id, body.status)
+    if isinstance(t, dict) and "error" in t:
+        raise HTTPException(status_code=400, detail=t["error"])
+    return {"status": "updated", "task": t}
+
 @app.get("/api/v1/tasks/{role_id}")
 def get_tasks(role_id: str, user=Depends(verify_jwt)):
     return {"tasks": task_manager.get_tasks_by_role(role_id)}

@@ -55,6 +55,26 @@
           <span class="material-symbols-outlined text-[15px]">key</span> Cuentas & Accesos
         </router-link>
 
+        <!-- Escuela & Academia -->
+        <router-link
+          v-if="isLoggedIn"
+          to="/academia"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/academia'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+        >
+          <span class="material-symbols-outlined text-[15px]">school</span> Academia
+        </router-link>
+
+        <!-- Centro de Manuales & OneDrive -->
+        <router-link
+          v-if="isLoggedIn"
+          to="/manuals"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/manuals'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+        >
+          <span class="material-symbols-outlined text-[15px]">folder_open</span> Manuales
+        </router-link>
+
         <!-- KPIs & Actas: Exclusivo Admin Maestro, CEO y Analista de Datos -->
         <router-link
           v-if="isLoggedIn && isKpiUser"
@@ -186,6 +206,12 @@
             </router-link>
             <router-link v-if="canManageAccounts" to="/cuentas" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">key</span> Cuentas & Accesos
+            </router-link>
+            <router-link to="/academia" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">school</span> Escuela & Academia
+            </router-link>
+            <router-link to="/manuals" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">folder_open</span> Manuales & OneDrive
             </router-link>
             <router-link v-if="isKpiUser" to="/kpis" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">analytics</span> KPIs & Actas

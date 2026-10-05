@@ -119,21 +119,38 @@
             </div>
           </div>
 
-          <!-- Academia Elite -->
+          <!-- Academia & Escuela NOVA WORD -->
           <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Academia Elite</h3>
-              <button class="text-[13px] font-medium text-[#b08d57] hover:text-[#80663f] transition-colors">Ver Todo</button>
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#8a6d3d] text-[20px]">school</span>
+                <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Escuela & Academia</h3>
+              </div>
+              <button @click="router.push('/academia')" class="text-[13px] font-medium text-[#b08d57] hover:text-[#80663f] transition-colors cursor-pointer">Ver Todo</button>
             </div>
             <div class="space-y-3">
-              <div class="group cursor-pointer rounded-xl bg-[#f5f5f7] p-3 border border-transparent hover:border-[#e5e5ea] hover:bg-white transition-all">
+              <div @click="router.push('/academia')" class="group cursor-pointer rounded-xl bg-[#f5f5f7] p-3.5 border border-transparent hover:border-[#e5e5ea] hover:bg-white transition-all">
                 <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-[#e5e5ea] flex items-center justify-center text-xl shrink-0">🎓</div>
-                  <div>
-                    <h4 class="text-[14px] font-semibold text-[#1d1d1f] leading-snug group-hover:text-[#b08d57] transition-colors">Onboarding de Ventas</h4>
-                    <p class="text-[12px] text-[#86868b] mt-1">Módulo 1: Políticas base</p>
-                    <div class="w-full h-1.5 bg-[#e5e5ea] rounded-full mt-2 overflow-hidden">
-                      <div class="w-[30%] h-full bg-[#b08d57] rounded-full"></div>
+                  <div class="w-10 h-10 rounded-lg bg-[#8a6d3d]/10 text-[#8a6d3d] flex items-center justify-center text-xl shrink-0 font-bold">
+                    <span class="material-symbols-outlined">play_circle</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1.5">
+                      <h4 class="text-[14px] font-semibold text-[#1d1d1f] leading-snug group-hover:text-[#b08d57] transition-colors truncate">
+                        {{ latestAssignedVideo ? latestAssignedVideo.title : 'Videos de Formación' }}
+                      </h4>
+                      <span v-if="latestAssignedVideo && isWorkspaceVideoCompleted(latestAssignedVideo.id)" class="px-1.5 py-0.5 bg-[#34c759]/10 text-[#34c759] text-[9px] font-bold rounded shrink-0">
+                        Visto ✓
+                      </span>
+                    </div>
+                    <p class="text-[12px] text-[#86868b] mt-0.5 truncate">
+                      {{ latestAssignedVideo ? (latestAssignedVideo.description || 'Cápsula formativa del cargo') : 'Capacitación y guías operativas' }}
+                    </p>
+                    <div class="flex items-center gap-2 mt-2.5">
+                      <div class="flex-1 h-1.5 bg-[#e5e5ea] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#8a6d3d] rounded-full transition-all duration-500" :style="{ width: `${userWorkspaceVideoProgressPercent}%` }"></div>
+                      </div>
+                      <span class="text-[10px] font-bold text-[#86868b] shrink-0">{{ userWorkspaceVideoProgressPercent }}%</span>
                     </div>
                   </div>
                 </div>
@@ -141,11 +158,14 @@
             </div>
           </div>
 
-          <!-- Biblioteca -->
+          <!-- Biblioteca & OneDrive -->
           <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Biblioteca Oficial</h3>
-              <button class="text-[13px] font-medium text-[#b08d57] hover:text-[#80663f] transition-colors">Repositorio</button>
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#0078d4] text-[20px]">folder_open</span>
+                <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Manuales & OneDrive</h3>
+              </div>
+              <button @click="router.push('/manuals')" class="text-[13px] font-medium text-[#0078d4] hover:text-[#005a9e] transition-colors cursor-pointer">Ver Todos</button>
             </div>
             <div class="space-y-2">
               <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank"
@@ -937,6 +957,61 @@ onUnmounted(() => {
   if (newsInterval) clearInterval(newsInterval);
 });
 
+// --- Videos de Academia en Workspace ---
+const userVideos = ref([]);
+const userVideosProgress = ref([]);
+
+const fetchUserAcademyVideos = async () => {
+  try {
+    const roleId = currentProfile.value?.role_id;
+    const areaId = currentProfile.value?.area_id;
+    const userId = currentProfile.value?.id;
+
+    const { data: vids, error } = await supabase
+      .from('academy_videos')
+      .select('*')
+      .order('sequence_order', { ascending: true });
+
+    if (!error && vids && vids.length > 0) {
+      userVideos.value = vids.filter(v => {
+        if (!v.role_id && !v.area_id) return true;
+        if (v.role_id && v.role_id === roleId) return true;
+        if (v.area_id && v.area_id === areaId) return true;
+        return false;
+      });
+    } else {
+      userVideos.value = [];
+    }
+
+    if (userId) {
+      const { data: prog } = await supabase
+        .from('user_video_progress')
+        .select('*')
+        .eq('user_id', userId);
+      userVideosProgress.value = prog || [];
+    }
+  } catch (err) {
+    console.error('Error cargando videos de academia:', err);
+    userVideos.value = [];
+  }
+};
+
+const isWorkspaceVideoCompleted = (videoId) => {
+  return userVideosProgress.value.some(p => p.video_id === videoId && p.is_completed);
+};
+
+const latestAssignedVideo = computed(() => {
+  if (!userVideos.value.length) return null;
+  const uncompleted = userVideos.value.find(v => !isWorkspaceVideoCompleted(v.id));
+  return uncompleted || userVideos.value[0];
+});
+
+const userWorkspaceVideoProgressPercent = computed(() => {
+  if (!userVideos.value.length) return 0;
+  const completed = userVideos.value.filter(v => isWorkspaceVideoCompleted(v.id)).length;
+  return Math.round((completed / userVideos.value.length) * 100);
+});
+
 const exitAuditMode = () => {
   router.push('/leader');
 };
@@ -988,6 +1063,7 @@ const initWorkspace = async () => {
     await fetchChecklists(currentProfile.value.id);
     await fetchNotifications(currentProfile.value.id, currentRole.value);
     await fetchNews();
+    await fetchUserAcademyVideos();
     setupRealtime(currentProfile.value.id);
   } catch(err) { console.error("Workspace Load Error:", err); } finally {
     loadingProfile.value = false;
