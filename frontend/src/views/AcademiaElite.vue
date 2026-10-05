@@ -165,12 +165,18 @@
               </div>
 
               <!-- Insignias Superiores -->
-              <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+              <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
                 <span v-if="video.is_mandatory" class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-md shadow uppercase tracking-wider">
                   Obligatorio
                 </span>
                 <span v-if="isVideoCompleted(video.id)" class="px-2 py-0.5 bg-[#34c759] text-white text-[10px] font-bold rounded-md shadow flex items-center gap-1">
                   <span class="material-symbols-outlined text-[12px]">check_circle</span> Completado
+                </span>
+                <span v-if="isDirectVideo(video.video_url)" class="px-1.5 py-0.5 bg-blue-600/90 text-white text-[9px] font-bold rounded shadow uppercase tracking-wider">
+                  MP4 Directo
+                </span>
+                <span v-else-if="video.video_url?.includes('onedrive') || video.video_url?.includes('sharepoint')" class="px-1.5 py-0.5 bg-[#0078d4] text-white text-[9px] font-bold rounded shadow uppercase tracking-wider">
+                  OneDrive
                 </span>
               </div>
 
@@ -337,7 +343,7 @@
         </div>
 
         <!-- Cuerpo del Video -->
-        <div class="relative w-full aspect-video bg-black flex items-center justify-center">
+        <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
           <!-- YouTube Iframe -->
           <iframe
             v-if="getEmbedUrl(activeVideoPlaying.video_url)"
@@ -347,15 +353,26 @@
             allowfullscreen
           ></iframe>
 
-          <!-- Enlace Directo HTML5 (MP4 / WebM) -->
-          <video
-            v-else-if="isDirectVideo(activeVideoPlaying.video_url)"
-            :src="activeVideoPlaying.video_url"
-            controls
-            autoplay
-            playsinline
-            class="w-full h-full"
-          ></video>
+          <!-- Enlace Directo HTML5 (MP4 / WebM / QuickTime) -->
+          <div v-else-if="isDirectVideo(activeVideoPlaying.video_url)" class="relative w-full h-full flex items-center justify-center bg-black">
+            <video
+              :key="activeVideoPlaying.video_url"
+              :src="activeVideoPlaying.video_url"
+              controls
+              autoplay
+              playsinline
+              preload="metadata"
+              class="w-full h-full object-contain"
+              @ended="handleVideoEnded(activeVideoPlaying.id)"
+            >
+              <source :src="activeVideoPlaying.video_url" type="video/mp4" />
+              <source :src="activeVideoPlaying.video_url" type="video/webm" />
+              Tu navegador no soporta la reproducción directa de video HTML5 en MP4.
+            </video>
+            <span class="absolute top-3 right-3 px-2 py-0.5 bg-black/70 text-blue-400 text-[10px] font-bold rounded backdrop-blur border border-blue-400/30 pointer-events-none">
+              REPRODUCTOR MP4 NATIVO
+            </span>
+          </div>
 
           <!-- Enlace Externo (OneDrive / SharePoint / Stream) -->
           <div v-else class="p-8 text-center text-white flex flex-col items-center">
@@ -423,15 +440,78 @@
             />
           </div>
 
-          <div>
-            <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider mb-1">URL del Video (YouTube, Vimeo, OneDrive o MP4) *</label>
+          <!-- Selector de Modo: Enlace vs Subir Archivo MP4 -->
+          <div class="flex items-center gap-2 bg-[#f5f5f7] p-1 rounded-xl border border-[#e5e5ea]">
+            <button
+              type="button"
+              @click="videoInputMode = 'link'"
+              class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              :class="videoInputMode === 'link' ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f]'"
+            >
+              <span class="material-symbols-outlined text-[16px]">link</span>
+              <span>Enlace / URL</span>
+            </button>
+            <button
+              type="button"
+              @click="videoInputMode = 'file'"
+              class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              :class="videoInputMode === 'file' ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f]'"
+            >
+              <span class="material-symbols-outlined text-[16px]">upload_file</span>
+              <span>Subir Archivo .MP4</span>
+            </button>
+          </div>
+
+          <!-- Modo 1: URL -->
+          <div v-if="videoInputMode === 'link'">
+            <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider mb-1">URL del Video (MP4 directo, YouTube, OneDrive o Vimeo) *</label>
             <input
               v-model="newVideo.video_url"
               type="url"
-              required
-              placeholder="https://www.youtube.com/watch?v=... o link OneDrive"
+              :required="videoInputMode === 'link'"
+              placeholder="https://.../video.mp4 o enlace de YouTube/OneDrive"
               class="w-full px-3.5 py-2 bg-white border border-[#e5e5ea] rounded-xl text-xs sm:text-sm text-[#1d1d1f] focus:outline-none focus:border-[#8a6d3d]"
             />
+            <p class="text-[10px] text-[#86868b] mt-1">
+              Admite enlaces directos a archivos <strong>.mp4</strong>, <strong>.webm</strong>, YouTube o Microsoft OneDrive / SharePoint.
+            </p>
+          </div>
+
+          <!-- Modo 2: Subir archivo MP4 -->
+          <div v-else class="space-y-2">
+            <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider">Archivo de Video .MP4 *</label>
+            <div
+              class="border-2 border-dashed border-[#e5e5ea] hover:border-[#8a6d3d] rounded-2xl p-4 text-center cursor-pointer transition-colors bg-[#fbfbfd]"
+              @click="$refs.videoFileInput?.click()"
+            >
+              <input
+                ref="videoFileInput"
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,video/x-m4v"
+                class="hidden"
+                @change="handleVideoFileSelect"
+              />
+              <div v-if="!selectedVideoFile" class="py-2 flex flex-col items-center">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#0078d4] flex items-center justify-center mb-1.5 shadow-sm">
+                  <span class="material-symbols-outlined text-2xl">movie</span>
+                </div>
+                <p class="text-xs font-bold text-[#1d1d1f]">Haz clic para seleccionar tu video .MP4</p>
+                <p class="text-[11px] text-[#86868b] mt-0.5">Formatos compatibles: .mp4, .webm, .mov</p>
+              </div>
+              <div v-else class="py-2 flex items-center justify-between px-3 bg-white rounded-xl border border-[#e5e5ea]">
+                <div class="flex items-center gap-2.5 truncate">
+                  <span class="material-symbols-outlined text-[#34c759]">check_circle</span>
+                  <div class="text-left truncate">
+                    <p class="text-xs font-bold text-[#1d1d1f] truncate">{{ selectedVideoFile.name }}</p>
+                    <p class="text-[10px] text-[#86868b]">{{ formatBytes(selectedVideoFile.size) }}</p>
+                  </div>
+                </div>
+                <button type="button" @click.stop="removeSelectedVideoFile" class="text-red-500 hover:text-red-700 text-xs font-bold">Cambiar</button>
+              </div>
+            </div>
+            <p class="text-[10px] text-[#86868b]">
+              💡 <em>Consejo:</em> Para videos muy pesados (>100MB), la mejor práctica es guardarlos en tu Microsoft OneDrive y pegar el enlace en la pestaña «Enlace / URL».
+            </p>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -572,6 +652,9 @@ const showAddModal = ref(false)
 const savingVideo = ref(false)
 const activeVideoPlaying = ref(null)
 const selectedMemberDetail = ref(null)
+const videoInputMode = ref('link') // 'link' | 'file'
+const selectedVideoFile = ref(null)
+const uploadProgressMsg = ref('')
 
 // Datos reactivos
 const allVideos = ref([])
@@ -818,7 +901,46 @@ const getEmbedUrl = (url) => {
 
 const isDirectVideo = (url) => {
   if (!url) return false
-  return url.endsWith('.mp4') || url.endsWith('.webm') || url.includes('/storage/v1/object/public/')
+  const clean = url.toLowerCase().split('?')[0].split('#')[0]
+  return clean.endsWith('.mp4') || 
+         clean.endsWith('.webm') || 
+         clean.endsWith('.ogg') || 
+         clean.endsWith('.mov') || 
+         clean.endsWith('.m4v') ||
+         url.includes('/storage/v1/object/public/') ||
+         url.includes('.mp4?') ||
+         url.includes('/academy_videos/') ||
+         url.startsWith('blob:')
+}
+
+const handleVideoEnded = (videoId) => {
+  if (!isVideoCompleted(videoId)) {
+    toggleVideoCompletion(videoId)
+  }
+}
+
+// Selector y manejo de archivo MP4 local
+const handleVideoFileSelect = (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  selectedVideoFile.value = file
+  if (!newVideo.value.title) {
+    const rawName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+    newVideo.value.title = rawName.charAt(0).toUpperCase() + rawName.slice(1)
+  }
+}
+
+const removeSelectedVideoFile = () => {
+  selectedVideoFile.value = null
+}
+
+const formatBytes = (bytes, decimals = 1) => {
+  if (!bytes) return '0 Bytes'
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
 // Agregar Nuevo Video
@@ -832,25 +954,72 @@ const openAddVideoModal = () => {
     duration_minutes: 10,
     is_mandatory: true
   }
+  selectedVideoFile.value = null
+  videoInputMode.value = 'link'
+  uploadProgressMsg.value = ''
   showAddModal.value = true
 }
 
 const saveNewVideo = async () => {
-  if (!newVideo.value.title || !newVideo.value.video_url) return
-  savingVideo.value = true
-
-  const payload = {
-    title: newVideo.value.title.trim(),
-    description: newVideo.value.description.trim(),
-    video_url: newVideo.value.video_url.trim(),
-    role_id: newVideo.value.role_id || null,
-    area_id: newVideo.value.area_id || null,
-    duration_minutes: newVideo.value.duration_minutes || 5,
-    is_mandatory: !!newVideo.value.is_mandatory,
-    created_by: currentProfile.value?.id
+  if (!newVideo.value.title) {
+    alert('Por favor indica un título para el video.')
+    return
   }
 
+  savingVideo.value = true
+  uploadProgressMsg.value = ''
+  let finalVideoUrl = ''
+
   try {
+    if (videoInputMode.value === 'file') {
+      if (!selectedVideoFile.value) {
+        alert('Por favor selecciona un archivo .mp4 de tu computadora.')
+        savingVideo.value = false
+        return
+      }
+
+      uploadProgressMsg.value = 'Subiendo video .MP4...'
+      const safeName = `${Date.now()}_${selectedVideoFile.value.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const filePath = `academy_videos/${safeName}`
+
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('employee_documents')
+          .upload(filePath, selectedVideoFile.value, { upsert: true })
+
+        if (uploadError) {
+          console.warn('Almacenamiento en nube falló, usando URL local temporal:', uploadError)
+          finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
+        } else {
+          const { data: publicUrlData } = supabase.storage
+            .from('employee_documents')
+            .getPublicUrl(filePath)
+          finalVideoUrl = publicUrlData?.publicUrl || URL.createObjectURL(selectedVideoFile.value)
+        }
+      } catch (uploadCatch) {
+        console.warn('Error en storage:', uploadCatch)
+        finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
+      }
+    } else {
+      if (!newVideo.value.video_url) {
+        alert('Por favor escribe o pega la URL del video.')
+        savingVideo.value = false
+        return
+      }
+      finalVideoUrl = newVideo.value.video_url.trim()
+    }
+
+    const payload = {
+      title: newVideo.value.title.trim(),
+      description: (newVideo.value.description || '').trim(),
+      video_url: finalVideoUrl,
+      role_id: newVideo.value.role_id || null,
+      area_id: newVideo.value.area_id || null,
+      duration_minutes: newVideo.value.duration_minutes || 5,
+      is_mandatory: !!newVideo.value.is_mandatory,
+      created_by: currentProfile.value?.id
+    }
+
     const { data, error } = await supabase.from('academy_videos').insert(payload).select().single()
     if (!error && data) {
       allVideos.value.unshift(data)
@@ -858,11 +1027,16 @@ const saveNewVideo = async () => {
       // Agregar a lista local si la tabla aún se está migrando
       allVideos.value.unshift({ id: 'loc-' + Date.now(), ...payload })
     }
-  } catch {
-    allVideos.value.unshift({ id: 'loc-' + Date.now(), ...payload })
+
+    showAddModal.value = false
+    selectedVideoFile.value = null
+    newVideo.value.video_url = ''
+    newVideo.value.title = ''
+  } catch (err) {
+    console.error('Error guardando video:', err)
   } finally {
     savingVideo.value = false
-    showAddModal.value = false
+    uploadProgressMsg.value = ''
   }
 }
 
