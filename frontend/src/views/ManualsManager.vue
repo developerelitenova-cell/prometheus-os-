@@ -17,6 +17,18 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <!-- Abrir Outlook Webmail -->
+          <a
+            href="https://outlook.office.com/mail/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shadow-sm border border-blue-200 bg-blue-50/80 text-[#0078d4] hover:bg-blue-100 cursor-pointer"
+            title="Abrir Correo Corporativo en Outlook Web"
+          >
+            <span class="material-symbols-outlined text-[18px]">mail</span>
+            <span class="hidden md:inline">Abrir Correo</span>
+          </a>
+
           <button
             v-if="canManage"
             @click="activeViewTab = activeViewTab === 'all' ? 'my' : 'all'"
@@ -42,23 +54,51 @@
     <!-- Contenido -->
     <main class="flex-1 max-w-[1400px] w-full mx-auto px-4 py-6 sm:px-6 space-y-6">
       
-      <!-- Banner Informativo de Conexión con OneDrive -->
-      <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-white rounded-2xl border border-blue-200/80 p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div class="flex items-start gap-3.5">
-          <div class="w-10 h-10 rounded-xl bg-[#0078d4] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-            <span class="material-symbols-outlined text-2xl">cloud</span>
+      <!-- Banner Informativo de Conexión con OneDrive & Correo -->
+      <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-white rounded-2xl border border-blue-200/80 p-5 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-[#0078d4] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <span class="material-symbols-outlined text-2xl">cloud</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-[#1d1d1f]">Conexión Oficial con Microsoft OneDrive / SharePoint & Outlook</h3>
+              <p class="text-xs text-[#555] mt-0.5 leading-relaxed max-w-2xl">
+                Toda la documentación y manuales residen en el OneDrive institucional de <strong>Elite Nutrition</strong> y <strong>Futupro</strong>. Los colaboradores pueden consultarlos y solicitar la incorporación de nuevos formatos por correo.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 class="text-sm font-bold text-[#1d1d1f]">Conexión Oficial con Microsoft OneDrive / SharePoint</h3>
-            <p class="text-xs text-[#555] mt-0.5 leading-relaxed max-w-2xl">
-              Toda la documentación de cada cargo reside en el OneDrive corporativo de <strong>Elite Nutrition</strong> y <strong>Futupro</strong>. Los colaboradores pueden acceder con un clic a los manuales, actas y procedimientos vigentes.
-            </p>
+          <div class="flex items-center gap-2 self-start md:self-center shrink-0">
+            <span class="px-3 py-1 bg-white border border-blue-200 rounded-lg text-xs font-bold text-[#0078d4] shadow-sm flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-[#34c759]"></span> OneDrive Cloud Sync
+            </span>
           </div>
         </div>
-        <div class="flex items-center gap-2 self-start md:self-center shrink-0">
-          <span class="px-3 py-1 bg-white border border-blue-200 rounded-lg text-xs font-bold text-[#0078d4] shadow-sm flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-[#34c759]"></span> OneDrive Cloud Sync
-          </span>
+
+        <!-- Barra rápida para solicitar documentos al correo institucional -->
+        <div class="pt-3 border-t border-blue-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/70 backdrop-blur rounded-xl p-3 border border-blue-100">
+          <div class="flex items-center gap-2 text-xs text-[#555]">
+            <span class="material-symbols-outlined text-[18px] text-[#0078d4]">forward_to_inbox</span>
+            <span>Para solicitar agregar o actualizar un manual o formato en la Biblioteca oficial, escribe a: <strong class="text-[#0078d4]">gestion@elitenutrition.com.co</strong></span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <a
+              href="mailto:gestion@elitenutrition.com.co?subject=%5BNOVA%20WORD%5D%20Solicitud%20de%20nuevo%20manual%20o%20documento%20para%20OneDrive&body=Hola%20Equipo%20de%20Gesti%C3%B3n%2C%0A%0ASolicito%20la%20incorporaci%C3%B3n%20del%20siguiente%20documento%20o%20formato%20en%20el%20Centro%20de%20Manuales%20%2F%20OneDrive%3A%0A%0A-%20Nombre%20del%20Documento%2FManual%3A%20%0A-%20Cargo%20%2F%20%C3%81rea%3A%20%0A-%20Enlace%20OneDrive%20o%20Archivo%20adjunto%3A%20%0A-%20Descripci%C3%B3n%20y%20Objetivo%3A%20%0A%0AGracias."
+              class="px-3 py-1.5 bg-[#f5f5f7] hover:bg-[#e5e5ea] text-[#1d1d1f] rounded-lg text-xs font-semibold transition-colors border border-[#e5e5ea] flex items-center gap-1 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[15px] text-[#8a6d3d]">send</span>
+              <span>Enviar Solicitud</span>
+            </a>
+            <a
+              href="https://outlook.office.com/mail/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-3 py-1.5 bg-[#0078d4] hover:bg-[#005a9e] text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[15px]">open_in_new</span>
+              <span>Abrir Outlook</span>
+            </a>
+          </div>
         </div>
       </div>
 

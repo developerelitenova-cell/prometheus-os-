@@ -115,12 +115,24 @@
           <button
             v-if="route.path !== '/' && route.path !== '/workspace'"
             @click="router.back()"
-            class="hidden md:flex h-9 px-3 mr-2 rounded-full bg-[#f5f5f7] border border-[#e5e5ea] text-[#1d1d1f] hover:bg-[#e5e5ea] transition-colors items-center gap-1.5 shadow-sm whitespace-nowrap"
+            class="hidden md:flex h-9 px-3 mr-1 rounded-full bg-[#f5f5f7] border border-[#e5e5ea] text-[#1d1d1f] hover:bg-[#e5e5ea] transition-colors items-center gap-1.5 shadow-sm whitespace-nowrap"
             title="Volver atrás"
           >
             <span class="material-symbols-outlined text-[17px]">arrow_back</span>
             <span class="text-[13px] font-medium">Volver</span>
           </button>
+
+          <!-- Acceso Rápido Correo Corporativo (Outlook) -->
+          <a
+            href="https://outlook.office.com/mail/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hidden sm:flex h-9 px-3 rounded-full bg-[#0078d4]/10 border border-[#0078d4]/20 text-[#0078d4] hover:bg-[#0078d4] hover:text-white transition-all items-center gap-1.5 text-[12px] xl:text-[13px] font-semibold shadow-sm whitespace-nowrap"
+            title="Abrir Correo Corporativo (Microsoft Outlook Webmail)"
+          >
+            <span class="material-symbols-outlined text-[17px]">mail</span>
+            <span class="hidden lg:inline">Correo</span>
+          </a>
 
           <!-- Mi Espacio / Nombre (Desktop solo si hay espacio, o comprimido) -->
           <router-link
@@ -213,6 +225,15 @@
             <router-link to="/manuals" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">folder_open</span> Manuales & OneDrive
             </router-link>
+            <a
+              href="https://outlook.office.com/mail/"
+              target="_blank"
+              rel="noopener noreferrer"
+              @click="closeMobileMenu"
+              class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold text-[#0078d4] bg-blue-50/70 hover:bg-blue-100 transition-colors"
+            >
+              <span class="material-symbols-outlined text-[20px] text-[#0078d4]">mail</span> Abrir Correo Corporativo (Outlook)
+            </a>
             <router-link v-if="isKpiUser" to="/kpis" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">analytics</span> KPIs & Actas
             </router-link>

@@ -158,14 +158,14 @@
             </div>
           </div>
 
-          <!-- Biblioteca & OneDrive -->
+          <!-- Biblioteca Oficial & OneDrive -->
           <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-[#0078d4] text-[20px]">folder_open</span>
-                <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Manuales & OneDrive</h3>
+                <h3 class="text-[15px] font-semibold text-[#1d1d1f]">Biblioteca Oficial</h3>
               </div>
-              <button @click="router.push('/manuals')" class="text-[13px] font-medium text-[#0078d4] hover:text-[#005a9e] transition-colors cursor-pointer">Ver Todos</button>
+              <button @click="router.push('/manuals')" class="text-[13px] font-medium text-[#0078d4] hover:text-[#005a9e] transition-colors cursor-pointer">Repositorio</button>
             </div>
             <div class="space-y-2">
               <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank"
@@ -181,6 +181,81 @@
               <div v-if="!templates.length" class="text-center text-sm text-gray-500 py-4">
                 No hay documentos en tu rol.
               </div>
+            </div>
+
+            <!-- Solicitar / Agregar nuevo documento oficial por correo -->
+            <div class="mt-4 pt-3.5 border-t border-[#f2f2f7] space-y-2">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-[#86868b] font-medium flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px] text-[#0078d4]">mark_email_read</span>
+                  ¿Agregar nuevo documento?
+                </span>
+                <span class="text-[#0078d4] font-semibold">gestion@elitenutrition.com.co</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <a
+                  href="mailto:gestion@elitenutrition.com.co?subject=%5BNOVA%20WORD%5D%20Solicitud%20para%20incorporar%20documento%20a%20la%20Biblioteca%20Oficial&body=Hola%20Equipo%20de%20Gesti%C3%B3n%2C%0A%0ASolicito%20la%20incorporaci%C3%B3n%20del%20siguiente%20documento%20o%20formato%20en%20la%20Biblioteca%20Oficial%20de%20mi%20cargo%3A%0A%0A-%20Nombre%20del%20Documento%3A%20%0A-%20Cargo%20%2F%20%C3%81rea%3A%20%0A-%20Enlace%20OneDrive%20o%20Archivo%20adjunto%3A%20%0A-%20Descripci%C3%B3n%20o%20Uso%3A%20%0A%0AGracias."
+                  class="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-[#f5f5f7] hover:bg-[#e5e5ea] text-[#1d1d1f] text-[11px] font-semibold rounded-lg transition-colors border border-[#e5e5ea] text-center"
+                  title="Enviar solicitud por correo para agregar documento"
+                >
+                  <span class="material-symbols-outlined text-[14px] text-[#8a6d3d]">send</span>
+                  <span>Solicitar por Correo</span>
+                </a>
+                <a
+                  href="https://outlook.office.com/mail/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-[#0078d4]/10 hover:bg-[#0078d4] text-[#0078d4] hover:text-white text-[11px] font-semibold rounded-lg transition-colors border border-[#0078d4]/20 hover:border-transparent text-center"
+                  title="Abrir Outlook Webmail de Microsoft 365"
+                >
+                  <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                  <span>Abrir Correo</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Correo Corporativo (Microsoft Outlook / Office 365) -->
+          <div class="bg-gradient-to-br from-white via-white to-blue-50/40 rounded-2xl border border-blue-200/70 shadow-sm p-5 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0078d4] to-[#005a9e] text-white flex items-center justify-center shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">mail</span>
+                </div>
+                <div>
+                  <h3 class="text-[14px] font-bold text-[#1d1d1f] leading-none">Correo Corporativo</h3>
+                  <p class="text-[10px] text-[#0078d4] font-semibold tracking-wide uppercase mt-0.5">Microsoft Outlook Webmail</p>
+                </div>
+              </div>
+              <span class="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-[#0078d4] text-[10px] font-bold rounded-md shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#0078d4] animate-pulse"></span> M365
+              </span>
+            </div>
+
+            <div class="p-2.5 bg-white/90 rounded-xl border border-blue-100 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+              <p class="text-[10px] font-medium text-[#86868b] leading-tight">Cuenta asignada:</p>
+              <p class="text-[12px] font-bold text-[#1d1d1f] truncate mt-0.5">{{ currentProfile?.email || 'colaborador@elitenutrition.com' }}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-0.5">
+              <a
+                href="https://outlook.office.com/mail/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#0078d4] hover:bg-[#005a9e] text-white text-[12px] font-bold rounded-xl shadow-sm transition-all hover:scale-[1.01] active:scale-95 text-center cursor-pointer"
+              >
+                <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                <span>Abrir Correo</span>
+              </a>
+              <a
+                href="https://outlook.office.com/mail/deeplink/compose"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-blue-50 text-[#0078d4] border border-[#0078d4]/30 text-[12px] font-bold rounded-xl shadow-sm transition-all hover:scale-[1.01] active:scale-95 text-center cursor-pointer"
+              >
+                <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                <span>Redactar</span>
+              </a>
             </div>
           </div>
         </div>
