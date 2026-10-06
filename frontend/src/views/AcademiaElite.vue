@@ -163,9 +163,13 @@
                 :alt="video.title"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div v-else class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1d1d1f] to-[#2c2c2e] p-4 text-center">
-                <span class="material-symbols-outlined text-white/40 text-5xl mb-2">play_circle</span>
-                <span class="text-xs font-medium text-white/80 line-clamp-1">{{ video.title }}</span>
+              <div v-else class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#141416] via-[#201f1c] to-[#141416] p-5 text-center relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-28 h-28 bg-[#8a6d3d]/20 rounded-full blur-xl pointer-events-none"></div>
+                <div class="w-12 h-12 rounded-2xl bg-white/5 border border-[#8a6d3d]/30 flex items-center justify-center mb-2 shadow-inner">
+                  <span class="material-symbols-outlined text-[#d4b06a] text-2xl">school</span>
+                </div>
+                <span class="text-xs font-bold text-white line-clamp-2 px-3 leading-snug">{{ video.title }}</span>
+                <span class="text-[10px] text-[#d4b06a] font-bold tracking-wider uppercase mt-1">NOVA WORK</span>
               </div>
 
               <!-- Overlay Botón Play -->
@@ -364,12 +368,12 @@
 
         <!-- Cuerpo del Video -->
         <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
-          <!-- YouTube Iframe -->
+          <!-- Embebido Iframe Directo (YouTube, Vimeo, Google Drive, OneDrive / SharePoint Embed) -->
           <iframe
             v-if="getEmbedUrl(activeVideoPlaying.video_url)"
             :src="getEmbedUrl(activeVideoPlaying.video_url)"
             class="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowfullscreen
           ></iframe>
 
@@ -394,17 +398,17 @@
             </span>
           </div>
 
-          <!-- Enlace Externo (OneDrive / SharePoint / Stream) -->
+          <!-- Fallback si el enlace no es integrable en iframe -->
           <div v-else class="p-8 text-center text-white flex flex-col items-center">
-            <span class="material-symbols-outlined text-5xl text-[#8a6d3d] mb-3">cloud_download</span>
-            <h4 class="text-lg font-bold">Video Alojado en OneDrive / SharePoint</h4>
-            <p class="text-xs text-white/70 mt-1 max-w-md">Este video está protegido bajo las políticas de seguridad de Microsoft 365.</p>
+            <span class="material-symbols-outlined text-5xl text-[#8a6d3d] mb-3">play_circle</span>
+            <h4 class="text-lg font-bold">{{ activeVideoPlaying.title }}</h4>
+            <p class="text-xs text-white/70 mt-1 max-w-md">Para reproducir este video, pulsa el botón a continuación:</p>
             <a
               :href="activeVideoPlaying.video_url"
               target="_blank"
-              class="mt-4 px-6 py-2.5 bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white font-bold text-xs rounded-xl shadow hover:brightness-105 transition-all flex items-center gap-2"
+              class="mt-4 px-6 py-2.5 bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] text-white font-bold text-xs rounded-xl shadow hover:brightness-105 transition-all flex items-center gap-2 cursor-pointer"
             >
-              <span>Abrir Video en Microsoft Stream</span>
+              <span>Abrir Video</span>
               <span class="material-symbols-outlined text-[16px]">open_in_new</span>
             </a>
           </div>
@@ -412,14 +416,26 @@
 
         <!-- Pie de Información y Botón Completar -->
         <div class="p-5 bg-white flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#e5e5ea]">
-          <div>
+          <div class="max-w-md">
             <span class="text-xs font-bold text-[#8a6d3d] uppercase tracking-wider block">
-              {{ activeVideoPlaying.roles?.name || 'General' }}
+              {{ activeVideoPlaying.roles?.name || (activeVideoPlaying.areas?.name ? `Área: ${activeVideoPlaying.areas.name}` : 'General (Toda la Empresa)') }}
             </span>
             <p class="text-xs text-[#86868b] mt-0.5 line-clamp-2">{{ activeVideoPlaying.description || 'Sin notas adicionales.' }}</p>
           </div>
 
-          <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-2.5 shrink-0">
+            <!-- Botón opcional para abrir en ventana externa si Microsoft pide login -->
+            <a
+              v-if="activeVideoPlaying.video_url?.includes('sharepoint') || activeVideoPlaying.video_url?.includes('onedrive')"
+              :href="activeVideoPlaying.video_url"
+              target="_blank"
+              class="px-3.5 py-2 text-xs font-semibold text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] rounded-xl flex items-center gap-1.5 transition-colors border border-[#e5e5ea]"
+              title="Abrir en Microsoft Stream si tu navegador bloquea la sesión"
+            >
+              <span class="material-symbols-outlined text-[15px]">open_in_new</span>
+              <span class="hidden sm:inline">Ver en Stream</span>
+            </a>
+
             <button
               @click="toggleVideoCompletion(activeVideoPlaying.id)"
               class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
@@ -437,8 +453,8 @@
 
     <!-- MODAL AGREGAR / EDITAR VIDEO (OPERADORES Y LÍDERES) -->
     <div v-if="showAddModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl border border-[#e5e5ea]">
-        <div class="p-5 bg-[#1d1d1f] text-white flex items-center justify-between">
+      <div class="bg-white rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl border border-[#e5e5ea] flex flex-col max-h-[92vh]">
+        <div class="p-5 bg-[#1d1d1f] text-white flex items-center justify-between shrink-0">
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-[#8a6d3d]">{{ editingVideoId ? 'edit_square' : 'video_call' }}</span>
             <h3 class="text-base font-bold">{{ editingVideoId ? 'Editar Video & Audiencia' : 'Agregar Video a la Academia' }}</h3>
@@ -448,7 +464,7 @@
           </button>
         </div>
 
-        <form @submit.prevent="saveNewVideo" class="p-5 space-y-4">
+        <form @submit.prevent="saveNewVideo" class="p-5 space-y-4 overflow-y-auto">
           <div>
             <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider mb-1">Título del Video *</label>
             <input
@@ -537,6 +553,100 @@
               <span class="material-symbols-outlined text-base animate-spin">sync</span>
               <span>{{ uploadProgressMsg }}</span>
             </p>
+          </div>
+
+          <!-- SECCIÓN: PORTADA / MINIATURA DEL VIDEO -->
+          <div class="p-4 bg-[#fbfbfd] border border-[#e5e5ea] rounded-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[#8a6d3d] text-[18px]">image</span>
+                <label class="text-xs font-bold text-[#1d1d1f] uppercase tracking-wider">Portada del Video</label>
+              </div>
+              <span v-if="newVideo.thumbnail_url" class="text-[11px] text-[#34c759] font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">check_circle</span> Con Portada
+              </span>
+              <span v-else class="text-[11px] text-[#86868b]">Genera o sube una portada</span>
+            </div>
+
+            <!-- Preview 16:9 de la portada -->
+            <div class="relative w-full aspect-video bg-[#141416] rounded-xl overflow-hidden border border-[#e5e5ea] shadow-inner flex items-center justify-center">
+              <img
+                v-if="newVideo.thumbnail_url"
+                :src="newVideo.thumbnail_url"
+                alt="Vista previa de portada"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="text-center p-4">
+                <span class="material-symbols-outlined text-white/30 text-4xl mb-1">wallpaper</span>
+                <p class="text-xs font-semibold text-white/70">Sin portada asignada</p>
+                <p class="text-[10px] text-white/40 mt-0.5">Puedes generarla con el título en 1 clic o subir un archivo</p>
+              </div>
+
+              <!-- Botón quitar portada si ya existe -->
+              <button
+                v-if="newVideo.thumbnail_url"
+                type="button"
+                @click="newVideo.thumbnail_url = ''"
+                class="absolute top-2 right-2 p-1.5 bg-black/70 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer shadow"
+                title="Quitar portada"
+              >
+                <span class="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+
+            <!-- Botones de Acción de Portada -->
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                @click="generateAutoThumbnail()"
+                :disabled="generatingThumbnail"
+                class="py-2 px-3 bg-gradient-to-r from-[#8a6d3d] to-[#d4b06a] hover:brightness-105 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                <span>{{ generatingThumbnail ? 'Diseñando...' : '🎨 Generar Portada' }}</span>
+              </button>
+
+              <button
+                type="button"
+                @click="$refs.thumbnailFileInput?.click()"
+                class="py-2 px-3 bg-white border border-[#e5e5ea] hover:border-[#8a6d3d] hover:text-[#8a6d3d] text-[#1d1d1f] font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span class="material-symbols-outlined text-[16px]">upload_file</span>
+                <span>Subir Imagen</span>
+              </button>
+              <input
+                ref="thumbnailFileInput"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/jpg"
+                class="hidden"
+                @change="handleThumbnailFileSelect"
+              />
+            </div>
+
+            <!-- Presets de estilo de portada -->
+            <div>
+              <p class="text-[10px] font-bold text-[#86868b] uppercase tracking-wider mb-1.5">Estilos de Portada Rápida:</p>
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  v-for="preset in thumbnailPresets"
+                  :key="preset.id"
+                  type="button"
+                  @click="generateAutoThumbnail(preset)"
+                  class="px-2.5 py-1 bg-white hover:bg-[#8a6d3d]/10 border border-[#e5e5ea] hover:border-[#8a6d3d] rounded-lg text-[10px] font-semibold text-[#1d1d1f] whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                >
+                  <span>{{ preset.emoji }}</span>
+                  <span>{{ preset.name }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Campo URL opcional -->
+            <input
+              v-model="newVideo.thumbnail_url"
+              type="url"
+              placeholder="O pega directamente una URL de imagen..."
+              class="w-full px-3 py-1.5 bg-white border border-[#e5e5ea] rounded-lg text-[11px] text-[#1d1d1f] focus:outline-none focus:border-[#8a6d3d]"
+            />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -779,6 +889,7 @@ const newVideo = ref({
   title: '',
   description: '',
   video_url: '',
+  thumbnail_url: '',
   role_id: '',
   area_id: '',
   duration_minutes: 10,
@@ -789,7 +900,7 @@ const newVideo = ref({
 const fallbackVideos = [
   {
     id: 'f001-video',
-    title: 'Inducción General y Cultura NOVA WORD',
+    title: 'Inducción General y Cultura NOVA WORK',
     description: 'Conoce los valores corporativos, procesos clave y directrices operativas de Elite Nutrition y Futupro.',
     video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     thumbnail_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop',
@@ -864,7 +975,7 @@ const loadData = async () => {
       userProgress.value = prog || []
     } catch {
       // Usar localStorage fallback
-      const saved = localStorage.getItem(`novaword_prog_${userId}`)
+      const saved = localStorage.getItem(`novawork_prog_${userId}`)
       userProgress.value = saved ? JSON.parse(saved) : []
     }
   }
@@ -998,23 +1109,51 @@ const toggleVideoCompletion = async (videoId) => {
       progress_percent: newStatus ? 100 : 0
     }, { onConflict: 'user_id, video_id' })
   } catch {
-    localStorage.setItem(`novaword_prog_${userId}`, JSON.stringify(userProgress.value))
+    localStorage.setItem(`novawork_prog_${userId}`, JSON.stringify(userProgress.value))
   }
 }
 
-// Helpers para YouTube y tipos de video
+// Helpers para streaming directo de videos (OneDrive, SharePoint, Google Drive, YouTube, Vimeo, Loom)
 const getEmbedUrl = (url) => {
   if (!url) return null
-  // YouTube standard
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i)
+  const cleanUrl = url.trim()
+
+  // 1. YouTube standard, shorts, embed & youtu.be
+  const ytMatch = cleanUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i)
   if (ytMatch && ytMatch[1]) {
     return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0&autoplay=1`
   }
-  // Vimeo
-  const vimeoMatch = url.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/)
+
+  // 2. Vimeo
+  const vimeoMatch = cleanUrl.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/)
   if (vimeoMatch && vimeoMatch[3]) {
     return `https://player.vimeo.com/video/${vimeoMatch[3]}?autoplay=1`
   }
+
+  // 3. Loom
+  const loomMatch = cleanUrl.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/)
+  if (loomMatch && loomMatch[1]) {
+    return `https://www.loom.com/embed/${loomMatch[1]}?autoplay=1`
+  }
+
+  // 4. Google Drive
+  const gdriveMatch = cleanUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+  if (gdriveMatch && gdriveMatch[1]) {
+    return `https://drive.google.com/file/d/${gdriveMatch[1]}/preview`
+  }
+
+  // 5. Microsoft SharePoint & OneDrive for Business / Personal
+  if (cleanUrl.includes('sharepoint.com') || cleanUrl.includes('1drv.ms') || cleanUrl.includes('onedrive.live.com')) {
+    if (cleanUrl.includes('action=embedview') || cleanUrl.includes('embed.aspx')) {
+      return cleanUrl
+    }
+    if (cleanUrl.includes('onedrive.live.com') && cleanUrl.includes('resid=')) {
+      return cleanUrl.replace('/view.aspx', '/embed.aspx').replace('/redir', '/embed')
+    }
+    const separator = cleanUrl.includes('?') ? '&' : '?'
+    return `${cleanUrl}${separator}action=embedview`
+  }
+
   return null
 }
 
@@ -1062,6 +1201,236 @@ const formatBytes = (bytes, decimals = 1) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
+// ==========================================
+// SISTEMA DE PORTADAS Y MINIATURAS INTERNAS
+// ==========================================
+const generatingThumbnail = ref(false)
+
+const thumbnailPresets = [
+  { id: 'gold', name: 'Oro Corporativo', emoji: '👑', bg1: '#141416', bg2: '#23221e', accent: '#d4b06a', tag: 'NOVA WORK' },
+  { id: 'audit', name: 'Auditoría & Calidad', emoji: '🔍', bg1: '#0b1626', bg2: '#132845', accent: '#38bdf8', tag: 'AUDITORÍA' },
+  { id: 'warehouse', name: 'Almacén & Logística', emoji: '📦', bg1: '#18181b', bg2: '#27272a', accent: '#f59e0b', tag: 'LOGÍSTICA' },
+  { id: 'commercial', name: 'Comercial & Ventas', emoji: '💼', bg1: '#1a102f', bg2: '#2e1c54', accent: '#c084fc', tag: 'COMERCIAL' },
+  { id: 'systems', name: 'Sistemas & TI', emoji: '💻', bg1: '#090d16', bg2: '#111d33', accent: '#22c55e', tag: 'TECNOLOGÍA' }
+]
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + width - radius, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+  ctx.lineTo(x + width, y + height - radius)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+  ctx.lineTo(x + radius, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.closePath()
+}
+
+const generateAutoThumbnail = async (presetChoice = null) => {
+  const preset = presetChoice || thumbnailPresets[0]
+  const title = (newVideo.value.title || 'Guía Operativa y Capacitación').trim()
+  
+  const areaObj = availableAreas.value.find(a => a.id === newVideo.value.area_id)
+  const roleObj = availableRoles.value.find(r => r.id === newVideo.value.role_id)
+  const audienceLabel = roleObj?.name || (areaObj ? `Área: ${areaObj.name}` : 'General • Toda la Empresa')
+
+  generatingThumbnail.value = true
+
+  try {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1280
+    canvas.height = 720
+    const ctx = canvas.getContext('2d')
+
+    // 1. Fondo degradado principal
+    const grad = ctx.createLinearGradient(0, 0, 1280, 720)
+    grad.addColorStop(0, preset.bg1)
+    grad.addColorStop(1, preset.bg2)
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 1280, 720)
+
+    // 2. Destello radial elegante en la esquina superior derecha
+    const radial = ctx.createRadialGradient(1050, 200, 20, 1050, 200, 600)
+    radial.addColorStop(0, `${preset.accent}33`)
+    radial.addColorStop(1, 'transparent')
+    ctx.fillStyle = radial
+    ctx.fillRect(0, 0, 1280, 720)
+
+    // 3. Patrón de líneas geométricas decorativas
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)'
+    ctx.lineWidth = 1.5
+    for (let x = -720; x < 1280; x += 90) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x + 720, 720)
+      ctx.stroke()
+    }
+
+    // 4. Borde sutil exterior
+    ctx.strokeStyle = `${preset.accent}44`
+    ctx.lineWidth = 12
+    ctx.strokeRect(6, 6, 1268, 708)
+
+    // 5. Encabezado de Marca: "ELITE NOVA GROUP • NOVA WORK"
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
+    drawRoundedRect(ctx, 80, 75, 430, 48, 12)
+    ctx.fill()
+    ctx.strokeStyle = `${preset.accent}66`
+    ctx.lineWidth = 1.5
+    drawRoundedRect(ctx, 80, 75, 430, 48, 12)
+    ctx.stroke()
+
+    ctx.fillStyle = preset.accent
+    ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    ctx.fillText('ELITE NOVA GROUP', 105, 106)
+
+    ctx.fillStyle = '#ffffff'
+    ctx.font = '600 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    ctx.fillText('•  NOVA WORK', 315, 106)
+
+    // Badge de categoría (derecha)
+    const categoryText = preset.tag
+    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    const catWidth = ctx.measureText(categoryText).width
+    ctx.fillStyle = preset.accent
+    drawRoundedRect(ctx, 1200 - catWidth - 40, 75, catWidth + 40, 48, 12)
+    ctx.fill()
+    ctx.fillStyle = '#000000'
+    ctx.fillText(categoryText, 1200 - catWidth - 20, 106)
+
+    // 6. Título del video con auto-wrap (hasta 3 líneas)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 54px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
+    ctx.shadowBlur = 16
+    ctx.shadowOffsetY = 4
+
+    const maxTextWidth = 1120
+    const words = title.split(' ')
+    let currentLine = ''
+    const lines = []
+    for (let n = 0; n < words.length; n++) {
+      const testLine = currentLine + words[n] + ' '
+      const metrics = ctx.measureText(testLine)
+      if (metrics.width > maxTextWidth && n > 0) {
+        lines.push(currentLine.trim())
+        currentLine = words[n] + ' '
+      } else {
+        currentLine = testLine
+      }
+    }
+    lines.push(currentLine.trim())
+
+    const startY = lines.length === 1 ? 320 : (lines.length === 2 ? 280 : 240)
+    for (let k = 0; k < Math.min(lines.length, 3); k++) {
+      ctx.fillText(lines[k], 80, startY + (k * 70))
+    }
+
+    ctx.shadowColor = 'transparent'
+    ctx.shadowBlur = 0
+    ctx.shadowOffsetY = 0
+
+    // 7. Línea divisoria acento
+    const lineY = startY + (Math.min(lines.length, 3) * 70) + 15
+    const lineGrad = ctx.createLinearGradient(80, lineY, 800, lineY)
+    lineGrad.addColorStop(0, preset.accent)
+    lineGrad.addColorStop(1, 'transparent')
+    ctx.fillStyle = lineGrad
+    ctx.fillRect(80, lineY, 600, 4)
+
+    // 8. Audiencia / Subtítulo
+    ctx.fillStyle = '#d1d5db'
+    ctx.font = '500 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    ctx.fillText(`Dirigido a: ${audienceLabel}`, 80, lineY + 50)
+
+    // 9. Pie de portada
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)'
+    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    ctx.fillText('ACADEMIA DE FORMACIÓN Y EXCELENCIA OPERATIVA', 80, 650)
+
+    // 10. Watermark con ícono de reproducción en la esquina inferior derecha
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)'
+    ctx.beginPath()
+    ctx.arc(1140, 580, 50, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = `${preset.accent}aa`
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(1140, 580, 50, 0, Math.PI * 2)
+    ctx.stroke()
+
+    ctx.fillStyle = preset.accent
+    ctx.beginPath()
+    ctx.moveTo(1130, 560)
+    ctx.lineTo(1160, 580)
+    ctx.lineTo(1130, 600)
+    ctx.closePath()
+    ctx.fill()
+
+    const dataUrl = canvas.toDataURL('image/png')
+    
+    // Subir a Supabase Storage
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+    if (blob) {
+      const fileName = `thumbnails/portada_${Date.now()}.png`
+      const { data: uploadRes, error: upErr } = await supabase.storage
+        .from('academy_videos')
+        .upload(fileName, blob, { contentType: 'image/png', upsert: true })
+
+      if (!upErr && uploadRes) {
+        const { data: pubData } = supabase.storage
+          .from('academy_videos')
+          .getPublicUrl(fileName)
+        newVideo.value.thumbnail_url = pubData?.publicUrl || dataUrl
+      } else {
+        newVideo.value.thumbnail_url = dataUrl
+      }
+    } else {
+      newVideo.value.thumbnail_url = dataUrl
+    }
+  } catch (err) {
+    console.error('Error generando portada:', err)
+  } finally {
+    generatingThumbnail.value = false
+  }
+}
+
+const handleThumbnailFileSelect = async (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert('La imagen de portada no debe superar 5MB.')
+    return
+  }
+
+  // Previsualización inmediata en local
+  const localUrl = URL.createObjectURL(file)
+  newVideo.value.thumbnail_url = localUrl
+
+  // Subir a Supabase Storage
+  try {
+    const ext = file.name.split('.').pop() || 'png'
+    const fileName = `thumbnails/custom_${Date.now()}.${ext}`
+    const { data: uploadRes, error: upErr } = await supabase.storage
+      .from('academy_videos')
+      .upload(fileName, file, { contentType: file.type, upsert: true })
+
+    if (!upErr && uploadRes) {
+      const { data: pubData } = supabase.storage
+        .from('academy_videos')
+        .getPublicUrl(fileName)
+      if (pubData?.publicUrl) {
+        newVideo.value.thumbnail_url = pubData.publicUrl
+      }
+    }
+  } catch (err) {
+    console.warn('Error subiendo miniatura a Supabase, manteniendo URL local:', err)
+  }
+}
+
 // Abrir Modal para Agregar Video
 const openAddVideoModal = () => {
   editingVideoId.value = null
@@ -1069,6 +1438,7 @@ const openAddVideoModal = () => {
     title: '',
     description: '',
     video_url: '',
+    thumbnail_url: '',
     role_id: '',
     area_id: currentProfile.value?.area_id || '',
     duration_minutes: 10,
@@ -1087,6 +1457,7 @@ const openEditVideoModal = (video) => {
     title: video.title || '',
     description: video.description || '',
     video_url: video.video_url || '',
+    thumbnail_url: video.thumbnail_url || '',
     role_id: video.role_id || '',
     area_id: video.area_id || '',
     duration_minutes: video.duration_minutes || 10,
@@ -1150,6 +1521,7 @@ const saveNewVideo = async () => {
       title: newVideo.value.title.trim(),
       description: (newVideo.value.description || '').trim(),
       video_url: finalVideoUrl,
+      thumbnail_url: newVideo.value.thumbnail_url?.trim() || null,
       role_id: newVideo.value.role_id || null,
       area_id: newVideo.value.area_id || null,
       duration_minutes: newVideo.value.duration_minutes || 5,
@@ -1195,6 +1567,7 @@ const saveNewVideo = async () => {
     selectedVideoFile.value = null
     editingVideoId.value = null
     newVideo.value.video_url = ''
+    newVideo.value.thumbnail_url = ''
     newVideo.value.title = ''
   } catch (err) {
     console.error('Error guardando video:', err)

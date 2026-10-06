@@ -134,12 +134,12 @@ VALUES (
   'academy_videos', 
   true, 
   524288000, -- Límite de 500 MB por archivo
-  ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v']
+  ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
 )
 ON CONFLICT (id) DO UPDATE SET 
   public = true,
   file_size_limit = 524288000,
-  allowed_mime_types = ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'];
+  allowed_mime_types = ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
 
 -- Políticas de Storage para academy_videos
 DROP POLICY IF EXISTS "academy_videos_storage_select" ON storage.objects;

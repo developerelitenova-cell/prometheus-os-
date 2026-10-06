@@ -1525,7 +1525,7 @@
           <div class="flex justify-between items-center">
             <div>
               <h1 class="text-2xl font-black text-black">INFORME DIARIO DE OPERACIONES</h1>
-              <p class="text-sm text-gray-700">Sistema PROMETHEUS OS • Gestión y Trazabilidad Operativa</p>
+              <p class="text-sm text-gray-700">Sistema NOVA WORK • Gestión y Trazabilidad Operativa</p>
             </div>
             <div class="text-right text-xs text-gray-800">
               <p><strong>Fecha Reportada:</strong> {{ dailyReportDate }}</p>
