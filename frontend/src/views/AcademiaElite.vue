@@ -368,16 +368,81 @@
 
         <!-- Cuerpo del Video -->
         <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
-          <!-- Embebido Iframe Directo (YouTube, Vimeo, Google Drive, OneDrive / SharePoint Embed) -->
+          
+          <!-- 1. CASO ESPECIAL: Microsoft Stream / SharePoint Corporativo -->
+          <div
+            v-if="isSharePointOrStream(activeVideoPlaying.video_url)"
+            class="w-full h-full p-6 sm:p-10 flex flex-col items-center justify-center text-center bg-gradient-to-br from-[#0c1427] via-[#0f172a] to-[#1e1b4b] text-white relative overflow-hidden"
+          >
+            <!-- Portada de fondo con desenfoque elegante si existe -->
+            <div
+              v-if="activeVideoPlaying.thumbnail_url"
+              class="absolute inset-0 opacity-25 bg-center bg-cover filter blur-xl scale-110 pointer-events-none"
+              :style="{ backgroundImage: `url(${activeVideoPlaying.thumbnail_url})` }"
+            ></div>
+
+            <div class="relative z-10 max-w-lg flex flex-col items-center">
+              <!-- Insignia Corporativa Stream -->
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0078d4]/20 border border-[#0078d4]/40 text-[#60a5fa] text-xs font-semibold mb-3 backdrop-blur-sm">
+                <span class="material-symbols-outlined text-sm">cloud</span>
+                <span>Microsoft Stream & SharePoint Corporativo</span>
+              </div>
+
+              <!-- Título del Video -->
+              <h4 class="text-lg sm:text-2xl font-bold tracking-tight mb-2 text-white">
+                {{ activeVideoPlaying.title }}
+              </h4>
+
+              <!-- Explicación amigable -->
+              <p class="text-xs sm:text-sm text-gray-300 mb-6 leading-relaxed max-w-md">
+                Este video está protegido bajo la infraestructura corporativa de Microsoft 365 (Futupro / Elite Nutrition). Por directivas de seguridad de Microsoft (<code class="text-[11px] bg-black/40 px-1 py-0.5 rounded text-blue-300">frame-ancestors</code>), se reproduce directamente con tu cuenta institucional.
+              </p>
+
+              <!-- Botones de Acción Principal -->
+              <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <a
+                  :href="activeVideoPlaying.video_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="w-full sm:w-auto px-6 py-3 bg-[#0078d4] hover:bg-[#106ebe] text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 cursor-pointer"
+                >
+                  <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                  <span>Abrir y Reproducir en Stream</span>
+                  <span class="material-symbols-outlined text-[15px] text-white/70">open_in_new</span>
+                </a>
+
+                <button
+                  type="button"
+                  @click="toggleVideoCompletion(activeVideoPlaying.id)"
+                  class="w-full sm:w-auto px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all border border-white/20 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span class="material-symbols-outlined text-[18px]" :class="isVideoCompleted(activeVideoPlaying.id) ? 'text-[#34c759]' : 'text-gray-300'">
+                    {{ isVideoCompleted(activeVideoPlaying.id) ? 'check_circle' : 'task_alt' }}
+                  </span>
+                  <span>{{ isVideoCompleted(activeVideoPlaying.id) ? 'Completado ✓' : 'Marcar como Visto' }}</span>
+                </button>
+              </div>
+
+              <!-- Tip para encargados y administradores -->
+              <div v-if="canManage" class="mt-6 pt-4 border-t border-white/10 text-[11px] text-gray-400 flex items-center gap-2 text-left">
+                <span class="material-symbols-outlined text-amber-400 text-sm shrink-0">lightbulb</span>
+                <span>
+                  Tip: Para reproducirlo directo dentro de NOVA WORK sin salir, descarga el archivo <strong>.mp4</strong> desde SharePoint y cárgalo en <strong>Editar Video</strong>.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Embebido Iframe Directo (YouTube, Vimeo, Loom, Google Drive) -->
           <iframe
-            v-if="getEmbedUrl(activeVideoPlaying.video_url)"
+            v-else-if="getEmbedUrl(activeVideoPlaying.video_url)"
             :src="getEmbedUrl(activeVideoPlaying.video_url)"
             class="w-full h-full border-0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowfullscreen
           ></iframe>
 
-          <!-- Enlace Directo HTML5 (MP4 / WebM / QuickTime) -->
+          <!-- 3. Enlace Directo HTML5 (MP4 / WebM / QuickTime en Supabase o Servidor) -->
           <div v-else-if="isDirectVideo(activeVideoPlaying.video_url)" class="relative w-full h-full flex items-center justify-center bg-black">
             <video
               :key="activeVideoPlaying.video_url"
@@ -398,7 +463,7 @@
             </span>
           </div>
 
-          <!-- Fallback si el enlace no es integrable en iframe -->
+          <!-- 4. Fallback si el enlace no es integrable -->
           <div v-else class="p-8 text-center text-white flex flex-col items-center">
             <span class="material-symbols-outlined text-5xl text-[#8a6d3d] mb-3">play_circle</span>
             <h4 class="text-lg font-bold">{{ activeVideoPlaying.title }}</h4>
@@ -511,6 +576,13 @@
             <p class="text-[10px] text-[#86868b] mt-1">
               Admite enlaces directos a archivos <strong>.mp4</strong>, <strong>.webm</strong>, YouTube o Microsoft OneDrive / SharePoint.
             </p>
+            <div v-if="newVideo.video_url && isSharePointOrStream(newVideo.video_url)" class="mt-2.5 p-3 bg-blue-50/80 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-[#0078d4]">
+              <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">info</span>
+              <div>
+                <strong>Video de Microsoft SharePoint / Stream detectado:</strong>
+                Por directivas de seguridad corporativa de Microsoft (<code class="text-[11px] bg-blue-100 px-1 py-0.2 rounded font-mono">frame-ancestors 'none'</code>), se abrirá directamente con la cuenta corporativa activa del usuario. Si deseas que se reproduzca dentro de NOVA WORK, te recomendamos cambiar arriba a <strong>"Subir Archivo .MP4"</strong> y subir el archivo descargado.
+              </div>
+            </div>
           </div>
 
           <!-- Modo 2: Subir archivo MP4 -->
@@ -1143,22 +1215,33 @@ const getEmbedUrl = (url) => {
   }
 
   // 5. Microsoft SharePoint & OneDrive for Business / Personal
-  if (cleanUrl.includes('sharepoint.com') || cleanUrl.includes('1drv.ms') || cleanUrl.includes('onedrive.live.com')) {
-    if (cleanUrl.includes('action=embedview') || cleanUrl.includes('embed.aspx')) {
-      return cleanUrl
-    }
-    if (cleanUrl.includes('onedrive.live.com') && cleanUrl.includes('resid=')) {
-      return cleanUrl.replace('/view.aspx', '/embed.aspx').replace('/redir', '/embed')
-    }
-    const separator = cleanUrl.includes('?') ? '&' : '?'
-    return `${cleanUrl}${separator}action=embedview`
+  // NOTA: Microsoft 365 bloquea por defecto iframes de terceros con 'frame-ancestors none' y 'X-Frame-Options: SAMEORIGIN'.
+  // Se retorna null para delegar a la tarjeta corporativa de Microsoft Stream con apertura segura y autorizada.
+  if (isSharePointOrStream(cleanUrl)) {
+    return null
   }
 
   return null
 }
 
+const isSharePointOrStream = (url) => {
+  if (!url) return false
+  const lower = url.toLowerCase()
+  return (
+    lower.includes('sharepoint.com') ||
+    lower.includes('stream.aspx') ||
+    lower.includes('1drv.ms') ||
+    lower.includes('onedrive.live.com') ||
+    lower.includes('stream.office.com') ||
+    lower.includes('microsoftstream.com')
+  )
+}
+
 const isDirectVideo = (url) => {
   if (!url) return false
+  // Si es un enlace de SharePoint (aunque termine con .mp4 en la ruta), no es accesible sin cookies de Microsoft Entra
+  if (isSharePointOrStream(url)) return false
+
   const clean = url.toLowerCase().split('?')[0].split('#')[0]
   return clean.endsWith('.mp4') || 
          clean.endsWith('.webm') || 
@@ -1166,9 +1249,7 @@ const isDirectVideo = (url) => {
          clean.endsWith('.mov') || 
          clean.endsWith('.m4v') ||
          url.includes('/storage/v1/object/public/') ||
-         url.includes('.mp4?') ||
-         url.includes('/academy_videos/') ||
-         url.startsWith('blob:')
+         url.includes('/academy_videos/')
 }
 
 const handleVideoEnded = (videoId) => {
@@ -1492,17 +1573,27 @@ const saveNewVideo = async () => {
             .upload(filePath, selectedVideoFile.value, { upsert: true })
 
           if (uploadError) {
-            console.warn('Almacenamiento en nube falló, usando URL local temporal:', uploadError)
-            finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
-          } else {
-            const { data: publicUrlData } = supabase.storage
-              .from('academy_videos')
-              .getPublicUrl(filePath)
-            finalVideoUrl = publicUrlData?.publicUrl || URL.createObjectURL(selectedVideoFile.value)
+            console.error('Almacenamiento en nube falló:', uploadError)
+            alert(`No se pudo subir el archivo de video a Supabase Storage: ${uploadError.message}\n\nPor favor asegúrate de haber ejecutado el script SQL de migración de storage en tu base de datos Supabase.`)
+            savingVideo.value = false
+            return
           }
+
+          const { data: publicUrlData } = supabase.storage
+            .from('academy_videos')
+            .getPublicUrl(filePath)
+          
+          if (!publicUrlData?.publicUrl) {
+            alert('El archivo se subió pero no se pudo obtener su URL pública.')
+            savingVideo.value = false
+            return
+          }
+          finalVideoUrl = publicUrlData.publicUrl
         } catch (uploadCatch) {
-          console.warn('Error en storage:', uploadCatch)
-          finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
+          console.error('Error inesperado en storage:', uploadCatch)
+          alert('Error inesperado al subir el video: ' + (uploadCatch.message || uploadCatch))
+          savingVideo.value = false
+          return
         }
       } else if (!finalVideoUrl && !editingVideoId.value) {
         alert('Por favor selecciona un archivo .mp4 de tu computadora.')
