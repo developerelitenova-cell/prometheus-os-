@@ -232,26 +232,74 @@
               </span>
             </div>
 
-            <div class="p-2.5 bg-white/90 rounded-xl border border-blue-100 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-              <p class="text-[10px] font-medium text-[#86868b] leading-tight">Cuenta asignada:</p>
-              <p class="text-[12px] font-bold text-[#1d1d1f] truncate mt-0.5">{{ currentProfile?.email || 'colaborador@elitenutrition.com' }}</p>
+            <!-- Caja de Cuenta Asignada con Edición Directa -->
+            <div class="p-3 bg-white/95 rounded-xl border border-blue-100 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] space-y-2">
+              <div class="flex items-center justify-between">
+                <p class="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Mi Correo Corporativo:</p>
+                <button
+                  v-if="!editingCorporateEmail"
+                  @click="startEditCorporateEmail"
+                  class="text-[11px] font-bold text-[#0078d4] hover:text-[#005a9e] flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Cambiar o colocar mi correo corporativo"
+                >
+                  <span class="material-symbols-outlined text-[13px]">edit</span>
+                  <span>{{ userCorporateEmail ? 'Cambiar' : 'Colocar correo' }}</span>
+                </button>
+              </div>
+
+              <!-- Modo Edición Directa -->
+              <div v-if="editingCorporateEmail" class="space-y-2 pt-0.5">
+                <input
+                  v-model="inputCorporateEmail"
+                  type="email"
+                  placeholder="ej: tu.nombre@elitenutrition.com"
+                  class="w-full px-2.5 py-1.5 bg-white border border-[#0078d4] rounded-lg text-xs font-semibold text-[#1d1d1f] focus:outline-none shadow-sm"
+                  @keyup.enter="saveCorporateEmail"
+                />
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    @click="cancelEditCorporateEmail"
+                    class="px-2.5 py-1 text-xs text-gray-500 hover:text-gray-800 rounded-md font-medium cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    @click="saveCorporateEmail"
+                    :disabled="savingCorporateEmail"
+                    class="px-3 py-1 bg-[#0078d4] hover:bg-[#005a9e] text-white text-xs font-bold rounded-md shadow-sm transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span v-if="savingCorporateEmail" class="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                    <span>Guardar</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Modo Visualización -->
+              <div v-else class="flex items-center justify-between gap-2">
+                <p class="text-[12px] font-bold text-[#1d1d1f] truncate" :class="!userCorporateEmail ? 'text-amber-600 italic font-normal text-[11px]' : ''">
+                  {{ userCorporateEmail || 'Pulsa en «Colocar correo» para asignar tu cuenta' }}
+                </p>
+                <span v-if="userCorporateEmail" class="w-2 h-2 rounded-full bg-[#34c759] shrink-0" title="Correo activo"></span>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-0.5">
               <a
-                href="https://outlook.office.com/mail/"
+                :href="outlookOpenUrl"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#0078d4] hover:bg-[#005a9e] text-white text-[12px] font-bold rounded-xl shadow-sm transition-all hover:scale-[1.01] active:scale-95 text-center cursor-pointer"
+                title="Abrir Outlook Webmail con tu cuenta"
               >
                 <span class="material-symbols-outlined text-[16px]">open_in_new</span>
                 <span>Abrir Correo</span>
               </a>
               <a
-                href="https://outlook.office.com/mail/deeplink/compose"
+                :href="outlookComposeUrl"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-blue-50 text-[#0078d4] border border-[#0078d4]/30 text-[12px] font-bold rounded-xl shadow-sm transition-all hover:scale-[1.01] active:scale-95 text-center cursor-pointer"
+                title="Redactar nuevo mensaje en Outlook"
               >
                 <span class="material-symbols-outlined text-[16px]">edit_note</span>
                 <span>Redactar</span>
@@ -726,6 +774,72 @@ const activeDmTaskList = computed(() => {
   return dmDailyTasks.value;
 });
 
+// --- Correo Corporativo Personalizable ---
+const editingCorporateEmail = ref(false);
+const inputCorporateEmail = ref('');
+const customCorporateEmail = ref('');
+const savingCorporateEmail = ref(false);
+
+const userCorporateEmail = computed(() => {
+  if (customCorporateEmail.value) return customCorporateEmail.value;
+  if (currentProfile.value?.email) return currentProfile.value.email;
+  return '';
+});
+
+const outlookOpenUrl = computed(() => {
+  if (userCorporateEmail.value) {
+    return `https://outlook.office.com/mail/?login_hint=${encodeURIComponent(userCorporateEmail.value)}`;
+  }
+  return 'https://outlook.office.com/mail/';
+});
+
+const outlookComposeUrl = computed(() => {
+  if (userCorporateEmail.value) {
+    return `https://outlook.office.com/mail/deeplink/compose?login_hint=${encodeURIComponent(userCorporateEmail.value)}`;
+  }
+  return 'https://outlook.office.com/mail/deeplink/compose';
+});
+
+const startEditCorporateEmail = () => {
+  inputCorporateEmail.value = userCorporateEmail.value || '';
+  editingCorporateEmail.value = true;
+};
+
+const cancelEditCorporateEmail = () => {
+  editingCorporateEmail.value = false;
+};
+
+const saveCorporateEmail = async () => {
+  const val = inputCorporateEmail.value.trim();
+  if (!val) {
+    alert('Por favor ingresa una dirección de correo válida.');
+    return;
+  }
+  savingCorporateEmail.value = true;
+  try {
+    customCorporateEmail.value = val;
+    if (currentProfile.value) {
+      currentProfile.value.email = val;
+      localStorage.setItem(`novaword_corp_email_${currentProfile.value.id}`, val);
+    }
+    localStorage.setItem('novaword_corp_email_global', val);
+
+    // Intentar persistir en Supabase profiles si es posible
+    if (currentProfile.value?.id) {
+      try {
+        await supabase.from('profiles').update({ email: val }).eq('id', currentProfile.value.id);
+      } catch (e) {
+        console.warn('Nota: guardado en memoria local:', e);
+      }
+    }
+    editingCorporateEmail.value = false;
+  } catch (err) {
+    console.error('Error guardando correo corporativo:', err);
+  } finally {
+    savingCorporateEmail.value = false;
+  }
+};
+
 // Notificaciones (avisos de la empresa / notifications) y mensajes del líder de área (categorization_messages)
 const notifications = ref([]);
 const categorizationMessages = ref([]);
@@ -1121,6 +1235,15 @@ const initWorkspace = async () => {
     } else {
       currentProfile.value = authProfile.value;
       isAuditMode.value = false;
+    }
+
+    // Restaurar correo corporativo personalizado guardado
+    if (currentProfile.value?.id) {
+      const saved = localStorage.getItem(`novaword_corp_email_${currentProfile.value.id}`) || localStorage.getItem('novaword_corp_email_global');
+      if (saved) {
+        customCorporateEmail.value = saved;
+        currentProfile.value.email = saved;
+      }
     }
 
     currentRole.value = currentProfile.value?.roles || null;

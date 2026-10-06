@@ -1,6 +1,25 @@
 -- ====================================================================
--- MIGRACIÓN: Módulo de Escuela y Videos de Formación (Academia NOVA WORD)
+-- MIGRACIÓN: Módulo de Escuela y Videos de Formación (Academia NOVA WORK)
 -- ====================================================================
+
+-- 0. Permiso específico de Encargado de la Academia en la tabla profiles
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_academy BOOLEAN DEFAULT false;
+
+-- Función de seguridad para comprobar si el usuario puede administrar la Academia
+-- (Super Admin, Colaborador con permiso can_manage_academy, o Líder/Gerente con access_level 1 o 2)
+CREATE OR REPLACE FUNCTION can_manage_academy()
+RETURNS BOOLEAN AS $$
+  SELECT COALESCE((
+    SELECT (
+      p.is_master_admin = true 
+      OR p.can_manage_academy = true
+      OR r.access_level IN (1, 2)
+    )
+    FROM profiles p
+    LEFT JOIN roles r ON p.role_id = r.id
+    WHERE p.id = auth.uid()
+  ), FALSE);
+$$ LANGUAGE sql SECURITY DEFINER;
 
 -- 1. Tabla de Videos de la Escuela / Academia
 CREATE TABLE IF NOT EXISTS academy_videos (
@@ -55,67 +74,42 @@ CREATE TRIGGER trg_academy_videos_modtime
 BEFORE UPDATE ON academy_videos
 FOR EACH ROW EXECUTE FUNCTION update_academy_videos_modtime();
 
--- 4. Políticas de Seguridad (Row Level Security - RLS)
+-- 4. Políticas de Seguridad en Tablas (Row Level Security - RLS)
 ALTER TABLE academy_videos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_video_progress ENABLE ROW LEVEL SECURITY;
 
--- academy_videos: Todos los usuarios autenticados pueden ver los videos
+-- academy_videos: Todos los usuarios autenticados pueden ver los videos de su alcance
 DROP POLICY IF EXISTS "academy_videos_select" ON academy_videos;
 CREATE POLICY "academy_videos_select" ON academy_videos
 FOR SELECT TO authenticated
 USING (true);
 
--- academy_videos: Líderes y Administradores pueden crear videos
+-- academy_videos: Solo Super Admin y Encargados designados pueden insertar videos
 DROP POLICY IF EXISTS "academy_videos_insert" ON academy_videos;
 CREATE POLICY "academy_videos_insert" ON academy_videos
 FOR INSERT TO authenticated
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM profiles p
-    LEFT JOIN roles r ON p.role_id = r.id
-    WHERE p.id = auth.uid()
-    AND (p.is_master_admin = true OR r.access_level IN (1, 2))
-  )
-);
+WITH CHECK (can_manage_academy());
 
--- academy_videos: Líderes y Administradores pueden actualizar videos
+-- academy_videos: Solo Super Admin y Encargados designados pueden actualizar videos
 DROP POLICY IF EXISTS "academy_videos_update" ON academy_videos;
 CREATE POLICY "academy_videos_update" ON academy_videos
 FOR UPDATE TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles p
-    LEFT JOIN roles r ON p.role_id = r.id
-    WHERE p.id = auth.uid()
-    AND (p.is_master_admin = true OR r.access_level IN (1, 2))
-  )
-);
+USING (can_manage_academy())
+WITH CHECK (can_manage_academy());
 
--- academy_videos: Solo Master Admin o creador puede eliminar videos
+-- academy_videos: Solo Super Admin o Encargados pueden eliminar videos
 DROP POLICY IF EXISTS "academy_videos_delete" ON academy_videos;
 CREATE POLICY "academy_videos_delete" ON academy_videos
 FOR DELETE TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles p
-    WHERE p.id = auth.uid()
-    AND p.is_master_admin = true
-  )
-  OR created_by = auth.uid()
-);
+USING (can_manage_academy());
 
--- user_video_progress: El usuario puede ver su progreso, y líderes pueden ver el progreso de su equipo
+-- user_video_progress: El usuario puede ver su progreso; Super Admin y Encargados ven el progreso de todos
 DROP POLICY IF EXISTS "user_video_progress_select" ON user_video_progress;
 CREATE POLICY "user_video_progress_select" ON user_video_progress
 FOR SELECT TO authenticated
 USING (
   user_id = auth.uid()
-  OR EXISTS (
-    SELECT 1 FROM profiles p
-    LEFT JOIN roles r ON p.role_id = r.id
-    WHERE p.id = auth.uid()
-    AND (p.is_master_admin = true OR r.access_level IN (1, 2))
-  )
+  OR can_manage_academy()
 );
 
 -- user_video_progress: El usuario puede insertar o actualizar su propio progreso
@@ -129,3 +123,50 @@ CREATE POLICY "user_video_progress_update" ON user_video_progress
 FOR UPDATE TO authenticated
 USING (user_id = auth.uid())
 WITH CHECK (user_id = auth.uid());
+
+
+-- ====================================================================
+-- 5. Bucket de Almacenamiento Dedicado para Videos MP4 de la Academia
+-- ====================================================================
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'academy_videos', 
+  'academy_videos', 
+  true, 
+  524288000, -- Límite de 500 MB por archivo
+  ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v']
+)
+ON CONFLICT (id) DO UPDATE SET 
+  public = true,
+  file_size_limit = 524288000,
+  allowed_mime_types = ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'];
+
+-- Políticas de Storage para academy_videos
+DROP POLICY IF EXISTS "academy_videos_storage_select" ON storage.objects;
+CREATE POLICY "academy_videos_storage_select" ON storage.objects
+FOR SELECT TO authenticated
+USING (bucket_id = 'academy_videos');
+
+DROP POLICY IF EXISTS "academy_videos_storage_insert" ON storage.objects;
+CREATE POLICY "academy_videos_storage_insert" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'academy_videos'
+  AND can_manage_academy()
+);
+
+DROP POLICY IF EXISTS "academy_videos_storage_update" ON storage.objects;
+CREATE POLICY "academy_videos_storage_update" ON storage.objects
+FOR UPDATE TO authenticated
+USING (
+  bucket_id = 'academy_videos'
+  AND can_manage_academy()
+);
+
+DROP POLICY IF EXISTS "academy_videos_storage_delete" ON storage.objects;
+CREATE POLICY "academy_videos_storage_delete" ON storage.objects
+FOR DELETE TO authenticated
+USING (
+  bucket_id = 'academy_videos'
+  AND can_manage_academy()
+);

@@ -41,6 +41,10 @@ export const loadCurrentProfile = async () => {
       }
     } catch (_) {}
   }
+  // Asegurar que el email de la sesión esté disponible en el perfil
+  if (!data.email && session.user.email) {
+    data.email = session.user.email
+  }
 
   currentProfile.value = data
   authReady.value = true

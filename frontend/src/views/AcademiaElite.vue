@@ -9,7 +9,7 @@
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <h1 class="text-lg sm:text-xl font-bold tracking-tight text-[#1d1d1f]">Escuela & Academia NOVA WORD</h1>
+              <h1 class="text-lg sm:text-xl font-bold tracking-tight text-[#1d1d1f]">Escuela & Academia NOVA WORK</h1>
               <span class="px-2 py-0.5 bg-[#8a6d3d]/10 text-[#8a6d3d] text-[11px] font-bold rounded-full uppercase">Formación Continua</span>
             </div>
             <p class="text-xs text-[#86868b]">Videos de inducción, tutoriales operativos y guías por cargo para Elite Nutrition & Futupro</p>
@@ -17,7 +17,18 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Botón de Ver Progreso del Equipo (solo líderes) -->
+          <!-- Botón de Gestionar Encargados (solo Super Admin) -->
+          <button
+            v-if="isMasterAdmin"
+            @click="openManagersModal"
+            class="px-3.5 py-2 bg-white hover:bg-[#f5f5f7] text-[#1d1d1f] border border-[#e5e5ea] text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            title="Asignar colaboradores que pueden subir y editar videos"
+          >
+            <span class="material-symbols-outlined text-[18px] text-[#8a6d3d]">admin_panel_settings</span>
+            <span class="hidden sm:inline">Encargados</span>
+          </button>
+
+          <!-- Botón de Ver Progreso del Equipo (solo líderes y encargados) -->
           <button
             v-if="canManage"
             @click="activeTab = activeTab === 'team' ? 'videos' : 'team'"
@@ -28,7 +39,7 @@
             <span>{{ activeTab === 'team' ? 'Ver Catálogo de Videos' : 'Progreso del Equipo' }}</span>
           </button>
 
-          <!-- Botón Agregar Video (solo líderes y admin) -->
+          <!-- Botón Agregar Video (solo encargados y admin) -->
           <button
             v-if="canManage"
             @click="openAddVideoModal"
@@ -224,8 +235,17 @@
 
                   <button
                     v-if="canManage"
+                    @click="openEditVideoModal(video)"
+                    class="p-1.5 text-[#8a6d3d] hover:bg-[#8a6d3d]/10 rounded-lg transition-colors cursor-pointer"
+                    title="Editar Video y Audiencia"
+                  >
+                    <span class="material-symbols-outlined text-[16px]">edit</span>
+                  </button>
+
+                  <button
+                    v-if="canManage"
                     @click="deleteVideo(video.id)"
-                    class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                     title="Eliminar Video"
                   >
                     <span class="material-symbols-outlined text-[16px]">delete</span>
@@ -415,15 +435,15 @@
       </div>
     </div>
 
-    <!-- MODAL AGREGAR NUEVO VIDEO (OPERADORES Y LÍDERES) -->
+    <!-- MODAL AGREGAR / EDITAR VIDEO (OPERADORES Y LÍDERES) -->
     <div v-if="showAddModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl border border-[#e5e5ea]">
         <div class="p-5 bg-[#1d1d1f] text-white flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-[#8a6d3d]">video_call</span>
-            <h3 class="text-base font-bold">Agregar Video a la Academia</h3>
+            <span class="material-symbols-outlined text-[#8a6d3d]">{{ editingVideoId ? 'edit_square' : 'video_call' }}</span>
+            <h3 class="text-base font-bold">{{ editingVideoId ? 'Editar Video & Audiencia' : 'Agregar Video a la Academia' }}</h3>
           </div>
-          <button @click="showAddModal = false" class="text-white/70 hover:text-white">
+          <button @click="showAddModal = false" class="text-white/70 hover:text-white cursor-pointer">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -468,7 +488,7 @@
             <input
               v-model="newVideo.video_url"
               type="url"
-              :required="videoInputMode === 'link'"
+              :required="videoInputMode === 'link' && !editingVideoId"
               placeholder="https://.../video.mp4 o enlace de YouTube/OneDrive"
               class="w-full px-3.5 py-2 bg-white border border-[#e5e5ea] rounded-xl text-xs sm:text-sm text-[#1d1d1f] focus:outline-none focus:border-[#8a6d3d]"
             />
@@ -479,7 +499,9 @@
 
           <!-- Modo 2: Subir archivo MP4 -->
           <div v-else class="space-y-2">
-            <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider">Archivo de Video .MP4 *</label>
+            <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider">
+              Archivo de Video .MP4 {{ editingVideoId ? '(Opcional si conservas el anterior)' : '*' }}
+            </label>
             <div
               class="border-2 border-dashed border-[#e5e5ea] hover:border-[#8a6d3d] rounded-2xl p-4 text-center cursor-pointer transition-colors bg-[#fbfbfd]"
               @click="$refs.videoFileInput?.click()"
@@ -495,8 +517,10 @@
                 <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#0078d4] flex items-center justify-center mb-1.5 shadow-sm">
                   <span class="material-symbols-outlined text-2xl">movie</span>
                 </div>
-                <p class="text-xs font-bold text-[#1d1d1f]">Haz clic para seleccionar tu video .MP4</p>
-                <p class="text-[11px] text-[#86868b] mt-0.5">Formatos compatibles: .mp4, .webm, .mov</p>
+                <p class="text-xs font-bold text-[#1d1d1f]">
+                  {{ editingVideoId ? 'Haz clic para reemplazar por un nuevo .MP4' : 'Haz clic para seleccionar tu video .MP4' }}
+                </p>
+                <p class="text-[11px] text-[#86868b] mt-0.5">Formatos compatibles: .mp4, .webm, .mov (Hasta 500MB)</p>
               </div>
               <div v-else class="py-2 flex items-center justify-between px-3 bg-white rounded-xl border border-[#e5e5ea]">
                 <div class="flex items-center gap-2.5 truncate">
@@ -509,14 +533,15 @@
                 <button type="button" @click.stop="removeSelectedVideoFile" class="text-red-500 hover:text-red-700 text-xs font-bold">Cambiar</button>
               </div>
             </div>
-            <p class="text-[10px] text-[#86868b]">
-              💡 <em>Consejo:</em> Para videos muy pesados (>100MB), la mejor práctica es guardarlos en tu Microsoft OneDrive y pegar el enlace en la pestaña «Enlace / URL».
+            <p v-if="uploadProgressMsg" class="text-xs font-bold text-[#8a6d3d] flex items-center gap-1.5 animate-pulse">
+              <span class="material-symbols-outlined text-base animate-spin">sync</span>
+              <span>{{ uploadProgressMsg }}</span>
             </p>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider mb-1">Área Destino</label>
+              <label class="block text-xs font-bold text-[#1d1d1f] uppercase tracking-wider mb-1">Área Destino (Audiencia)</label>
               <select
                 v-model="newVideo.area_id"
                 class="w-full px-3 py-2 bg-white border border-[#e5e5ea] rounded-xl text-xs text-[#1d1d1f] focus:outline-none focus:border-[#8a6d3d]"
@@ -572,19 +597,100 @@
             <button
               type="button"
               @click="showAddModal = false"
-              class="px-4 py-2 bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e5e5ea] rounded-xl text-xs font-bold transition-colors"
+              class="px-4 py-2 bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e5e5ea] rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               :disabled="savingVideo"
-              class="px-5 py-2 bg-[#8a6d3d] hover:bg-[#b08d57] text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50"
+              class="px-5 py-2 bg-[#8a6d3d] hover:bg-[#b08d57] text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
             >
-              {{ savingVideo ? 'Guardando...' : 'Guardar y Publicar' }}
+              {{ savingVideo ? 'Guardando...' : (editingVideoId ? 'Guardar Cambios' : 'Guardar y Publicar') }}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- MODAL GESTIONAR ENCARGADOS DE LA ACADEMIA (SOLO SUPER ADMIN) -->
+    <div v-if="showManagersModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl border border-[#e5e5ea] flex flex-col max-h-[85vh]">
+        <div class="p-5 bg-[#1d1d1f] text-white flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#8a6d3d]">admin_panel_settings</span>
+            <div>
+              <h3 class="text-base font-bold">Encargados de la Escuela</h3>
+              <p class="text-xs text-white/70">Otorga el rol para subir videos y definir la audiencia</p>
+            </div>
+          </div>
+          <button @click="showManagersModal = false" class="text-white/70 hover:text-white cursor-pointer">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Buscador de colaboradores -->
+        <div class="p-4 border-b border-[#e5e5ea] bg-[#fbfbfd]">
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b] text-[18px]">search</span>
+            <input
+              v-model="managerSearchQuery"
+              type="text"
+              placeholder="Buscar colaborador por nombre o cargo..."
+              class="w-full pl-9 pr-3 py-2 bg-white border border-[#e5e5ea] rounded-xl text-xs sm:text-sm text-[#1d1d1f] focus:outline-none focus:border-[#8a6d3d]"
+            />
+          </div>
+        </div>
+
+        <!-- Lista de colaboradores -->
+        <div class="p-4 space-y-2.5 overflow-y-auto flex-1">
+          <div v-if="filteredManagersList.length === 0" class="text-center py-8 text-xs text-[#86868b]">
+            No se encontraron colaboradores.
+          </div>
+          <div
+            v-for="user in filteredManagersList"
+            :key="user.id"
+            class="flex items-center justify-between p-3 rounded-xl border border-[#e5e5ea] hover:bg-[#f9f9fb] transition-colors gap-3"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#8a6d3d] to-[#d4b06a] text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                {{ user.full_name?.charAt(0) || 'U' }}
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs sm:text-sm font-bold text-[#1d1d1f] flex items-center gap-1.5 truncate">
+                  <span class="truncate">{{ user.full_name }}</span>
+                  <span v-if="user.is_master_admin" class="px-1.5 py-0.2 bg-[#8a6d3d]/10 text-[#8a6d3d] text-[9px] font-bold rounded shrink-0">Master Admin</span>
+                </p>
+                <p class="text-[11px] text-[#86868b] truncate">
+                  {{ user.roles?.name || 'Sin Cargo' }} • {{ user.areas?.name || 'Sin Área' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Switch / Toggle -->
+            <div class="shrink-0 flex items-center">
+              <span v-if="user.is_master_admin" class="text-[11px] font-bold text-[#8a6d3d] italic">
+                Control Total
+              </span>
+              <label v-else class="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  :checked="!!user.can_manage_academy"
+                  :disabled="updatingManagerId === user.id"
+                  @change="toggleAcademyManagerRole(user)"
+                  class="sr-only peer"
+                />
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a6d3d]"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-[#f5f5f7] border-t border-[#e5e5ea] flex justify-end">
+          <button @click="showManagersModal = false" class="px-5 py-2 bg-[#1d1d1f] hover:bg-black text-white text-xs font-semibold rounded-xl cursor-pointer transition-colors">
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
 
@@ -649,6 +755,11 @@ const filterType = ref('assigned') // 'assigned' | 'all' | 'completed'
 const searchQuery = ref('')
 const selectedAreaFilter = ref('')
 const showAddModal = ref(false)
+const editingVideoId = ref(null)
+const showManagersModal = ref(false)
+const managerSearchQuery = ref('')
+const updatingManagerId = ref(null)
+const allCompanyUsers = ref([])
 const savingVideo = ref(false)
 const activeVideoPlaying = ref(null)
 const selectedMemberDetail = ref(null)
@@ -700,10 +811,16 @@ const fallbackVideos = [
   }
 ]
 
-// Permisos
+// Permisos: Super Admin y usuarios a los que se les concedió el rol de encargado can_manage_academy
+const isMasterAdmin = computed(() => !!currentProfile.value?.is_master_admin)
+
 const canManage = computed(() => {
   if (!currentProfile.value) return false
-  return currentProfile.value.is_master_admin || [1, 2].includes(currentProfile.value.roles?.access_level)
+  return (
+    currentProfile.value.is_master_admin ||
+    currentProfile.value.can_manage_academy ||
+    [1, 2].includes(currentProfile.value.roles?.access_level)
+  )
 })
 
 // Cargar Datos
@@ -725,13 +842,15 @@ const loadData = async () => {
       .select('*, roles(name), areas(name)')
       .order('sequence_order', { ascending: true })
 
-    if (error || !vids || vids.length === 0) {
-      allVideos.value = fallbackVideos
+    if (error) {
+      console.warn('Error cargando videos de Supabase:', error)
+      allVideos.value = []
     } else {
-      allVideos.value = vids
+      allVideos.value = vids || []
     }
   } catch (err) {
-    allVideos.value = fallbackVideos
+    console.error('Error en loadData:', err)
+    allVideos.value = []
   }
 
   // 3. Cargar progreso del usuario
@@ -943,8 +1062,9 @@ const formatBytes = (bytes, decimals = 1) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-// Agregar Nuevo Video
+// Abrir Modal para Agregar Video
 const openAddVideoModal = () => {
+  editingVideoId.value = null
   newVideo.value = {
     title: '',
     description: '',
@@ -960,6 +1080,24 @@ const openAddVideoModal = () => {
   showAddModal.value = true
 }
 
+// Abrir Modal para Editar Video y Audiencia
+const openEditVideoModal = (video) => {
+  editingVideoId.value = video.id
+  newVideo.value = {
+    title: video.title || '',
+    description: video.description || '',
+    video_url: video.video_url || '',
+    role_id: video.role_id || '',
+    area_id: video.area_id || '',
+    duration_minutes: video.duration_minutes || 10,
+    is_mandatory: !!video.is_mandatory
+  }
+  selectedVideoFile.value = null
+  videoInputMode.value = isDirectVideo(video.video_url) ? 'file' : 'link'
+  uploadProgressMsg.value = ''
+  showAddModal.value = true
+}
+
 const saveNewVideo = async () => {
   if (!newVideo.value.title) {
     alert('Por favor indica un título para el video.')
@@ -968,45 +1106,44 @@ const saveNewVideo = async () => {
 
   savingVideo.value = true
   uploadProgressMsg.value = ''
-  let finalVideoUrl = ''
+  let finalVideoUrl = newVideo.value.video_url?.trim() || ''
 
   try {
     if (videoInputMode.value === 'file') {
-      if (!selectedVideoFile.value) {
+      if (selectedVideoFile.value) {
+        uploadProgressMsg.value = 'Subiendo video .MP4 al almacenamiento seguro...'
+        const safeName = `${Date.now()}_${selectedVideoFile.value.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+        const filePath = `academy_videos/${safeName}`
+
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from('academy_videos')
+            .upload(filePath, selectedVideoFile.value, { upsert: true })
+
+          if (uploadError) {
+            console.warn('Almacenamiento en nube falló, usando URL local temporal:', uploadError)
+            finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
+          } else {
+            const { data: publicUrlData } = supabase.storage
+              .from('academy_videos')
+              .getPublicUrl(filePath)
+            finalVideoUrl = publicUrlData?.publicUrl || URL.createObjectURL(selectedVideoFile.value)
+          }
+        } catch (uploadCatch) {
+          console.warn('Error en storage:', uploadCatch)
+          finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
+        }
+      } else if (!finalVideoUrl && !editingVideoId.value) {
         alert('Por favor selecciona un archivo .mp4 de tu computadora.')
         savingVideo.value = false
         return
       }
-
-      uploadProgressMsg.value = 'Subiendo video .MP4...'
-      const safeName = `${Date.now()}_${selectedVideoFile.value.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const filePath = `academy_videos/${safeName}`
-
-      try {
-        const { error: uploadError } = await supabase.storage
-          .from('employee_documents')
-          .upload(filePath, selectedVideoFile.value, { upsert: true })
-
-        if (uploadError) {
-          console.warn('Almacenamiento en nube falló, usando URL local temporal:', uploadError)
-          finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
-        } else {
-          const { data: publicUrlData } = supabase.storage
-            .from('employee_documents')
-            .getPublicUrl(filePath)
-          finalVideoUrl = publicUrlData?.publicUrl || URL.createObjectURL(selectedVideoFile.value)
-        }
-      } catch (uploadCatch) {
-        console.warn('Error en storage:', uploadCatch)
-        finalVideoUrl = URL.createObjectURL(selectedVideoFile.value)
-      }
     } else {
-      if (!newVideo.value.video_url) {
+      if (!finalVideoUrl) {
         alert('Por favor escribe o pega la URL del video.')
         savingVideo.value = false
         return
       }
-      finalVideoUrl = newVideo.value.video_url.trim()
     }
 
     const payload = {
@@ -1016,24 +1153,52 @@ const saveNewVideo = async () => {
       role_id: newVideo.value.role_id || null,
       area_id: newVideo.value.area_id || null,
       duration_minutes: newVideo.value.duration_minutes || 5,
-      is_mandatory: !!newVideo.value.is_mandatory,
-      created_by: currentProfile.value?.id
+      is_mandatory: !!newVideo.value.is_mandatory
     }
 
-    const { data, error } = await supabase.from('academy_videos').insert(payload).select().single()
-    if (!error && data) {
-      allVideos.value.unshift(data)
+    if (editingVideoId.value) {
+      // Actualizar video existente
+      const { data, error } = await supabase
+        .from('academy_videos')
+        .update(payload)
+        .eq('id', editingVideoId.value)
+        .select('*, roles(name), areas(name)')
+        .single()
+
+      if (error) {
+        alert('Error al actualizar el video: ' + error.message)
+        return
+      }
+      if (data) {
+        const idx = allVideos.value.findIndex(v => v.id === editingVideoId.value)
+        if (idx !== -1) allVideos.value[idx] = data
+      }
     } else {
-      // Agregar a lista local si la tabla aún se está migrando
-      allVideos.value.unshift({ id: 'loc-' + Date.now(), ...payload })
+      // Crear nuevo video
+      payload.created_by = currentProfile.value?.id
+      const { data, error } = await supabase
+        .from('academy_videos')
+        .insert(payload)
+        .select('*, roles(name), areas(name)')
+        .single()
+
+      if (error) {
+        alert('Error al guardar el video en la base de datos: ' + error.message)
+        return
+      }
+      if (data) {
+        allVideos.value.unshift(data)
+      }
     }
 
     showAddModal.value = false
     selectedVideoFile.value = null
+    editingVideoId.value = null
     newVideo.value.video_url = ''
     newVideo.value.title = ''
   } catch (err) {
     console.error('Error guardando video:', err)
+    alert('Ocurrió un error inesperado al guardar el video: ' + (err.message || err))
   } finally {
     savingVideo.value = false
     uploadProgressMsg.value = ''
@@ -1042,10 +1207,81 @@ const saveNewVideo = async () => {
 
 const deleteVideo = async (videoId) => {
   if (!confirm('¿Estás seguro de eliminar este video de la academia?')) return
-  allVideos.value = allVideos.value.filter(v => v.id !== videoId)
   try {
-    await supabase.from('academy_videos').delete().eq('id', videoId)
-  } catch {}
+    const { error } = await supabase.from('academy_videos').delete().eq('id', videoId)
+    if (error) {
+      alert('Error al eliminar en la base de datos: ' + error.message)
+      return
+    }
+    allVideos.value = allVideos.value.filter(v => v.id !== videoId)
+  } catch (err) {
+    alert('Error al intentar eliminar: ' + (err.message || err))
+  }
+}
+
+// Gestión de Encargados de la Escuela (Solo Super Admin)
+const openManagersModal = async () => {
+  showManagersModal.value = true
+  await loadCompanyUsers()
+}
+
+const loadCompanyUsers = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, role_id, area_id, is_master_admin, can_manage_academy, roles(name), areas(name)')
+      .eq('approval_status', 'approved')
+      .order('full_name')
+
+    if (!error && data) {
+      allCompanyUsers.value = data
+    } else {
+      // Si la columna can_manage_academy aún no está en la base de datos, fallback
+      const { data: fallbackData } = await supabase
+        .from('profiles')
+        .select('id, full_name, role_id, area_id, is_master_admin, roles(name), areas(name)')
+        .eq('approval_status', 'approved')
+        .order('full_name')
+      allCompanyUsers.value = (fallbackData || []).map(u => ({ ...u, can_manage_academy: false }))
+    }
+  } catch (err) {
+    console.warn('Error cargando colaboradores:', err)
+  }
+}
+
+const filteredManagersList = computed(() => {
+  if (!managerSearchQuery.value.trim()) return allCompanyUsers.value
+  const q = managerSearchQuery.value.toLowerCase()
+  return allCompanyUsers.value.filter(u =>
+    u.full_name?.toLowerCase().includes(q) ||
+    u.roles?.name?.toLowerCase().includes(q) ||
+    u.areas?.name?.toLowerCase().includes(q)
+  )
+})
+
+const toggleAcademyManagerRole = async (user) => {
+  updatingManagerId.value = user.id
+  const newRoleVal = !user.can_manage_academy
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ can_manage_academy: newRoleVal })
+      .eq('id', user.id)
+
+    if (!error) {
+      user.can_manage_academy = newRoleVal
+    } else {
+      console.error('Error actualizando rol de encargado en base de datos:', error)
+      // Si falló por falta de la columna en la BD, notificar al usuario
+      alert('Aviso: Debes ejecutar la migración SQL en Supabase para habilitar la columna "can_manage_academy".')
+      user.can_manage_academy = newRoleVal // reflejo visual temporal
+    }
+  } catch (err) {
+    console.error('Error al cambiar rol:', err)
+  } finally {
+    updatingManagerId.value = null
+  }
 }
 
 // Métricas de Equipo
