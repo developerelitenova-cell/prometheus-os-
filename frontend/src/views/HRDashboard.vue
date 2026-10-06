@@ -57,6 +57,11 @@
                   class="w-full pl-10 pr-4 py-2 text-sm rounded-xl border bg-surface-container-low outline-none focus:border-primary"
                 />
               </div>
+              <select v-model="companyFilter" class="w-full sm:w-auto p-2 text-sm rounded-xl border bg-surface-container-low outline-none">
+                <option value="all">Todas las Empresas</option>
+                <option value="Elite Nutrition">Elite Nutrition</option>
+                <option value="Futupro">Futupro</option>
+              </select>
               <select v-model="statusFilter" class="w-full sm:w-auto p-2 text-sm rounded-xl border bg-surface-container-low outline-none">
                 <option value="all">Todos los estados</option>
                 <option value="approved">Activos</option>
@@ -116,6 +121,7 @@
                 <thead>
                   <tr class="border-b border-surface-container-high bg-surface-container-low/50 text-xs font-semibold text-secondary uppercase tracking-wider">
                     <th class="py-3 px-4">Colaborador</th>
+                    <th class="py-3 px-4">Empresa</th>
                     <th class="py-3 px-4">Cargo & Área</th>
                     <th class="py-3 px-4">Estado</th>
                     <th class="py-3 px-4 text-right">Acciones</th>
@@ -149,6 +155,20 @@
                           <span class="text-xs text-secondary">{{ emp.email || 'Correo empresarial asignado' }}</span>
                         </div>
                       </div>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span
+                        v-if="getEmployeeCompany(emp) === 'Futupro'"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span> Futupro
+                      </span>
+                      <span
+                        v-else
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#8a6d3d]/10 text-[#8a6d3d] border border-[#8a6d3d]/25"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#8a6d3d]"></span> Elite Nutrition
+                      </span>
                     </td>
                     <td class="py-3.5 px-4">
                       <div class="flex flex-col">
@@ -330,6 +350,39 @@
               >
             </div>
 
+            <!-- Selector de Empresa / División -->
+            <div>
+              <label class="block text-xs font-semibold text-secondary uppercase mb-1.5">Empresa / División *</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button 
+                  type="button" 
+                  @click="setCreateCompany('Elite Nutrition')" 
+                  :class="[
+                    'py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer',
+                    createForm.company === 'Elite Nutrition'
+                      ? 'bg-[#8a6d3d]/15 border-[#8a6d3d] text-[#8a6d3d] ring-1 ring-[#8a6d3d] shadow-2xs'
+                      : 'bg-surface-container-low border-surface-container-high text-secondary hover:text-on-surface hover:bg-surface-container'
+                  ]"
+                >
+                  <span class="material-symbols-outlined text-[17px]">nutrition</span>
+                  <span>Elite Nutrition</span>
+                </button>
+                <button 
+                  type="button" 
+                  @click="setCreateCompany('Futupro')" 
+                  :class="[
+                    'py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer',
+                    createForm.company === 'Futupro'
+                      ? 'bg-blue-500/15 border-blue-600 text-blue-600 ring-1 ring-blue-600 shadow-2xs'
+                      : 'bg-surface-container-low border-surface-container-high text-secondary hover:text-on-surface hover:bg-surface-container'
+                  ]"
+                >
+                  <span class="material-symbols-outlined text-[17px]">rocket_launch</span>
+                  <span>Futupro</span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <div class="flex justify-between items-center mb-1.5">
                 <label class="text-xs font-semibold text-secondary uppercase">Correo Corporativo *</label>
@@ -367,7 +420,7 @@
                 @input="onEmailInput"
                 required 
                 type="email" 
-                :placeholder="emailMode === 'role' ? 'cargo@elitenutrition.com' : 'nombre.apellido@elitenutrition.com'" 
+                :placeholder="emailMode === 'role' ? (createForm.company === 'Futupro' ? 'cargo@futupro.com' : 'cargo@elitenutrition.com') : (createForm.company === 'Futupro' ? 'nombre.apellido@futupro.com' : 'nombre.apellido@elitenutrition.com')" 
                 class="w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm font-mono text-xs focus:border-primary"
               >
               <p v-if="emailMode === 'role' && !createForm.role_id" class="text-[11px] text-amber-600 mt-1 flex items-center gap-1 font-medium">
@@ -435,6 +488,39 @@
             <div>
               <label class="block text-xs font-semibold text-secondary uppercase mb-1">Nombre Completo *</label>
               <input v-model="editForm.full_name" required type="text" class="w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm focus:border-primary">
+            </div>
+
+            <!-- Selector de Empresa / División -->
+            <div>
+              <label class="block text-xs font-semibold text-secondary uppercase mb-1.5">Empresa / División</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button 
+                  type="button" 
+                  @click="setEditCompany('Elite Nutrition')" 
+                  :class="[
+                    'py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer',
+                    editForm.company === 'Elite Nutrition'
+                      ? 'bg-[#8a6d3d]/15 border-[#8a6d3d] text-[#8a6d3d] ring-1 ring-[#8a6d3d] shadow-2xs'
+                      : 'bg-surface-container-low border-surface-container-high text-secondary hover:text-on-surface hover:bg-surface-container'
+                  ]"
+                >
+                  <span class="material-symbols-outlined text-[17px]">nutrition</span>
+                  <span>Elite Nutrition</span>
+                </button>
+                <button 
+                  type="button" 
+                  @click="setEditCompany('Futupro')" 
+                  :class="[
+                    'py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer',
+                    editForm.company === 'Futupro'
+                      ? 'bg-blue-500/15 border-blue-600 text-blue-600 ring-1 ring-blue-600 shadow-2xs'
+                      : 'bg-surface-container-low border-surface-container-high text-secondary hover:text-on-surface hover:bg-surface-container'
+                  ]"
+                >
+                  <span class="material-symbols-outlined text-[17px]">rocket_launch</span>
+                  <span>Futupro</span>
+                </button>
+              </div>
             </div>
 
             <div>
@@ -621,10 +707,15 @@ const activeNews = ref([]);
 // Filtros y búsqueda
 const searchQuery = ref('');
 const statusFilter = ref('all');
+const companyFilter = ref('all'); // 'all' | 'Elite Nutrition' | 'Futupro'
 const showPendingSection = ref(true);
 
 const filteredEmployees = computed(() => {
   return allEmployees.value.filter(emp => {
+    // Filtro empresa
+    if (companyFilter.value !== 'all' && getEmployeeCompany(emp) !== companyFilter.value) {
+      return false;
+    }
     // Filtro estado
     if (statusFilter.value !== 'all' && emp.approval_status !== statusFilter.value) {
       return false;
@@ -636,19 +727,20 @@ const filteredEmployees = computed(() => {
     const emailMatch = emp.email?.toLowerCase().includes(q);
     const roleMatch = emp.roles?.name?.toLowerCase().includes(q);
     const areaMatch = emp.roles?.areas?.name?.toLowerCase().includes(q);
-    return nameMatch || emailMatch || roleMatch || areaMatch;
+    const companyMatch = getEmployeeCompany(emp).toLowerCase().includes(q);
+    return nameMatch || emailMatch || roleMatch || areaMatch || companyMatch;
   });
 });
 
 // State - Modales Usuario
 const showCreateModal = ref(false);
-const createForm = ref({ full_name: '', email: '', role_id: '', password: '' });
+const createForm = ref({ full_name: '', email: '', company: 'Elite Nutrition', role_id: '', password: '' });
 const createLoading = ref(false);
 const createError = ref('');
 const emailMode = ref('name'); // 'name' | 'role' | 'manual'
 
 const showEditModal = ref(false);
-const editForm = ref({ id: '', full_name: '', email: '', role_id: '', approval_status: 'approved' });
+const editForm = ref({ id: '', full_name: '', email: '', company: 'Elite Nutrition', role_id: '', approval_status: 'approved' });
 const editLoading = ref(false);
 const editError = ref('');
 
@@ -757,7 +849,20 @@ const generateRandomPassword = () => {
   return pass;
 };
 
-// --- GENERADOR DE CORREO CORPORATIVO ---
+// --- GENERADOR DE CORREO CORPORATIVO & EMPRESAS ---
+const getCompanyDomain = (company) => {
+  return company === 'Futupro' ? 'futupro.com' : 'elitenutrition.com';
+};
+
+const getEmployeeCompany = (emp) => {
+  if (emp.company) return emp.company;
+  const email = (emp.email || '').toLowerCase();
+  if (email.includes('@futupro.com') || email.includes('futupro')) {
+    return 'Futupro';
+  }
+  return 'Elite Nutrition';
+};
+
 const normalizeForEmail = (text) => {
   return (text || '')
     .normalize('NFD')
@@ -768,30 +873,68 @@ const normalizeForEmail = (text) => {
     .replace(/^\.|\.$/g, '');
 };
 
-const generateEmailFromName = (fullName) => {
+const generateEmailFromName = (fullName, company = 'Elite Nutrition') => {
   if (!fullName || !fullName.trim()) return '';
+  const domain = getCompanyDomain(company);
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     const first = normalizeForEmail(parts[0]);
-    // Para 2 palabras: parts[1]. Para 3 o más palabras (ej: Karen Sofía Ávila Pareja): parts[2] es el primer apellido
+    // Para 2 palabras: parts[1]. Para 3 o más palabras: parts[2] es el primer apellido
     const last = normalizeForEmail(parts.length > 2 ? parts[2] : parts[1]);
-    return `${first}.${last}@elitenutrition.com`;
+    return `${first}.${last}@${domain}`;
   } else if (parts.length === 1) {
-    return `${normalizeForEmail(parts[0])}@elitenutrition.com`;
+    return `${normalizeForEmail(parts[0])}@${domain}`;
   }
   return '';
 };
 
-const generateEmailFromRole = (roleName) => {
+const generateEmailFromRole = (roleName, company = 'Elite Nutrition') => {
   if (!roleName || !roleName.trim()) return '';
-  return `${normalizeForEmail(roleName)}@elitenutrition.com`;
+  const domain = getCompanyDomain(company);
+  return `${normalizeForEmail(roleName)}@${domain}`;
+};
+
+const setCreateCompany = (comp) => {
+  createForm.value.company = comp;
+  const oldDomain = comp === 'Futupro' ? 'elitenutrition.com' : 'futupro.com';
+  const newDomain = comp === 'Futupro' ? 'futupro.com' : 'elitenutrition.com';
+
+  if (emailMode.value === 'name') {
+    if (createForm.value.full_name?.trim()) {
+      createForm.value.email = generateEmailFromName(createForm.value.full_name, comp);
+    }
+  } else if (emailMode.value === 'role') {
+    if (createForm.value.role_id) {
+      const role = rolesList.value.find(r => r.id === createForm.value.role_id);
+      if (role) {
+        createForm.value.email = generateEmailFromRole(role.name, comp);
+      }
+    }
+  } else if (createForm.value.email) {
+    if (createForm.value.email.includes(`@${oldDomain}`)) {
+      createForm.value.email = createForm.value.email.replace(`@${oldDomain}`, `@${newDomain}`);
+    } else if (!createForm.value.email.includes('@')) {
+      createForm.value.email = `${createForm.value.email}@${newDomain}`;
+    }
+  }
+};
+
+const setEditCompany = (comp) => {
+  editForm.value.company = comp;
+  const oldDomain = comp === 'Futupro' ? 'elitenutrition.com' : 'futupro.com';
+  const newDomain = comp === 'Futupro' ? 'futupro.com' : 'elitenutrition.com';
+
+  if (editForm.value.email?.includes(`@${oldDomain}`)) {
+    editForm.value.email = editForm.value.email.replace(`@${oldDomain}`, `@${newDomain}`);
+  }
 };
 
 const setEmailMode = (mode) => {
   emailMode.value = mode;
+  const comp = createForm.value.company || 'Elite Nutrition';
   if (mode === 'name') {
     if (createForm.value.full_name?.trim()) {
-      createForm.value.email = generateEmailFromName(createForm.value.full_name);
+      createForm.value.email = generateEmailFromName(createForm.value.full_name, comp);
     } else {
       createForm.value.email = '';
     }
@@ -799,7 +942,7 @@ const setEmailMode = (mode) => {
     if (createForm.value.role_id) {
       const role = rolesList.value.find(r => r.id === createForm.value.role_id);
       if (role) {
-        createForm.value.email = generateEmailFromRole(role.name);
+        createForm.value.email = generateEmailFromRole(role.name, comp);
       }
     } else {
       createForm.value.email = '';
@@ -810,7 +953,7 @@ const setEmailMode = (mode) => {
 const onNameInput = () => {
   if (emailMode.value === 'name') {
     if (createForm.value.full_name?.trim()) {
-      createForm.value.email = generateEmailFromName(createForm.value.full_name);
+      createForm.value.email = generateEmailFromName(createForm.value.full_name, createForm.value.company || 'Elite Nutrition');
     } else {
       createForm.value.email = '';
     }
@@ -822,7 +965,7 @@ const onRoleChange = () => {
     if (createForm.value.role_id) {
       const role = rolesList.value.find(r => r.id === createForm.value.role_id);
       if (role) {
-        createForm.value.email = generateEmailFromRole(role.name);
+        createForm.value.email = generateEmailFromRole(role.name, createForm.value.company || 'Elite Nutrition');
       }
     } else {
       createForm.value.email = '';
@@ -843,15 +986,16 @@ const suggestEmailByRole = () => {
 };
 
 const setEditEmailMode = (mode) => {
+  const comp = editForm.value.company || 'Elite Nutrition';
   if (mode === 'name') {
     if (editForm.value.full_name?.trim()) {
-      editForm.value.email = generateEmailFromName(editForm.value.full_name);
+      editForm.value.email = generateEmailFromName(editForm.value.full_name, comp);
     }
   } else if (mode === 'role') {
     if (editForm.value.role_id) {
       const role = rolesList.value.find(r => r.id === editForm.value.role_id);
       if (role) {
-        editForm.value.email = generateEmailFromRole(role.name);
+        editForm.value.email = generateEmailFromRole(role.name, comp);
       }
     }
   }
@@ -863,6 +1007,7 @@ const openCreateModal = () => {
   createForm.value = {
     full_name: '',
     email: '',
+    company: 'Elite Nutrition',
     role_id: '',
     password: generateRandomPassword()
   };
@@ -889,6 +1034,7 @@ const submitCreateEmployee = async () => {
       body: JSON.stringify({
         full_name: createForm.value.full_name.trim(),
         email: createForm.value.email.trim(),
+        company: createForm.value.company || 'Elite Nutrition',
         role_id: createForm.value.role_id || null,
         password: createForm.value.password
       })
@@ -912,6 +1058,7 @@ const openEditModal = (emp) => {
     id: emp.id,
     full_name: emp.full_name || '',
     email: emp.email || '',
+    company: getEmployeeCompany(emp),
     role_id: emp.role_id || '',
     approval_status: emp.approval_status || 'approved',
     contract_url: emp.contract_url || '',
@@ -959,6 +1106,7 @@ const submitEditEmployee = async () => {
       const payload = {
         full_name: editForm.value.full_name.trim(),
         email: editForm.value.email ? editForm.value.email.trim() : undefined,
+        company: editForm.value.company || 'Elite Nutrition',
         role_id: editForm.value.role_id || null,
         approval_status: editForm.value.approval_status
       };
@@ -978,6 +1126,7 @@ const submitEditEmployee = async () => {
     if (!backendSuccess) {
       const updateData = {
         full_name: editForm.value.full_name.trim(),
+        company: editForm.value.company || 'Elite Nutrition',
         role_id: editForm.value.role_id || null,
         approval_status: editForm.value.approval_status
       };
@@ -989,9 +1138,10 @@ const submitEditEmployee = async () => {
         .update(updateData)
         .eq('id', editForm.value.id);
 
-      if (supaErr && (supaErr.message?.includes('contract_url') || supaErr.message?.includes('signature_url') || supaErr.code === 'PGRST204')) {
+      if (supaErr && (supaErr.message?.includes('contract_url') || supaErr.message?.includes('signature_url') || supaErr.message?.includes('company') || supaErr.code === 'PGRST204')) {
         delete updateData.contract_url;
         delete updateData.signature_url;
+        delete updateData.company;
         const retry = await supabase
           .from('profiles')
           .update(updateData)

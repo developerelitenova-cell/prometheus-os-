@@ -217,13 +217,13 @@ def update_role(role_id: str, role_data: dict, user=Depends(verify_jwt)):
 
 # --- Módulo de Administración: Cuentas de Empleados ---
 # Usa la Service Role Key (solo disponible aquí, en el backend) para crear
-# usuarios de Supabase Auth. Nunca se debe exponer esta llave al frontend.
 class CreateEmployeeRequest(BaseModel):
     email: str
     password: str
     full_name: str
     role_id: Optional[str] = None
     is_master_admin: bool = False
+    company: Optional[str] = "Elite Nutrition"
 
 class UpdateEmployeeRequest(BaseModel):
     full_name: Optional[str] = None
@@ -234,6 +234,7 @@ class UpdateEmployeeRequest(BaseModel):
     is_master_admin: Optional[bool] = None
     contract_url: Optional[str] = None
     signature_url: Optional[str] = None
+    company: Optional[str] = None
 
 @app.get("/api/v1/admin/employees")
 def list_employees(user=Depends(verify_jwt)):
@@ -286,9 +287,17 @@ def create_employee(req: CreateEmployeeRequest, user=Depends(verify_jwt)):
             "is_master_admin": req.is_master_admin,
             "mapping_completed": False,
             # Cuentas creadas por un admin quedan aprobadas de entrada
-            "approval_status": "approved"
+            "approval_status": "approved",
+            "company": req.company or "Elite Nutrition"
         }
-        supabase.table("profiles").insert(profile_payload).execute()
+        try:
+            supabase.table("profiles").insert(profile_payload).execute()
+        except Exception as insert_err:
+            if "company" in str(insert_err):
+                profile_payload.pop("company", None)
+                supabase.table("profiles").insert(profile_payload).execute()
+            else:
+                raise insert_err
     except Exception as e:
         # Rollback: si falla crear el perfil, no dejamos un usuario de Auth huérfano.
         try:
@@ -338,15 +347,18 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
         profile_updates["contract_url"] = req.contract_url
     if req.signature_url is not None:
         profile_updates["signature_url"] = req.signature_url
+    if req.company is not None:
+        profile_updates["company"] = req.company
 
     if profile_updates:
         try:
             supabase.table("profiles").update(profile_updates).eq("id", user_id).execute()
         except Exception as e:
             err_msg = str(e)
-            if "contract_url" in err_msg or "signature_url" in err_msg or "schema cache" in err_msg:
+            if "contract_url" in err_msg or "signature_url" in err_msg or "company" in err_msg or "schema cache" in err_msg:
                 profile_updates.pop("contract_url", None)
                 profile_updates.pop("signature_url", None)
+                profile_updates.pop("company", None)
                 if profile_updates:
                     try:
                         supabase.table("profiles").update(profile_updates).eq("id", user_id).execute()
