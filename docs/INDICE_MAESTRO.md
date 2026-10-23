@@ -110,6 +110,7 @@ graph TD
 | [tecnica/manual_scripts_mantenimiento.md](./tecnica/manual_scripts_mantenimiento.md) | SysAdmins / Backend | Manual operativo de los 14 scripts en `scripts/` (creación de admins, siembra de datos, detección de roles duplicados, ingesta IA). |
 | [tecnica/integracion_onedrive.md](./tecnica/integracion_onedrive.md) | Arquitectos / Desarrolladores | Guía de integración con Microsoft OneDrive y SharePoint para manuales de cargo y futura conexión vía Microsoft Graph API. |
 | [tecnica/guia_troubleshooting.md](./tecnica/guia_troubleshooting.md) | Soporte / Desarrolladores | Guía de resolución de problemas con árboles de decisión para CORS, expiración JWT, errores RLS 403, 429 Rate Limit y fallas de compilación. |
+| [tecnica/especificacion_tecnica_mejoras_v2.md](./tecnica/especificacion_tecnica_mejoras_v2.md) | Desarrolladores / DBAs | Especificación técnica v2.1: esquemas SQL, daily_closings, extraordinary_activities, RLS, corte 00:01-23:59, draft cache, KPI diario vs acumulado y PDF. |
 | [tecnica/CHANGELOG.md](./tecnica/CHANGELOG.md) | Toda la organización | Registro cronológico formal de cambios bajo el estándar Keep a Changelog y versionamiento semántico SemVer. |
 | [tecnica/inventario_documentacion_pendiente.md](./tecnica/inventario_documentacion_pendiente.md) | Auditoría / Gestión Técnica | Cláusula de honestidad: listado de elementos marcados como `pendiente de verificación`, soporte de videos en desarrollo y deuda técnica controlada. |
 
@@ -123,6 +124,7 @@ graph TD
 | [usabilidad/flujos_operativos.md](./usabilidad/flujos_operativos.md) | Colaboradores / Líderes | Procedimientos operativos paso a paso: ingreso diario, ejecución y soporte de tareas con foto, reporte diario, órdenes programadas y KPIs. |
 | [usabilidad/manual_roles_permisos.md](./usabilidad/manual_roles_permisos.md) | RRHH / Administradores | Manual funcional de accesos: Nivel 1 (Gerencial/Ejecutivo), Nivel 2 (Área/Líder), Nivel 3 (Individual), Master Admin y delegación de claves. |
 | [usabilidad/manual_modulos_especiales.md](./usabilidad/manual_modulos_especiales.md) | Usuarios / Comunicación / SST | Manual de módulos especiales: comunicados corporativos y noticias, soporte de videos y capacitación audiovisual por cargo, calendario y mesa de ayuda WhatsApp. |
+| [usabilidad/especificacion_funcional_mejoras_v2.md](./usabilidad/especificacion_funcional_mejoras_v2.md) | Colaboradores / Líderes / Master | Especificación funcional v2.1: histórico solo lectura, acta de cumplimiento PDF, franjas horarias, bloqueo secuencial, actividades extraordinarias y Asistente IA. |
 
 ---
 

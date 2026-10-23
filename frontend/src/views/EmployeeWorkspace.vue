@@ -168,7 +168,7 @@
               <button @click="router.push('/manuals')" class="text-[13px] font-medium text-[#0078d4] hover:text-[#005a9e] transition-colors cursor-pointer">Repositorio</button>
             </div>
             <div class="space-y-2">
-              <a v-for="tpl in templates" :key="tpl.id" :href="tpl.url" target="_blank"
+              <a v-for="tpl in templates" :key="tpl.id" :href="tpl.content_url || tpl.url" target="_blank"
                  class="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5f7] hover:bg-[#e5e5ea]/50 transition-colors border border-transparent hover:border-[#e5e5ea] group">
                 <div class="w-8 h-8 rounded-lg bg-white border border-[#e5e5ea] flex items-center justify-center text-[#ff3b30] shadow-sm shrink-0">
                   <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
@@ -311,6 +311,65 @@
         <!-- CENTER COLUMN (6 cols): Las 3 Capas de Gestión -->
         <div class="lg:col-span-6 space-y-5">
 
+          <!-- BARRA SUPERIOR DE JORNADA, HISTÓRICO Y CIERRE -->
+          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm p-4 space-y-3">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <!-- Selector de Fecha de Gestión -->
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#0071e3] text-[20px]">calendar_month</span>
+                <span class="text-xs font-bold text-gray-700">Jornada:</span>
+                <div class="flex items-center gap-1 bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl px-2 py-1">
+                  <button type="button" @click="navigateDate(-1)" class="p-0.5 hover:bg-white rounded text-gray-600 transition-all cursor-pointer" title="Día anterior">
+                    <span class="material-symbols-outlined text-[15px]">chevron_left</span>
+                  </button>
+                  <input type="date" v-model="selectedDateStr" @change="onDateChanged" class="bg-transparent text-xs font-bold text-[#1d1d1f] outline-none cursor-pointer" />
+                  <button type="button" @click="navigateDate(1)" :disabled="isTodaySelected" class="p-0.5 hover:bg-white rounded text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" title="Día siguiente">
+                    <span class="material-symbols-outlined text-[15px]">chevron_right</span>
+                  </button>
+                </div>
+                <button v-if="!isTodaySelected" type="button" @click="goToToday" class="px-2 py-1 rounded-lg bg-blue-50 text-[#0071e3] text-[11px] font-bold hover:bg-blue-100 transition-colors cursor-pointer">
+                  Hoy
+                </button>
+              </div>
+
+              <!-- Badge de Estado de la Jornada -->
+              <div>
+                <span v-if="isReadOnlyDay" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
+                  <span class="material-symbols-outlined text-[13px]">lock</span>
+                  Jornada Cerrada (Solo Lectura)
+                </span>
+                <span v-else class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 text-[11px] font-bold border border-green-200">
+                  <span class="material-symbols-outlined text-[13px]">timer</span>
+                  Jornada Activa (00:01 - 23:59)
+                </span>
+              </div>
+            </div>
+
+            <!-- Botonera de Gestión y Cumplimiento -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#f5f5f7]">
+              <!-- Botón Actividad Extraordinaria -->
+              <button type="button" @click="showExtraordinaryModal = true" class="px-3 py-1.5 rounded-xl bg-[#f5f5f7] hover:bg-[#e5e5ea] text-[#1d1d1f] text-[11px] font-bold border border-[#e5e5ea] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined text-[15px] text-amber-600">emergency</span>
+                <span>+ Actividad Extraordinaria</span>
+              </button>
+
+              <div class="flex items-center gap-2">
+                <!-- Botón Descargar PDF de Cumplimiento -->
+                <button type="button" @click="downloadCompliancePdf" class="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50/50 text-[#0071e3] text-[11px] font-bold border border-[#0071e3]/30 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer" title="Descargar verificación de cumplimiento para el jefe">
+                  <span class="material-symbols-outlined text-[15px]">picture_as_pdf</span>
+                  <span>Descargar Acta PDF</span>
+                </button>
+
+                <!-- Botón Guardar y Consolidar Gestión Diaria (Solo día actual) -->
+                <button v-if="!isReadOnlyDay" type="button" @click="consolidateAndCloseDay" :disabled="isClosingDay" class="px-3.5 py-1.5 rounded-xl bg-[#34c759] hover:bg-[#2fb34f] text-white text-[11px] font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer disabled:opacity-50">
+                  <span v-if="isClosingDay" class="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                  <span v-else class="material-symbols-outlined text-[14px]">task_alt</span>
+                  <span>{{ isDayClosed ? 'Cierre Consolidado ✓' : 'Guardar y Cerrar Día' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Alerta de tareas atrasadas -->
           <div v-if="overdueTasks.length > 0" class="bg-[#ffebee] border border-[#ffcdd2] rounded-2xl p-4 flex items-start gap-3 shadow-sm">
             <span class="material-symbols-outlined text-[#c62828] mt-0.5">warning</span>
@@ -333,7 +392,7 @@
                 <span class="material-symbols-outlined text-[#34c759] text-[20px]">checklist</span>
                 <div>
                   <h3 class="text-[15px] font-bold text-[#1d1d1f] leading-none">Gestión Diaria</h3>
-                  <p class="text-[11px] text-[#86868b] mt-0.5">Obligatorio · Recurrente del cargo</p>
+                  <p class="text-[11px] text-[#86868b] mt-0.5">Obligatorio · Secuencial cronológico</p>
                 </div>
               </div>
               <!-- Tab selector Diario/Semanal/Mensual -->
@@ -347,17 +406,25 @@
             </div>
             <!-- Task list -->
             <ul class="divide-y divide-[#f5f5f7]">
-              <li v-for="task in activeDmTaskList" :key="task.id"
-                  class="px-5 py-3 hover:bg-[#f5f5f7]/60 transition-colors flex items-start gap-3.5">
-                <button @click="openEvidenceModal(task, 'daily_management')"
-                  :title="task.status === 'unfulfilled' ? 'Ver motivo de no ejecución' : (task.completed || task.status === 'completed') ? 'Ver evidencia registrada' : 'Marcar tarea con evidencia'"
-                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer',
-                    task.status === 'unfulfilled' ? 'bg-[#ff3b30] border-[#ff3b30]' :
-                    (task.completed || task.status === 'completed') ? 'bg-[#34c759] border-[#34c759]' : 'border-[#d1d1d6] hover:border-[#34c759]']">
-                  <span v-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-white text-[13px]">close</span>
+              <li v-for="(task, index) in activeDmTaskList" :key="task.id"
+                  :class="['px-5 py-3 transition-colors flex items-start gap-3.5',
+                    isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'bg-gray-50/70 opacity-60' : 'hover:bg-[#f5f5f7]/60']">
+                
+                <!-- Botón de Checkbox / Bloqueo -->
+                <button @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
+                  :disabled="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay"
+                  :title="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'Bloqueada: Debes completar primero la actividad previa' : (task.status === 'unfulfilled' ? 'Ver motivo de no ejecución' : (task.completed || task.status === 'completed') ? 'Ver evidencia registrada' : 'Marcar tarea con evidencia')"
+                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                    isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed' :
+                    task.status === 'unfulfilled' ? 'bg-[#ff3b30] border-[#ff3b30] cursor-pointer' :
+                    (task.completed || task.status === 'completed') ? 'bg-[#34c759] border-[#34c759] cursor-pointer' : 'border-[#d1d1d6] hover:border-[#34c759] cursor-pointer']">
+                  <span v-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="material-symbols-outlined text-[11px] text-gray-600">lock</span>
+                  <span v-else-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-white text-[13px]">close</span>
                   <span v-else-if="task.completed || task.status === 'completed'" class="material-symbols-outlined text-white text-[13px]">check</span>
                 </button>
-                <div class="flex-1 min-w-0 cursor-pointer" @click="openEvidenceModal(task, 'daily_management')">
+
+                <!-- Detalle de la tarea -->
+                <div class="flex-1 min-w-0" :class="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'cursor-not-allowed' : 'cursor-pointer'" @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')">
                   <div class="flex items-center justify-between gap-2">
                     <p :class="['text-[13px] font-medium leading-snug',
                       task.status === 'unfulfilled' ? 'text-[#ff3b30] font-semibold' :
@@ -368,8 +435,17 @@
                     <span v-else-if="task.completed || task.status === 'completed'" class="text-[10px] font-bold text-[#34c759] bg-[#e8f8ed] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
                       <span class="material-symbols-outlined text-[12px]">photo_camera</span> Con Evidencia
                     </span>
+                    <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                      <span class="material-symbols-outlined text-[12px]">lock</span> Bloqueada
+                    </span>
                   </div>
-                  <div class="flex items-center gap-2 mt-1">
+                  <div class="flex flex-wrap items-center gap-2 mt-1">
+                    <!-- Franja Horaria Asignada -->
+                    <span class="text-[10px] font-bold text-[#0071e3] bg-[#e8f0fe] px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[11px]">schedule</span>
+                      <span>{{ task.start_time ? task.start_time.substring(0,5) : '08:00' }} - {{ task.end_time ? task.end_time.substring(0,5) : '08:30' }}</span>
+                    </span>
+
                     <span class="text-[10px] text-[#86868b] flex items-center gap-1 bg-[#f5f5f7] px-1.5 py-0.5 rounded">
                       <span class="material-symbols-outlined text-[11px]">autorenew</span> Recurrente
                     </span>
@@ -611,10 +687,80 @@
       v-model="showEvidenceModal"
       :task="selectedTaskForEvidence"
       :task-type="selectedTaskType"
-      :read-only="isAuditMode"
+      :read-only="isAuditMode || isReadOnlyDay"
       @save="handleEvidenceSave"
       @reopen="handleTaskReopen"
     />
+
+    <!-- Modal de Registro de Actividad Extraordinaria -->
+    <div v-if="showExtraordinaryModal" class="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" @click.self="showExtraordinaryModal = false">
+      <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-[#e5e5ea]" @click.stop>
+        <div class="px-6 py-4 border-b border-[#e5e5ea] flex items-center justify-between bg-[#fbfbfd]">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">emergency</span>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-[#1d1d1f]">Actividad Extraordinaria</h3>
+              <p class="text-xs text-[#86868b]">No mapeada · Solicitud de aprobación a liderazgo</p>
+            </div>
+          </div>
+          <button @click="showExtraordinaryModal = false" class="text-gray-400 hover:text-gray-700 cursor-pointer">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4 overflow-y-auto">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#86868b] mb-1">Título de la Actividad *</label>
+            <input v-model="extraActivityForm.title" type="text" placeholder="ej: Reunión de urgencia de precios con presidencia" class="w-full px-3 py-2 border border-[#e5e5ea] rounded-xl text-xs font-medium focus:outline-none focus:border-[#0071e3]" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#86868b] mb-1">Descripción y Motivo *</label>
+            <textarea v-model="extraActivityForm.description" rows="3" placeholder="Explica qué se realizó y por qué surgió esta labor..." class="w-full px-3 py-2 border border-[#e5e5ea] rounded-xl text-xs font-medium focus:outline-none focus:border-[#0071e3]"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-[#86868b] mb-1">Hora Inicio *</label>
+              <input v-model="extraActivityForm.start_time" type="time" class="w-full px-3 py-2 border border-[#e5e5ea] rounded-xl text-xs font-medium" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-[#86868b] mb-1">Hora Fin *</label>
+              <input v-model="extraActivityForm.end_time" type="time" class="w-full px-3 py-2 border border-[#e5e5ea] rounded-xl text-xs font-medium" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#86868b] mb-1">¿A quién se asigna la aprobación? *</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" @click="extraActivityForm.approver_type = 'leader'" :class="['p-3 rounded-xl border-2 text-left flex items-center gap-2.5 transition-all cursor-pointer', extraActivityForm.approver_type === 'leader' ? 'border-[#0071e3] bg-blue-50/60 font-bold text-[#0071e3]' : 'border-[#e5e5ea] text-gray-600']">
+                <span class="material-symbols-outlined text-[18px]">supervisor_account</span>
+                <span class="text-xs">Líder de Área</span>
+              </button>
+              <button type="button" @click="extraActivityForm.approver_type = 'presidency'" :class="['p-3 rounded-xl border-2 text-left flex items-center gap-2.5 transition-all cursor-pointer', extraActivityForm.approver_type === 'presidency' ? 'border-[#0071e3] bg-blue-50/60 font-bold text-[#0071e3]' : 'border-[#e5e5ea] text-gray-600']">
+                <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                <span class="text-xs">Presidencia / Gerencia</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#86868b] mb-1">Evidencia / Enlace / Notas (Opcional)</label>
+            <textarea v-model="extraActivityForm.evidence_text" rows="2" placeholder="Enlace a archivo, notas de reunión o soporte..." class="w-full px-3 py-2 border border-[#e5e5ea] rounded-xl text-xs font-medium focus:outline-none focus:border-[#0071e3]"></textarea>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-[#e5e5ea] bg-[#fbfbfd] flex items-center justify-end gap-2">
+          <button @click="showExtraordinaryModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:text-gray-900 cursor-pointer">Cancelar</button>
+          <button @click="submitExtraordinaryActivity" :disabled="savingExtra" class="px-5 py-2 bg-[#0071e3] hover:bg-[#005bb5] text-white text-xs font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5">
+            <span v-if="savingExtra" class="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+            <span>Enviar a Aprobación</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Toast Flotante de Confirmación de Evidencia Guardada -->
     <transition
@@ -654,6 +800,158 @@ import { getRoleKpiDetail } from '../api/kpi';
 import TaskEvidenceModal from '@/components/TaskEvidenceModal.vue';
 
 const canManageKpis = computed(() => canAccessKpis());
+
+// ── Control de Jornada, Fechas y Cierre de Gestión ───────────────
+const getTodayStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const selectedDateStr = ref(getTodayStr());
+
+const isTodaySelected = computed(() => {
+  return selectedDateStr.value === getTodayStr();
+});
+
+const currentDayClosing = ref(null);
+const isDayClosed = computed(() => !!currentDayClosing.value);
+const isClosingDay = ref(false);
+
+const isReadOnlyDay = computed(() => {
+  return !isTodaySelected.value || isDayClosed.value;
+});
+
+const navigateDate = (delta) => {
+  const parts = selectedDateStr.value.split('-').map(Number);
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  d.setDate(d.getDate() + delta);
+  
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  
+  if (d > todayDate) return;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  selectedDateStr.value = `${year}-${month}-${day}`;
+  onDateChanged();
+};
+
+const goToToday = () => {
+  selectedDateStr.value = getTodayStr();
+  onDateChanged();
+};
+
+const onDateChanged = async () => {
+  if (currentRole.value?.id && currentProfile.value?.id) {
+    await fetchDailyClosing();
+    await fetchDailyManagement(currentRole.value.id, currentProfile.value.id);
+  }
+};
+
+const isTaskBlocked = (index, taskList) => {
+  if (!taskList || index === 0) return false;
+  for (let i = 0; i < index; i++) {
+    const prev = taskList[i];
+    const isFinished = prev.completed || prev.status === 'completed' || prev.status === 'unfulfilled';
+    if (!isFinished) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const onTaskClick = (task, index, taskList, type = 'daily_management') => {
+  if (isReadOnlyDay.value) {
+    openEvidenceModal(task, type);
+    return;
+  }
+  if (isTaskBlocked(index, taskList)) {
+    alert('Esta actividad está bloqueada. Debes completar o registrar la justificación de las actividades previas en el orden cronológico.');
+    return;
+  }
+  openEvidenceModal(task, type);
+};
+
+// ── Modal de Actividad Extraordinaria ─────────────────────────────
+const showExtraordinaryModal = ref(false);
+const savingExtra = ref(false);
+const extraActivityForm = ref({
+  title: '',
+  description: '',
+  start_time: '',
+  end_time: '',
+  approver_type: 'leader',
+  evidence_text: ''
+});
+
+const submitExtraordinaryActivity = async () => {
+  if (!extraActivityForm.value.title.trim()) {
+    alert('Por favor indica el título de la actividad extraordinaria.');
+    return;
+  }
+  if (!extraActivityForm.value.description.trim()) {
+    alert('Por favor ingresa la descripción y motivo de la actividad.');
+    return;
+  }
+  if (!extraActivityForm.value.start_time || !extraActivityForm.value.end_time) {
+    alert('Por favor especifica la franja horaria (hora inicio y fin).');
+    return;
+  }
+
+  savingExtra.value = true;
+  try {
+    const { error } = await supabase
+      .from('extraordinary_activities')
+      .insert({
+        profile_id: currentProfile.value.id,
+        activity_date: selectedDateStr.value,
+        title: extraActivityForm.value.title.trim(),
+        description: extraActivityForm.value.description.trim(),
+        start_time: extraActivityForm.value.start_time,
+        end_time: extraActivityForm.value.end_time,
+        approver_type: extraActivityForm.value.approver_type,
+        evidence_text: extraActivityForm.value.evidence_text.trim() || null,
+        status: 'pending'
+      });
+
+    if (error) throw error;
+
+    showToast('Actividad extraordinaria enviada para aprobación.');
+    showExtraordinaryModal.value = false;
+    extraActivityForm.value = {
+      title: '',
+      description: '',
+      start_time: '',
+      end_time: '',
+      approver_type: 'leader',
+      evidence_text: ''
+    };
+  } catch (err) {
+    console.error('Error saving extraordinary activity:', err);
+    alert('Error al enviar la actividad: ' + (err.message || 'Error desconocido'));
+  } finally {
+    savingExtra.value = false;
+  }
+};
+
+// Temporizador de corte de medianoche (00:01 a 23:59)
+let midnightTimer = null;
+const setupMidnightTimer = () => {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 1, 0);
+  const msUntilMidnight = midnight.getTime() - now.getTime();
+  
+  midnightTimer = setTimeout(() => {
+    alert('Ha finalizado la jornada diaria (corte de medianoche). La gestión se actualizará al nuevo día.');
+    goToToday();
+    setupMidnightTimer();
+  }, Math.max(msUntilMidnight, 1000));
+};
 
 // ── Motor de Tiempo ──────────────────────────────────────────
 const today = new Date();
@@ -892,6 +1190,7 @@ const chatContainer = ref(null);
 onMounted(async () => {
   loadDismissed();
   await initWorkspace();
+  setupMidnightTimer();
 });
 
 watch(() => route.query.view_as, async () => {
@@ -1252,6 +1551,7 @@ const initWorkspace = async () => {
 
     if (currentRole.value) {
       await fetchRoleData(currentRole.value.id);
+      await fetchDailyClosing();
       await fetchDailyManagement(currentRole.value.id, currentProfile.value.id);
       await fetchScheduledDeliveries(currentRole.value, currentProfile.value);
       if (isManagerRole.value) {
@@ -1500,6 +1800,220 @@ const handleTaskReopen = async (payload) => {
   }
 };
 
+// ── Auditoría, Cierre y Descarga de Cumplimiento ─────────────────
+const fetchDailyClosing = async () => {
+  if (!currentProfile.value?.id) return;
+  try {
+    const { data, error } = await supabase
+      .from('daily_closings')
+      .select('*')
+      .eq('profile_id', currentProfile.value.id)
+      .eq('closing_date', selectedDateStr.value)
+      .maybeSingle();
+    if (!error && data) {
+      currentDayClosing.value = data;
+    } else {
+      currentDayClosing.value = null;
+    }
+  } catch (err) {
+    console.error('Error fetching daily closing:', err);
+    currentDayClosing.value = null;
+  }
+};
+
+const consolidateAndCloseDay = async () => {
+  if (!currentProfile.value?.id) return;
+  
+  const confirmClose = window.confirm(
+    '¿Estás seguro de que deseas consolidar y cerrar la gestión de hoy? Una vez cerrada, quedará registrada y congelada en modo de solo lectura para auditoría y verificación.'
+  );
+  if (!confirmClose) return;
+
+  isClosingDay.value = true;
+  try {
+    const total = activeDmTaskList.value.length;
+    const completed = activeDmTaskList.value.filter(t => t.completed || t.status === 'completed').length;
+    const score = total > 0 ? Number(((completed / total) * 100).toFixed(1)) : 100;
+
+    const summaryPayload = {
+      tasks: activeDmTaskList.value.map(t => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        completed: t.completed,
+        completed_at: t.completed_at,
+        evidence_text: t.evidence_text,
+        evidence_photo: t.evidence_photo,
+        start_time: t.start_time,
+        end_time: t.end_time
+      }))
+    };
+
+    const { data, error } = await supabase
+      .from('daily_closings')
+      .upsert({
+        profile_id: currentProfile.value.id,
+        closing_date: selectedDateStr.value,
+        kpi_score: score,
+        total_tasks: total,
+        completed_tasks: completed,
+        summary: summaryPayload,
+        closed_at: new Date().toISOString()
+      }, { onConflict: 'profile_id,closing_date' })
+      .select()
+      .single();
+
+    if (error) throw error;
+    currentDayClosing.value = data;
+    showToast('Jornada consolidada y cerrada exitosamente.');
+  } catch (err) {
+    console.error('Error closing daily management:', err);
+    alert('Error al consolidar el cierre: ' + (err.message || 'Error desconocido'));
+  } finally {
+    isClosingDay.value = false;
+  }
+};
+
+const downloadCompliancePdf = () => {
+  const userName = currentProfile.value?.full_name || 'Colaborador';
+  const roleName = currentRole.value?.name || 'Cargo Operativo';
+  const dateStr = selectedDateStr.value;
+  const tasks = activeDmTaskList.value || [];
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.completed || t.status === 'completed').length;
+  const unfulfilled = tasks.filter(t => t.status === 'unfulfilled').length;
+  const kpiScore = total > 0 ? ((completed / total) * 100).toFixed(1) : '100.0';
+
+  const rowsHtml = tasks.map((t, idx) => {
+    const order = idx + 1;
+    const slot = (t.start_time && t.end_time) ? `${t.start_time.substring(0,5)} - ${t.end_time.substring(0,5)}` : 'Jornada';
+    let statusBadge = '<span style="color:#d97706; font-weight:bold;">Pendiente</span>';
+    if (t.completed || t.status === 'completed') {
+      statusBadge = '<span style="color:#16a34a; font-weight:bold;">Completado ✓</span>';
+    } else if (t.status === 'unfulfilled') {
+      statusBadge = '<span style="color:#dc2626; font-weight:bold;">No Ejecutado ✕</span>';
+    }
+
+    const note = t.status === 'unfulfilled' 
+      ? `<strong>Motivo:</strong> ${t.cancellation_reason || 'Sin justificación'}` 
+      : (t.evidence_text ? `<strong>Evidencia:</strong> ${t.evidence_text}` : (t.evidence_photo ? '<em>Foto adjuntada en sistema</em>' : '<em>Ejecutado conforme</em>'));
+
+    return `
+      <tr>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: bold;">${order}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #4b5563;">${slot}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #111827;">${t.title}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${statusBadge}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 11px; color: #374151;">${note}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 11px; color: #6b7280; text-align: center;">${t.completed_at ? new Date(t.completed_at).toLocaleTimeString() : '-'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const printHtml = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <title>Acta de Verificación de Cumplimiento - ${userName} - ${dateStr}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2937; margin: 0; padding: 24px; }
+        .header { border-bottom: 2px solid #b08d57; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .title { font-size: 20px; font-weight: bold; color: #111827; margin: 0; }
+        .subtitle { font-size: 13px; color: #b08d57; font-weight: bold; text-transform: uppercase; margin-top: 4px; }
+        .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+        .info-item { display: flex; flex-direction: column; }
+        .info-label { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #6b7280; }
+        .info-value { font-size: 13px; font-weight: 600; color: #111827; margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px; }
+        th { background: #1f2937; color: #ffffff; padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px; page-break-inside: avoid; }
+        .sig-box { border-top: 1px solid #9ca3af; padding-top: 8px; text-align: center; }
+        .sig-name { font-weight: bold; font-size: 13px; }
+        .sig-role { font-size: 11px; color: #6b7280; }
+        @media print {
+          body { padding: 0; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <h1 class="title">NOVA WORK · PROMETHEUS OS</h1>
+          <div class="subtitle">Acta Oficial de Verificación de Cumplimiento Operativo</div>
+        </div>
+        <div style="text-align: right; font-size: 11px; color: #6b7280;">
+          <div><strong>Fecha Emisión:</strong> ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+          <div><strong>ID Auditoría:</strong> ${currentProfile.value?.id ? currentProfile.value.id.substring(0,8) : 'AUD'}-${dateStr}</div>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Colaborador</span>
+          <span class="info-value">${userName}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Cargo / Área</span>
+          <span class="info-value">${roleName}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Fecha de Jornada</span>
+          <span class="info-value">${dateStr}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Cumplimiento KPI</span>
+          <span class="info-value" style="color: #16a34a; font-size: 16px;">${kpiScore}% (${completed}/${total})</span>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">#</th>
+            <th style="width: 100px;">Horario</th>
+            <th>Actividad / Gestión Asignada</th>
+            <th style="width: 110px; text-align: center;">Estado</th>
+            <th>Evidencia / Justificación Registrada</th>
+            <th style="width: 80px; text-align: center;">Hora Reg.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml || '<tr><td colspan="6" style="padding: 16px; text-align: center; color: #6b7280;">No se registraron actividades para esta jornada.</td></tr>'}
+        </tbody>
+      </table>
+
+      <div class="signatures">
+        <div class="sig-box">
+          <div class="sig-name">${userName}</div>
+          <div class="sig-role">Firma del Colaborador</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-name">Jefatura Inmediata / Auditoría</div>
+          <div class="sig-role">Firma y Sello de Verificación</div>
+        </div>
+      </div>
+
+      <script>
+        window.onload = function() {
+          window.print();
+        };
+      <\/script>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+  } else {
+    alert('Por favor habilita las ventanas emergentes en tu navegador para generar e imprimir el PDF de cumplimiento.');
+  }
+};
+
 // Gestión Diaria: actividades recurrentes y estándar del cargo.
 const fetchDailyManagement = async (roleId, profileId) => {
   try {
@@ -1508,7 +2022,7 @@ const fetchDailyManagement = async (roleId, profileId) => {
       .select('*')
       .eq('role_id', roleId)
       .eq('active', true)
-      .order('created_at', { ascending: true });
+      .order('sequence_order', { ascending: true, nullsFirst: false });
     if (templatesError) throw templatesError;
 
     let completions = [];
@@ -1532,24 +2046,27 @@ const fetchDailyManagement = async (roleId, profileId) => {
       compMap.set(`${c.task_template_id}::${c.period_key}`, c);
     });
 
-    const withStatus = (frequency) =>
-      (templates || [])
+    const withStatus = (frequency) => {
+      const filtered = (templates || [])
         .filter(t => t.frequency === frequency)
-        .map(t => {
-          const pKey = getPeriodKey(frequency);
-          const c = compMap.get(`${t.id}::${pKey}`);
-          const isComp = !!c;
-          return {
-            ...t,
-            periodKey: pKey,
-            completed: isComp && (c?.status !== 'unfulfilled'),
-            status: c ? (c.status || 'completed') : 'pending',
-            evidence_text: c?.evidence_text || null,
-            evidence_photo: c?.evidence_photo || null,
-            cancellation_reason: c?.cancellation_reason || null,
-            completed_at: c?.completed_at || null
-          };
-        });
+        .sort((a, b) => (a.sequence_order || 999) - (b.sequence_order || 999));
+
+      return filtered.map(t => {
+        const pKey = frequency === 'daily' ? selectedDateStr.value : getPeriodKey(frequency);
+        const c = compMap.get(`${t.id}::${pKey}`);
+        const isComp = !!c;
+        return {
+          ...t,
+          periodKey: pKey,
+          completed: isComp && (c?.status !== 'unfulfilled'),
+          status: c ? (c.status || 'completed') : 'pending',
+          evidence_text: c?.evidence_text || null,
+          evidence_photo: c?.evidence_photo || null,
+          cancellation_reason: c?.cancellation_reason || null,
+          completed_at: c?.completed_at || null
+        };
+      });
+    };
 
     dmDailyTasks.value = withStatus('daily');
     dmWeeklyTasks.value = withStatus('weekly');
@@ -1705,7 +2222,7 @@ KPIs esperados: ${JSON.stringify(flowData.kpis)}
 
     // 2. Fetch Templates (Global or specific to this role)
     const { data: templateData } = await supabase
-      .from('document_templates')
+      .from('manuals')
       .select('*')
       .or(`role_id.is.null,role_id.eq.${roleId}`)
       .order('title');
@@ -1830,6 +2347,7 @@ const getScoreColor = (score) => {
 };
 
 onUnmounted(() => {
+  if (midnightTimer) clearTimeout(midnightTimer);
   if (realtimeChannel) {
     supabase.removeChannel(realtimeChannel);
     realtimeChannel = null;

@@ -63,7 +63,7 @@
           @click="openAiPanel"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 active:scale-95 text-white font-label-sm text-xs font-semibold shadow-xs transition-all cursor-pointer">
           <span class="material-symbols-outlined text-[16px]">neurology</span>
-          <span>Oráculo IA</span>
+          <span>Asistente IA</span>
         </button>
 
         <!-- Switch to Hierarchy Organigram -->
@@ -140,7 +140,7 @@
               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 active:scale-95 text-white font-label-md text-xs font-bold shadow-md transition-all cursor-pointer disabled:opacity-50">
               <span class="material-symbols-outlined text-[16px] animate-spin" v-if="generatingAi">refresh</span>
               <span class="material-symbols-outlined text-[16px]" v-else>auto_awesome</span>
-              <span>Generar con Oráculo IA</span>
+              <span>Generar con Asistente IA</span>
             </button>
             <button 
               v-else
@@ -164,7 +164,7 @@
           <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 animate-bounce">
             <span class="material-symbols-outlined text-3xl">neurology</span>
           </div>
-          <h3 class="text-xl font-bold text-on-surface mb-2">El Oráculo IA está Cartografiando el Proceso</h3>
+          <h3 class="text-xl font-bold text-on-surface mb-2">El Asistente IA está Cartografiando el Proceso</h3>
           <p class="text-sm text-secondary max-w-md mb-4">
             Analizando manuales de funciones, entradas operativas, entregables y correlaciones de {{ currentRole?.name }}...
           </p>
@@ -187,7 +187,7 @@
               @click="generateWorkflowWithAi" 
               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#d4b06a] to-[#8a6d3d] hover:brightness-105 active:scale-95 text-white font-semibold text-sm shadow-md transition-all cursor-pointer">
               <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-              <span>Cartografiar Ahora con Oráculo IA</span>
+              <span>Cartografiar Ahora con Asistente IA</span>
             </button>
             <router-link 
               :to="`/mapper/${currentRole?.id}`"

@@ -3,6 +3,28 @@
 > Todas las modificaciones notables de **NOVA WORD** se registran en este documento.  
 > El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.2.0 - Roadmap & Especificación Oficial] - Octubre 2026
+
+### Añadido
+- **Módulo de Gestión Diaria con Consulta Histórica y Cierre Formal (`EmployeeWorkspace.vue`):**
+  - Selector de fecha histórica en modo Sólo Lectura para días anteriores (`read-only` inmutable).
+  - Cierre formal de jornada con generación y descarga de **Acta / PDF de Verificación de Cumplimiento** para revisión de jefatura.
+  - Ventana temporal estricta de `00:01` a `23:59` con cierre automático por corte de medianoche.
+  - Persistencia de borradores en tiempo real (`Draft Auto-Save`) en `TaskEvidenceModal.vue` para prevenir pérdida de información al cerrar ventanas o refrescar la página.
+  - Tipificación de requerimiento probatorio en tareas (`none`, `text_only`, `photo_required`) para exigir fotos únicamente en tareas críticas.
+  - Botón y flujo de **"Actividad Extraordinaria"** no mapeada con circuito de aprobación por Líder o Presidencia (`extraordinary_activities`).
+- **Módulo de Auditoría Histórica y Reingeniería de Indicadores (`LeaderDashboard.vue` / `MasterDashboard.vue`):**
+  - Selector de calendario para auditar evidencias, fotos, textos y justificaciones de cualquier fecha histórica.
+  - Desacoplamiento de métricas: **KPI Diario** (exacto del día sin retroactividad) vs **KPI Acumulado** (% ponderado independiente de jornadas cerradas).
+  - Bloqueo secuencial estratégico: avance obligatorio en orden cronológico paso a paso (tarea N requiere tarea N-1 completada o justificada).
+  - Asignación de franjas horarias exactas por tarea (ej. `06:10 - 06:30`) con monitor visual de timeline.
+- **Estructuración Organizacional y Rebranding:**
+  - Reorganización del organigrama (`MapaCargos.vue`) en 4 niveles jerárquicos oficiales (Nivel 1 al 4) y agrupación por áreas operativas.
+  - Rebranding corporativo unificado: sustitución de **"Oráculo IA"** por **"Asistente IA"** en todo el frontend.
+  - Seed de usuario sandbox de pruebas (`test.operativo@elitenutrition.com`) con tareas escalonadas para certificación de calidad.
+- **Soporte Audiovisual en Nova Academy (`AcademiaElite.vue`):**
+  - Actualización de políticas RLS de Supabase Storage para reproducción pública/autenticada y streaming sin cortes de videos .MP4 corporativos.
+
 ---
 
 ## [2.1.0] - 2026-10-01

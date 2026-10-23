@@ -35,7 +35,7 @@
           class="text-[12px] xl:text-[13px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 whitespace-nowrap"
           active-class="text-primary/90 font-bold"
         >
-          <span class="material-symbols-outlined text-[15px]">auto_awesome</span> Oráculo IA
+          <span class="material-symbols-outlined text-[15px]">auto_awesome</span> Asistente IA
         </router-link>
 
         <!-- Centro de Control: solo para líderes/admin, dentro del nav principal -->
@@ -211,7 +211,7 @@
               <span class="material-symbols-outlined text-[20px] text-secondary">account_tree</span> Estructura Corporativa
             </router-link>
             <router-link v-if="isMasterUser" to="/oracle" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
-              <span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span> Oráculo IA
+              <span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span> Asistente IA
             </router-link>
             <router-link v-if="isControlUser" to="/leader" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">dashboard</span> Centro de Control

@@ -386,7 +386,7 @@ const auditSteps = ref([
   { completed: false, title: 'Revisar Alertas de Cuellos de Botella', desc: 'Hay 2 equipos superando el tiempo límite de SLA operativo.', action: 'Ver Centro de Control', link: '/team' },
   { completed: false, title: 'Gestión de KPIs y Actas de Rendimiento', desc: 'Evaluar cumplimiento con IA, generar actas institucionales y firmas.', action: 'Abrir KPIs & Actas', link: '/kpis' },
   { completed: false, title: 'Monitorear Riesgos de Compliance', desc: 'Revisar matriz de perfiles para detectar accesos no autorizados.', action: 'Ver Gobernanza', link: '/roles' },
-  { completed: false, title: 'Sincronizar Inteligencia Corporativa', desc: 'El oráculo ha detectado 3 desviaciones en manuales operativos.', action: 'Hablar con Oráculo', link: '/oracle' }
+  { completed: false, title: 'Sincronizar Inteligencia Corporativa', desc: 'El Asistente IA ha detectado 3 desviaciones en manuales operativos.', action: 'Hablar con Asistente IA', link: '/oracle' }
 ]);
 
 const allRoles = ref([]);

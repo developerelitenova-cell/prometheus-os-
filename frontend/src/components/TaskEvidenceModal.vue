@@ -161,10 +161,38 @@
 
           <!-- CASO A: REALIZADO -->
           <div v-if="selectedAction === 'completed'" class="space-y-4 animate-fade-in">
+            <!-- Aviso si se restauró borrador -->
+            <div v-if="hasRestoredDraft" class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-medium">
+                <span class="material-symbols-outlined text-[16px] text-amber-600">history_edu</span>
+                <span>Se recuperó tu borrador no enviado de esta tarea.</span>
+              </div>
+              <button type="button" @click="discardDraft" class="text-amber-700 hover:underline font-bold text-[11px] cursor-pointer">
+                Descartar borrador
+              </button>
+            </div>
+
+            <!-- Indicador de exigencia probatoria -->
+            <div v-if="evidenceRequirement === 'none'" class="p-2.5 rounded-xl bg-green-50/70 border border-green-200/60 text-green-800 text-[11px] flex items-center gap-2">
+              <span class="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
+              <span>Esta actividad es de verificación directa. La foto y el resumen son opcionales.</span>
+            </div>
+            <div v-else-if="evidenceRequirement === 'text_only'" class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/60 text-blue-800 text-[11px] flex items-center gap-2">
+              <span class="material-symbols-outlined text-[16px] text-blue-600">edit_note</span>
+              <span>Esta actividad requiere una breve descripción o nota de cumplimiento. La foto es opcional.</span>
+            </div>
+            <div v-else class="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200/60 text-purple-800 text-[11px] flex items-center gap-2">
+              <span class="material-symbols-outlined text-[16px] text-purple-600">photo_camera</span>
+              <span>Actividad crítica/estratégica: Requiere soporte fotográfico obligatorio para su auditoría.</span>
+            </div>
+
             <!-- Texto de Evidencia -->
             <div class="space-y-1">
               <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b] flex justify-between">
-                <span>Descripción de la Evidencia / Resumen <span class="text-red-500">*</span></span>
+                <span>Descripción de la Evidencia / Resumen 
+                  <span v-if="isTextMandatory" class="text-red-500">*</span>
+                  <span v-else class="text-[10px] text-gray-400 font-normal lowercase">(opcional)</span>
+                </span>
                 <span class="text-[10px] font-normal text-[#86868b]">{{ evidenceText.length }} caracteres</span>
               </label>
               <textarea
@@ -173,8 +201,8 @@
                 placeholder="Explica qué se entregó, resultados alcanzados, enlaces a carpetas/documentos o notas de la gestión..."
                 class="w-full px-3.5 py-2.5 rounded-xl border border-[#e5e5ea] text-[13px] outline-none focus:border-[#34c759] focus:ring-2 focus:ring-[#34c759]/20 transition-all placeholder:text-gray-400"
               ></textarea>
-              <p v-if="evidenceText.trim().length === 0 && showValidationErrors" class="text-[11px] text-red-500">
-                La descripción de la evidencia es obligatoria para verificar la tarea.
+              <p v-if="evidenceText.trim().length === 0 && isTextMandatory && showValidationErrors" class="text-[11px] text-red-500">
+                La descripción de la evidencia es obligatoria para verificar esta tarea.
               </p>
             </div>
 
@@ -182,7 +210,9 @@
             <div class="space-y-1.5">
               <div class="flex items-center justify-between">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b]">
-                  Pantallazo o Foto de Soporte <span class="text-red-500">*</span>
+                  Pantallazo o Foto de Soporte 
+                  <span v-if="isPhotoMandatory" class="text-red-500">*</span>
+                  <span v-else class="text-[10px] text-gray-400 font-normal lowercase">(opcional)</span>
                 </label>
                 <span class="text-[10px] text-[#0071e3] font-medium bg-[#e8f0fe] px-2 py-0.5 rounded-full flex items-center gap-1">
                   <span class="material-symbols-outlined text-[12px]">content_paste</span>
@@ -228,11 +258,11 @@
                   Arrastra aquí tu foto/pantallazo o haz clic para subir
                 </p>
                 <p class="text-[11px] text-[#86868b] mt-1">
-                  También puedes tomar una captura de pantalla y simplemente presionar <strong class="text-[#1d1d1f]">Ctrl+V / Cmd+V</strong>
+                  También puedes tomar una captura de pantalla y presionar <strong class="text-[#1d1d1f]">Ctrl+V / Cmd+V</strong>
                 </p>
               </div>
-              <p v-if="!evidencePhoto && showValidationErrors" class="text-[11px] text-red-500">
-                Debes adjuntar un pantallazo o foto para validar la entrega.
+              <p v-if="!evidencePhoto && isPhotoMandatory && showValidationErrors" class="text-[11px] text-red-500">
+                Debes adjuntar un pantallazo o foto para validar esta entrega estratégica.
               </p>
             </div>
           </div>
@@ -369,6 +399,89 @@ const showFullscreen = ref(false);
 const showValidationErrors = ref(false);
 const isEditMode = ref(false);
 const fileInput = ref(null);
+const hasRestoredDraft = ref(false);
+
+const evidenceRequirement = computed(() => {
+  return props.task?.evidence_requirement || 'none';
+});
+
+const isPhotoMandatory = computed(() => {
+  return evidenceRequirement.value === 'photo_required';
+});
+
+const isTextMandatory = computed(() => {
+  return evidenceRequirement.value === 'text_only' || evidenceRequirement.value === 'photo_required';
+});
+
+const getDraftKey = () => {
+  if (!props.task?.id) return null;
+  const pKey = props.task.periodKey || props.task._periodKey || 'current';
+  return `novawork_draft_${props.task.id}_${pKey}`;
+};
+
+const saveDraft = () => {
+  const key = getDraftKey();
+  if (!key || isViewingExisting.value) return;
+  if (evidenceText.value || evidencePhoto.value || cancellationReason.value) {
+    const draft = {
+      selectedAction: selectedAction.value,
+      evidenceText: evidenceText.value,
+      evidencePhoto: evidencePhoto.value,
+      cancellationReason: cancellationReason.value,
+      savedAt: Date.now()
+    };
+    try {
+      localStorage.setItem(key, JSON.stringify(draft));
+    } catch (e) {
+      console.warn('Draft save error', e);
+    }
+  }
+};
+
+const restoreDraft = () => {
+  const key = getDraftKey();
+  if (!key) return false;
+  const raw = localStorage.getItem(key);
+  if (!raw) return false;
+  try {
+    const draft = JSON.parse(raw);
+    selectedAction.value = draft.selectedAction || 'completed';
+    evidenceText.value = draft.evidenceText || '';
+    evidencePhoto.value = draft.evidencePhoto || '';
+    cancellationReason.value = draft.cancellationReason || '';
+    hasRestoredDraft.value = true;
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+const discardDraft = () => {
+  const key = getDraftKey();
+  if (key) {
+    localStorage.removeItem(key);
+  }
+  hasRestoredDraft.value = false;
+  selectedAction.value = 'completed';
+  evidenceText.value = '';
+  evidencePhoto.value = '';
+  cancellationReason.value = '';
+};
+
+const clearDraft = () => {
+  const key = getDraftKey();
+  if (key) {
+    localStorage.removeItem(key);
+  }
+  hasRestoredDraft.value = false;
+};
+
+// Auto-guardado de borrador al escribir
+watch([evidenceText, evidencePhoto, cancellationReason, selectedAction], () => {
+  if (props.modelValue && !isViewingExisting.value) {
+    saveDraft();
+  }
+}, { deep: true });
 
 const taskTypeName = computed(() => {
   if (props.task?._isScheduled || props.taskType === 'scheduled') return 'Entrega Programada';
@@ -406,12 +519,25 @@ const formatDateTime = (dateStr) => {
 };
 
 const resetForm = () => {
-  selectedAction.value = 'completed';
-  evidenceText.value = props.task?.evidence_text || '';
-  evidencePhoto.value = props.task?.evidence_photo || '';
-  cancellationReason.value = props.task?.cancellation_reason || '';
+  hasRestoredDraft.value = false;
   showValidationErrors.value = false;
   isEditMode.value = false;
+
+  if (props.task?.evidence_text || props.task?.evidence_photo || props.task?.cancellation_reason || props.task?.completed) {
+    selectedAction.value = props.task?.status === 'unfulfilled' ? 'unfulfilled' : 'completed';
+    evidenceText.value = props.task?.evidence_text || '';
+    evidencePhoto.value = props.task?.evidence_photo || '';
+    cancellationReason.value = props.task?.cancellation_reason || '';
+    return;
+  }
+
+  const restored = restoreDraft();
+  if (!restored) {
+    selectedAction.value = 'completed';
+    evidenceText.value = '';
+    evidencePhoto.value = '';
+    cancellationReason.value = '';
+  }
 };
 
 watch(() => props.modelValue, (newVal) => {
@@ -421,6 +547,9 @@ watch(() => props.modelValue, (newVal) => {
 });
 
 const close = () => {
+  if (!isViewingExisting.value) {
+    saveDraft();
+  }
   emit('update:modelValue', false);
 };
 
@@ -518,12 +647,12 @@ const submit = async () => {
   showValidationErrors.value = true;
 
   if (selectedAction.value === 'completed') {
-    if (!evidenceText.value.trim()) {
-      alert('Por favor ingresa una descripción o resumen de la evidencia realizada.');
+    if (isTextMandatory.value && !evidenceText.value.trim()) {
+      alert('Por favor ingresa una descripción o resumen de la evidencia requerida para esta actividad.');
       return;
     }
-    if (!evidencePhoto.value) {
-      alert('Es obligatorio adjuntar una foto o pantallazo como evidencia de cumplimiento.');
+    if (isPhotoMandatory.value && !evidencePhoto.value) {
+      alert('Es obligatorio adjuntar una foto o pantallazo como soporte para esta actividad estratégica.');
       return;
     }
   } else {
@@ -573,14 +702,15 @@ const submit = async () => {
       task: props.task,
       taskType: props.taskType,
       status: selectedAction.value,
-      evidence_text: selectedAction.value === 'completed' ? evidenceText.value.trim() : null,
+      evidence_text: selectedAction.value === 'completed' ? (evidenceText.value.trim() || null) : null,
       evidence_photo: finalPhotoUrl || null,
-      cancellation_reason: selectedAction.value === 'unfulfilled' ? cancellationReason.value.trim() : null,
+      cancellation_reason: selectedAction.value === 'unfulfilled' ? (cancellationReason.value.trim() || null) : null,
       completed_at: new Date().toISOString()
     };
 
+    clearDraft();
     emit('save', payload);
-    close();
+    emit('update:modelValue', false);
   } catch (err) {
     console.error('Error guardando evidencia:', err);
     alert('Ocurrió un error al registrar la evidencia: ' + (err.message || 'Error desconocido'));

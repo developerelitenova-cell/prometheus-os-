@@ -205,6 +205,32 @@
                       </div>
                     </div>
 
+                    <!-- Connection Line to Level 4 -->
+                    <div v-if="getRolesByLevelAndArea(4, area).length > 0" class="w-0.5 h-10 bg-surface-container-highest"></div>
+
+                    <!-- L4 Roles for this area -->
+                    <div class="flex flex-col items-center gap-3 w-full mt-2">
+                      <div v-for="role in getRolesByLevelAndArea(4, area)" :key="role.id" class="node-card group bg-surface-container-lowest rounded-2xl shadow-sm p-3 w-full hover:shadow-md transition-all relative cursor-pointer border border-dashed border-surface-container-highest" @click="selectRole(role)">
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="px-1.5 py-0.5 rounded bg-surface-container-low text-secondary font-caption text-[10px] font-bold">Nivel 4 • Operativo</span>
+                        </div>
+                        <h6 class="font-label-sm text-label-sm font-semibold text-on-surface leading-tight">{{ role.name }}</h6>
+                        <div class="flex items-center gap-1.5 pt-1.5 bg-surface-container-low/30 -mx-3 -mb-3 px-3 py-1.5 rounded-b-2xl mt-1.5">
+                          <div class="w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center text-secondary font-caption text-[9px] font-bold">L4</div>
+                          <span class="font-caption text-[10px] text-secondary truncate">{{ mappedRoleIds.has(role.id) ? 'Mapeado' : 'Sin Mapear' }}</span>
+                        </div>
+                        <!-- Master Admin quick-edit overlay -->
+                        <div v-if="isMaster" class="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 z-30 flex gap-1">
+                          <button @click.stop="openEditRole(role)" class="p-1 rounded-lg bg-surface-container-highest/90 text-secondary hover:text-primary hover:bg-primary/10 transition-all" title="Editar cargo">
+                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                          </button>
+                          <button @click.stop="confirmDeleteRole(role)" class="p-1 rounded-lg bg-surface-container-highest/90 text-secondary hover:text-error hover:bg-error/10 transition-all" title="Eliminar cargo">
+                            <span class="material-symbols-outlined text-[14px]">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
 
@@ -467,19 +493,19 @@
                   <!-- Nivel de Acceso -->
                   <div class="space-y-1.5">
                     <label class="font-label-sm text-label-sm font-semibold text-on-surface">Nivel Jerárquico <span class="text-error">*</span></label>
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-4 gap-2">
                       <label
-                        v-for="lvl in [1, 2, 3]"
+                        v-for="lvl in [1, 2, 3, 4]"
                         :key="lvl"
-                        class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all"
+                        class="flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 cursor-pointer transition-all"
                         :class="newRole.access_level === lvl
                           ? 'border-primary bg-primary/5 text-primary'
                           : 'border-surface-container-high bg-surface-container-low text-secondary hover:border-surface-container-highest'"
                       >
                         <input type="radio" v-model="newRole.access_level" :value="lvl" class="sr-only" />
-                        <span class="font-headline-sm text-headline-sm font-bold">{{ lvl }}</span>
-                        <span class="font-caption text-caption text-center leading-tight">
-                          {{ lvl === 1 ? 'Ejecutivo' : lvl === 2 ? 'Gerencial' : 'Operativo' }}
+                        <span class="font-headline-sm text-sm font-bold">{{ lvl }}</span>
+                        <span class="font-caption text-[10px] text-center leading-tight">
+                          {{ lvl === 1 ? 'Dirección' : lvl === 2 ? 'Líder' : lvl === 3 ? 'Especialista' : 'Operativo' }}
                         </span>
                       </label>
                     </div>
@@ -539,17 +565,17 @@
                     <!-- Nivel -->
                     <div class="space-y-1">
                       <label class="font-label-sm text-label-sm font-semibold text-on-surface">Nivel Jerárquico</label>
-                      <div class="flex gap-2">
+                      <div class="flex gap-1.5">
                         <label
-                          v-for="lvl in [1, 2, 3]"
+                          v-for="lvl in [1, 2, 3, 4]"
                           :key="lvl"
-                          class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 cursor-pointer transition-all font-label-sm text-label-sm font-semibold"
+                          class="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border-2 cursor-pointer transition-all font-label-sm text-xs font-semibold"
                           :class="editForm.access_level === lvl
                             ? 'border-primary bg-primary/5 text-primary'
                             : 'border-surface-container-highest bg-surface-container-lowest text-secondary hover:border-surface-container-high'"
                         >
                           <input type="radio" v-model="editForm.access_level" :value="lvl" class="sr-only" />
-                          Nivel {{ lvl }}
+                          Nv. {{ lvl }}
                         </label>
                       </div>
                     </div>
@@ -779,8 +805,8 @@ const areas = computed(() => {
 const level1Roles = computed(() => filteredRoles.value.filter(r => r.access_level === 1));
 
 const areasList = computed(() => {
-  const l2l3 = filteredRoles.value.filter(r => r.access_level === 2 || r.access_level === 3);
-  const relevantAreas = l2l3.map(r => r.areas?.name || 'General').filter(a => a);
+  const l2l3l4 = filteredRoles.value.filter(r => r.access_level >= 2);
+  const relevantAreas = l2l3l4.map(r => r.areas?.name || 'General').filter(a => a);
   return [...new Set(relevantAreas)].sort();
 });
 

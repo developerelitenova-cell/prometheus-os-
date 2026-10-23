@@ -17,7 +17,7 @@
               <span class="text-outline-variant">/</span>
               <span class="text-on-surface">Centro de Conocimiento</span>
               <span class="text-outline-variant">/</span>
-              <span class="text-primary font-medium">El Oráculo Enterprise</span>
+              <span class="text-primary font-medium">Asistente IA Enterprise</span>
             </div>
           </div>
           <div class="flex items-center gap-space-md">
@@ -119,7 +119,7 @@
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
-                    <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Oráculo IA — Asistente Corporativo</h2>
+                    <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Asistente IA — Consultoría Corporativa</h2>
                     <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#34c759]/10 text-[#248a3d] font-caption text-caption font-semibold">
                       <span class="w-1.5 h-1.5 rounded-full bg-[#34c759]"></span> En Línea
                     </span>
@@ -174,7 +174,7 @@
                   </div>
                   <div class="flex flex-col gap-space-sm w-full">
                     <div class="flex flex-wrap items-center gap-2">
-                      <span class="font-label-md text-label-md font-semibold text-on-surface">Oráculo IA</span>
+                      <span class="font-label-md text-label-md font-semibold text-on-surface">Asistente IA</span>
                       <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#b08d57]/10 text-primary font-caption text-caption font-semibold">
                         <span class="material-symbols-outlined text-[13px]">verified</span> Respaldo Corporativo
                       </div>
@@ -519,7 +519,7 @@ const openDocsModal = async (role) => {
 const messages = ref([
   {
     role: 'ai',
-    text: 'Saludos. Soy el Oráculo de NOVA WORK. He indexado la base de conocimiento de la corporación. ¿Qué deseas consultar sobre el ecosistema de la empresa?'
+    text: 'Saludos. Soy el Asistente IA de NOVA WORK. He indexado la base de conocimiento de la corporación. ¿Qué deseas consultar sobre el ecosistema de la empresa?'
   }
 ]);
 
