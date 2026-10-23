@@ -385,81 +385,216 @@
                SECCIÓN 1 — GESTIÓN DIARIA
                Tareas recurrentes y obligatorias del cargo
           ═══════════════════════════════════════════════════ -->
-          <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden">
-            <!-- Header -->
-            <div class="px-5 py-3.5 border-b border-[#e5e5ea] bg-[#f0fdf4] flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-[#34c759] text-[20px]">checklist</span>
+          <div class="bg-white rounded-3xl border border-[#e5e5ea] shadow-sm overflow-hidden">
+            <!-- Header con Título y Tabs -->
+            <div class="px-6 py-4 border-b border-[#e5e5ea] bg-gradient-to-r from-[#f0fdf4] via-white to-white flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-[#34c759]/15 text-[#248a3d] flex items-center justify-center shrink-0 shadow-xs">
+                  <span class="material-symbols-outlined text-[22px]">checklist</span>
+                </div>
                 <div>
-                  <h3 class="text-[15px] font-bold text-[#1d1d1f] leading-none">Gestión Diaria</h3>
-                  <p class="text-[11px] text-[#86868b] mt-0.5">Obligatorio · Secuencial cronológico</p>
+                  <h3 class="text-base font-bold text-[#1d1d1f] leading-none">Gestión Diaria</h3>
+                  <p class="text-xs text-[#86868b] mt-1">Timeline Secuencial Obligatorio · Flujo Cronológico</p>
                 </div>
               </div>
               <!-- Tab selector Diario/Semanal/Mensual -->
-              <div class="flex items-center bg-white border border-[#e5e5ea] rounded-lg p-0.5 gap-0.5">
+              <div class="flex items-center bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl p-1 gap-1">
                 <button v-for="t in [{k:'daily',l:'Diario'},{k:'weekly',l:'Semanal'},{k:'monthly',l:'Mensual'}]" :key="t.k"
                   @click="dmTab = t.k"
-                  :class="['px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all',
-                    dmTab === t.k ? 'bg-[#34c759] text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f]']"
+                  :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                    dmTab === t.k ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f]']"
                 >{{ t.l }}</button>
               </div>
             </div>
-            <!-- Task list -->
-            <ul class="divide-y divide-[#f5f5f7]">
-              <li v-for="(task, index) in activeDmTaskList" :key="task.id"
-                  :class="['px-5 py-3 transition-colors flex items-start gap-3.5',
-                    isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'bg-gray-50/70 opacity-60' : 'hover:bg-[#f5f5f7]/60']">
-                
-                <!-- Botón de Checkbox / Bloqueo -->
-                <button @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
-                  :disabled="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay"
-                  :title="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'Bloqueada: Debes completar primero la actividad previa' : (task.status === 'unfulfilled' ? 'Ver motivo de no ejecución' : (task.completed || task.status === 'completed') ? 'Ver evidencia registrada' : 'Marcar tarea con evidencia')"
-                  :class="['w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed' :
-                    task.status === 'unfulfilled' ? 'bg-[#ff3b30] border-[#ff3b30] cursor-pointer' :
-                    (task.completed || task.status === 'completed') ? 'bg-[#34c759] border-[#34c759] cursor-pointer' : 'border-[#d1d1d6] hover:border-[#34c759] cursor-pointer']">
-                  <span v-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="material-symbols-outlined text-[11px] text-gray-600">lock</span>
-                  <span v-else-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-white text-[13px]">close</span>
-                  <span v-else-if="task.completed || task.status === 'completed'" class="material-symbols-outlined text-white text-[13px]">check</span>
-                </button>
 
-                <!-- Detalle de la tarea -->
-                <div class="flex-1 min-w-0" :class="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'cursor-not-allowed' : 'cursor-pointer'" @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')">
-                  <div class="flex items-center justify-between gap-2">
-                    <p :class="['text-[13px] font-medium leading-snug',
-                      task.status === 'unfulfilled' ? 'text-[#ff3b30] font-semibold' :
-                      (task.completed || task.status === 'completed') ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]']">{{ task.title }}</p>
-                    <span v-if="task.status === 'unfulfilled'" class="text-[10px] font-bold text-[#ff3b30] bg-[#fff0f0] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-                      <span class="material-symbols-outlined text-[12px]">cancel</span> No ejecutado
-                    </span>
-                    <span v-else-if="task.completed || task.status === 'completed'" class="text-[10px] font-bold text-[#34c759] bg-[#e8f8ed] px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-                      <span class="material-symbols-outlined text-[12px]">photo_camera</span> Con Evidencia
-                    </span>
-                    <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-                      <span class="material-symbols-outlined text-[12px]">lock</span> Bloqueada
-                    </span>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-2 mt-1">
-                    <!-- Franja Horaria Asignada -->
-                    <span class="text-[10px] font-bold text-[#0071e3] bg-[#e8f0fe] px-1.5 py-0.5 rounded flex items-center gap-1">
-                      <span class="material-symbols-outlined text-[11px]">schedule</span>
-                      <span>{{ task.start_time ? task.start_time.substring(0,5) : '08:00' }} - {{ task.end_time ? task.end_time.substring(0,5) : '08:30' }}</span>
-                    </span>
+            <!-- Barra de Progreso Segmentada de la Jornada -->
+            <div v-if="activeDmTaskList.length > 0" class="px-6 py-3.5 bg-[#fbfbfd] border-b border-[#f2f2f7]">
+              <div class="flex items-center justify-between text-xs mb-2">
+                <span class="font-bold text-[#1d1d1f] flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#34c759] animate-pulse"></span>
+                  Ritmo de Cumplimiento de la Jornada
+                </span>
+                <span class="text-[#86868b] font-medium">
+                  <strong class="text-[#1d1d1f]">{{ dmStats.completed }}</strong> de {{ dmStats.total }} completadas ({{ dmStats.percent }}%)
+                </span>
+              </div>
+              <div class="flex gap-1.5 h-2 w-full rounded-full overflow-hidden bg-gray-100 p-0.5">
+                <div v-for="(t, i) in activeDmTaskList" :key="'seg-'+t.id"
+                  class="flex-1 rounded-full transition-all duration-500"
+                  :class="[
+                    (t.completed || t.status === 'completed') ? 'bg-[#34c759] shadow-xs' :
+                    t.status === 'unfulfilled' ? 'bg-[#ff3b30]' :
+                    isTaskCurrentActive(t, i, activeDmTaskList) ? 'bg-[#0071e3] animate-pulse' :
+                    isTaskBlocked(i, activeDmTaskList) ? 'bg-gray-200' : 'bg-gray-300'
+                  ]"
+                  :title="t.title"
+                ></div>
+              </div>
+            </div>
 
-                    <span class="text-[10px] text-[#86868b] flex items-center gap-1 bg-[#f5f5f7] px-1.5 py-0.5 rounded">
-                      <span class="material-symbols-outlined text-[11px]">autorenew</span> Recurrente
-                    </span>
-                    <span v-if="task.priority === 'high' || task.priority === 'urgent'"
-                      :class="['text-[10px] font-bold px-1.5 py-0.5 rounded',
-                        task.priority === 'urgent' ? 'bg-red-600 text-white animate-pulse' : 'bg-red-50 text-red-700']"
-                    >{{ task.priority === 'urgent' ? '¡URGENTE!' : 'Alta' }}</span>
+            <!-- Contenedor del Stepper Timeline Vertical -->
+            <div class="p-6 relative">
+              <div v-if="activeDmTaskList.length === 0" class="py-12 text-center text-sm text-[#86868b] italic">
+                No hay actividades registradas en esta frecuencia.
+              </div>
+
+              <div v-else class="space-y-4 relative">
+                <!-- Tarjeta de Actividad en el Timeline -->
+                <div 
+                  v-for="(task, index) in activeDmTaskList" 
+                  :key="task.id"
+                  class="relative flex items-start gap-4 group"
+                >
+                  <!-- Riel Vertical (Línea conectora entre nodos) -->
+                  <div 
+                    v-if="index < activeDmTaskList.length - 1"
+                    class="absolute left-5 top-10 bottom-[-16px] w-0.5 transition-colors duration-500 z-0"
+                    :class="[
+                      (task.completed || task.status === 'completed') ? 'bg-[#34c759]' :
+                      isTaskBlocked(index + 1, activeDmTaskList) ? 'border-l-2 border-dashed border-gray-200' : 'bg-gray-200'
+                    ]"
+                  ></div>
+
+                  <!-- Nodo / Hito Circular del Timeline -->
+                  <button 
+                    type="button"
+                    @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
+                    :disabled="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay"
+                    class="relative z-10 w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300"
+                    :class="[
+                      (task.completed || task.status === 'completed') ? 'bg-[#34c759] text-white shadow-[0_4px_12px_rgba(52,199,89,0.35)] scale-100 hover:scale-105 cursor-pointer' :
+                      task.status === 'unfulfilled' ? 'bg-[#ff3b30] text-white shadow-[0_4px_12px_rgba(255,59,48,0.3)] cursor-pointer' :
+                      isTaskCurrentActive(task, index, activeDmTaskList) ? 'bg-white text-[#0071e3] border-2 border-[#0071e3] shadow-[0_0_0_4px_rgba(0,113,227,0.18)] scale-105 animate-pulse cursor-pointer' :
+                      isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' :
+                      'bg-white text-gray-500 border-2 border-gray-300 hover:border-[#0071e3] hover:text-[#0071e3] cursor-pointer'
+                    ]"
+                    :title="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'Bloqueada por secuencia cronológica' : 'Ver / Registrar Actividad'"
+                  >
+                    <!-- Icono dinámico según estado -->
+                    <span v-if="task.completed || task.status === 'completed'" class="material-symbols-outlined text-[20px] font-bold">check</span>
+                    <span v-else-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-[20px] font-bold">close</span>
+                    <span v-else-if="isTaskCurrentActive(task, index, activeDmTaskList)" class="material-symbols-outlined text-[20px] font-bold">play_arrow</span>
+                    <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="material-symbols-outlined text-[18px]">lock</span>
+                    <span v-else class="text-xs font-bold">{{ index + 1 }}</span>
+                  </button>
+
+                  <!-- Tarjeta de Contenido de la Tarea (Frosted Glass si está bloqueada, pulida si está activa) -->
+                  <div 
+                    @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
+                    class="flex-1 rounded-2xl p-4 sm:p-5 transition-all duration-200 relative z-10"
+                    :class="[
+                      isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay
+                        ? 'bg-white/50 backdrop-blur-md border border-dashed border-gray-300/80 cursor-not-allowed select-none opacity-70'
+                        : isTaskCurrentActive(task, index, activeDmTaskList)
+                        ? 'bg-gradient-to-r from-blue-50/50 via-white to-white border-2 border-[#0071e3]/50 shadow-md hover:shadow-lg cursor-pointer hover:-translate-y-0.5'
+                        : (task.completed || task.status === 'completed')
+                        ? 'bg-[#f0fdf4]/50 border border-[#34c759]/30 shadow-xs hover:shadow-sm cursor-pointer'
+                        : task.status === 'unfulfilled'
+                        ? 'bg-[#fff5f5] border border-[#ff3b30]/30 shadow-xs cursor-pointer'
+                        : 'bg-white border border-[#e5e5ea] shadow-xs hover:shadow-md cursor-pointer hover:-translate-y-0.5'
+                    ]"
+                  >
+                    <!-- Fila Superior: Franja Horaria + Badges -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <!-- Franja Horaria -->
+                        <span 
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold tracking-tight"
+                          :class="[
+                            isCurrentTimeSlot(task.start_time, task.end_time) 
+                              ? 'bg-[#0071e3] text-white shadow-xs animate-pulse'
+                              : isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay
+                              ? 'bg-gray-200/80 text-gray-500'
+                              : 'bg-blue-50 text-[#0071e3] border border-blue-100'
+                          ]"
+                        >
+                          <span class="material-symbols-outlined text-[14px]">schedule</span>
+                          <span>{{ task.start_time ? task.start_time.substring(0,5) : '08:00' }} - {{ task.end_time ? task.end_time.substring(0,5) : '08:30' }}</span>
+                          <span v-if="isCurrentTimeSlot(task.start_time, task.end_time)" class="ml-1 text-[9px] uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded font-black">Ahora</span>
+                        </span>
+
+                        <!-- Badge Requisito de Evidencia -->
+                        <span 
+                          v-if="task.evidence_requirement === 'photo_required'"
+                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
+                          title="Requiere foto o comprobante visual obligatorio"
+                        >
+                          <span class="material-symbols-outlined text-[12px]">photo_camera</span>
+                          <span>Foto Requerida</span>
+                        </span>
+                        <span 
+                          v-else-if="task.evidence_requirement === 'text_only'"
+                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200"
+                        >
+                          <span class="material-symbols-outlined text-[12px]">edit_note</span>
+                          <span>Nota Requerida</span>
+                        </span>
+                      </div>
+
+                      <!-- Badge de Estado Derecho -->
+                      <div>
+                        <span v-if="task.completed || task.status === 'completed'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#34c759]/15 text-[#248a3d]">
+                          <span class="material-symbols-outlined text-[14px]">verified</span>
+                          <span>Completada</span>
+                        </span>
+                        <span v-else-if="task.status === 'unfulfilled'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#ff3b30]/10 text-[#d70015]">
+                          <span class="material-symbols-outlined text-[14px]">cancel</span>
+                          <span>No ejecutada</span>
+                        </span>
+                        <span v-else-if="isTaskCurrentActive(task, index, activeDmTaskList)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#0071e3] border border-blue-200">
+                          <span class="w-2 h-2 rounded-full bg-[#0071e3] animate-ping"></span>
+                          <span>En Turno</span>
+                        </span>
+                        <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-200/60 text-gray-500">
+                          <span class="material-symbols-outlined text-[13px]">lock</span>
+                          <span>Bloqueada</span>
+                        </span>
+                        <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
+                          <span>Pendiente</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Título y Descripción -->
+                    <div>
+                      <h4 
+                        class="text-sm sm:text-[15px] font-bold leading-snug tracking-tight"
+                        :class="[
+                          (task.completed || task.status === 'completed') ? 'text-[#86868b] line-through' :
+                          task.status === 'unfulfilled' ? 'text-[#ff3b30]' :
+                          isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'text-gray-500' : 'text-[#1d1d1f]'
+                        ]"
+                      >
+                        {{ task.title }}
+                      </h4>
+                      <p v-if="task.description" class="text-xs text-[#86868b] mt-1 leading-relaxed">
+                        {{ task.description }}
+                      </p>
+                    </div>
+
+                    <!-- Resumen de Evidencia o Motivo Registrado -->
+                    <div v-if="task.evidence_text || task.cancellation_reason || task.evidence_photo" class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+                      <span class="truncate max-w-[80%] text-gray-600 italic">
+                        <strong v-if="task.status === 'unfulfilled'" class="text-[#ff3b30] not-italic">Motivo:</strong>
+                        <strong v-else class="text-[#34c759] not-italic">Soporte:</strong>
+                        {{ task.cancellation_reason || task.evidence_text || 'Comprobante fotográfico adjunto' }}
+                      </span>
+                      <span class="text-[11px] text-gray-400 font-mono shrink-0">
+                        {{ task.completed_at ? new Date(task.completed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '' }}
+                      </span>
+                    </div>
+
+                    <!-- Botón de Llamada a la Acción (CTA) -->
+                    <div v-if="!isReadOnlyDay && !isTaskBlocked(index, activeDmTaskList) && !task.completed && task.status !== 'completed' && task.status !== 'unfulfilled'" class="mt-3 flex justify-end">
+                      <span class="inline-flex items-center gap-1 text-xs font-bold text-[#0071e3] hover:underline">
+                        <span>Registrar cumplimiento</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </li>
-              <li v-if="activeDmTaskList.length === 0" class="px-5 py-6 text-center text-[13px] text-[#86868b] italic">
-                No hay gestiones {{ dmTab === 'daily' ? 'diarias' : dmTab === 'weekly' ? 'semanales' : 'mensuales' }} registradas.
-              </li>
-            </ul>
+              </div>
+            </div>
           </div>
 
           <!-- ═══════════════════════════════════════════════════
@@ -876,6 +1011,48 @@ const onTaskClick = (task, index, taskList, type = 'daily_management') => {
   }
   openEvidenceModal(task, type);
 };
+
+// ── Helpers del Timeline Interactivo y Estadísticas Segmentadas ──
+const isCurrentTimeSlot = (startTime, endTime) => {
+  if (!startTime || !endTime) return false;
+  if (!isTodaySelected.value) return false;
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const parseMinutes = (timeStr) => {
+    const parts = timeStr.split(':').map(Number);
+    return parts[0] * 60 + (parts[1] || 0);
+  };
+
+  const startMin = parseMinutes(startTime);
+  const endMin = parseMinutes(endTime);
+
+  return currentMinutes >= startMin && currentMinutes <= endMin;
+};
+
+const isTaskCurrentActive = (task, index, taskList) => {
+  if (isReadOnlyDay.value) return false;
+  if (task.completed || task.status === 'completed' || task.status === 'unfulfilled') return false;
+  if (isTaskBlocked(index, taskList)) return false;
+
+  if (isCurrentTimeSlot(task.start_time, task.end_time)) return true;
+
+  const firstPendingIdx = (taskList || []).findIndex(
+    t => !t.completed && t.status !== 'completed' && t.status !== 'unfulfilled'
+  );
+  return index === firstPendingIdx;
+};
+
+const dmStats = computed(() => {
+  const list = activeDmTaskList.value || [];
+  const total = list.length;
+  const completed = list.filter(t => t.completed || t.status === 'completed').length;
+  const unfulfilled = list.filter(t => t.status === 'unfulfilled').length;
+  const pending = total - completed - unfulfilled;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return { total, completed, unfulfilled, pending, percent };
+});
 
 // ── Modal de Actividad Extraordinaria ─────────────────────────────
 const showExtraordinaryModal = ref(false);
