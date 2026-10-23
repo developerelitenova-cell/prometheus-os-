@@ -13,17 +13,12 @@
   - Persistencia de borradores en tiempo real (`Draft Auto-Save`) en `TaskEvidenceModal.vue` para prevenir pérdida de información al cerrar ventanas o refrescar la página.
   - Tipificación de requerimiento probatorio en tareas (`none`, `text_only`, `photo_required`) para exigir fotos únicamente en tareas críticas.
   - Botón y flujo de **"Actividad Extraordinaria"** no mapeada con circuito de aprobación por Líder o Presidencia (`extraordinary_activities`).
-- **Módulo de Auditoría Histórica y Reingeniería de Indicadores (`LeaderDashboard.vue` / `MasterDashboard.vue`):**
-  - Selector de calendario para auditar evidencias, fotos, textos y justificaciones de cualquier fecha histórica.
-  - Desacoplamiento de métricas: **KPI Diario** (exacto del día sin retroactividad) vs **KPI Acumulado** (% ponderado independiente de jornadas cerradas).
-  - Bloqueo secuencial estratégico: avance obligatorio en orden cronológico paso a paso (tarea N requiere tarea N-1 completada o justificada).
-  - Asignación de franjas horarias exactas por tarea (ej. `06:10 - 06:30`) con monitor visual de timeline.
-- **Estructuración Organizacional y Rebranding:**
-  - Reorganización del organigrama (`MapaCargos.vue`) en 4 niveles jerárquicos oficiales (Nivel 1 al 4) y agrupación por áreas operativas.
-  - Rebranding corporativo unificado: sustitución de **"Oráculo IA"** por **"Asistente IA"** en todo el frontend.
-  - Seed de usuario sandbox de pruebas (`test.operativo@elitenutrition.com`) con tareas escalonadas para certificación de calidad.
-- **Soporte Audiovisual en Nova Academy (`AcademiaElite.vue`):**
-  - Actualización de políticas RLS de Supabase Storage para reproducción pública/autenticada y streaming sin cortes de videos .MP4 corporativos.
+- **Experiencia Visual y UX/UI Stepper Timeline Interactivo (`EmployeeWorkspace.vue`):**
+  - Riel vertical dinámico (`Stepper Rail`) que ilumina el flujo de la jornada en verde esmeralda conforme se avanza.
+  - Tarjetas con acabado **Frosted Glass (vidrio esmerilado translúcido)** para actividades bloqueadas por orden cronológico.
+  - Monitor dinámico de franjas horarias en tiempo real con tag **`● AHORA`** pulsante en la actividad en curso.
+  - Barra segmentada tipo *Stories* en la cabecera para visualización instantánea del ritmo de cumplimiento.
+  - Creación del documento maestro: [docs/usabilidad/guia_visual_mejoras_v2.md](../usabilidad/guia_visual_mejoras_v2.md).
 
 ---
 

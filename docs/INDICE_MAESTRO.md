@@ -125,6 +125,7 @@ graph TD
 | [usabilidad/manual_roles_permisos.md](./usabilidad/manual_roles_permisos.md) | RRHH / Administradores | Manual funcional de accesos: Nivel 1 (Gerencial/Ejecutivo), Nivel 2 (Área/Líder), Nivel 3 (Individual), Master Admin y delegación de claves. |
 | [usabilidad/manual_modulos_especiales.md](./usabilidad/manual_modulos_especiales.md) | Usuarios / Comunicación / SST | Manual de módulos especiales: comunicados corporativos y noticias, soporte de videos y capacitación audiovisual por cargo, calendario y mesa de ayuda WhatsApp. |
 | [usabilidad/especificacion_funcional_mejoras_v2.md](./usabilidad/especificacion_funcional_mejoras_v2.md) | Colaboradores / Líderes / Master | Especificación funcional v2.1: histórico solo lectura, acta de cumplimiento PDF, franjas horarias, bloqueo secuencial, actividades extraordinarias y Asistente IA. |
+| [usabilidad/guia_visual_mejoras_v2.md](./usabilidad/guia_visual_mejoras_v2.md) | Toda la Organización / Operaciones / Auditoría | Documento Especial V2.2: Stepper Timeline interactivo con riel iluminado, tarjetas Frosted Glass en bloqueos, monitor horario en vivo '● AHORA', barra segmentada y actas oficiales PDF. |
 
 ---
 
