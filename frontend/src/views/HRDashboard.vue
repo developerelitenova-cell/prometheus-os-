@@ -41,6 +41,11 @@
           <button @click="activeTab = 'news'" class="pb-3 px-2 font-label-lg transition-colors border-b-2" :class="activeTab === 'news' ? 'border-primary text-primary font-bold' : 'border-transparent text-secondary hover:text-on-surface'">
             Noticias & Flyers
           </button>
+          <button @click="activeTab = 'archives'" class="pb-3 px-2 font-label-lg transition-colors border-b-2 flex items-center gap-1.5" :class="activeTab === 'archives' ? 'border-primary text-primary font-bold' : 'border-transparent text-secondary hover:text-on-surface'">
+            <span class="material-symbols-outlined text-[18px]">folder_special</span>
+            Carpeta de Bajas e Historial
+            <span v-if="archivedEmployees.length > 0" class="ml-1.5 bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full font-bold">{{ archivedEmployees.length }}</span>
+          </button>
         </div>
 
         <!-- Tab 1: Usuarios y Personal -->
@@ -320,6 +325,166 @@
             </div>
           </div>
 
+        </div>
+
+        <!-- Tab 4: Carpeta de Bajas e Historial Archivador -->
+        <div v-if="activeTab === 'archives'" class="flex flex-col gap-6">
+          <!-- Header descriptivo y Métricas -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-5 bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-xs flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-[26px]">folder_zip</span>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-secondary uppercase">Colaboradores Archivados</p>
+                <h4 class="text-2xl font-bold text-on-surface">{{ archivedEmployees.length }}</h4>
+              </div>
+            </div>
+
+            <div class="p-5 bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-xs flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-secondary-container/20 text-secondary flex items-center justify-center">
+                <span class="material-symbols-outlined text-[26px]">task_alt</span>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-secondary uppercase">Gestiones Diarias Respaldadas</p>
+                <h4 class="text-2xl font-bold text-on-surface">
+                  {{ archivedEmployees.reduce((acc, a) => acc + (a.total_completions_recorded || 0), 0) }}
+                </h4>
+              </div>
+            </div>
+
+            <div class="p-5 bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-xs flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-tertiary-container/30 text-tertiary flex items-center justify-center">
+                <span class="material-symbols-outlined text-[26px]">verified_user</span>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-secondary uppercase">Cierres y Evidencias Custodiadas</p>
+                <h4 class="text-2xl font-bold text-on-surface">
+                  {{ archivedEmployees.reduce((acc, a) => acc + (a.total_closings_recorded || 0), 0) }}
+                </h4>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Búsqueda -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface-container-lowest p-4 rounded-2xl border border-surface-container-high shadow-xs">
+            <div class="relative w-full sm:w-96">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
+              <input
+                v-model="archiveSearchQuery"
+                type="text"
+                placeholder="Buscar por colaborador, correo, cargo o administrador..."
+                class="w-full pl-10 pr-4 py-2 bg-surface-container-low rounded-xl border border-transparent focus:border-primary focus:bg-surface text-sm outline-none transition-all"
+              />
+            </div>
+            <div class="text-xs text-secondary flex items-center gap-2">
+              <span class="material-symbols-outlined text-[16px]">lock</span>
+              Repositorio inmutable de auditoría corporativa
+            </div>
+          </div>
+
+          <!-- Tabla de Expedientes Archivados -->
+          <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-xs overflow-hidden">
+            <div v-if="filteredArchives.length === 0" class="p-12 text-center text-secondary flex flex-col items-center justify-center gap-3">
+              <span class="material-symbols-outlined text-[48px] text-outline/50">folder_off</span>
+              <p class="font-medium text-base">No hay expedientes archivados en este momento.</p>
+              <p class="text-xs max-w-md text-secondary/80">Cuando un administrador de de baja a un colaborador, su historial completo de tareas, evidencias y cierres se guardará aquí de forma inalterable.</p>
+            </div>
+
+            <div v-else class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-surface-container-high text-xs text-secondary font-semibold uppercase bg-surface-container-low/50">
+                    <th class="py-3.5 px-4">Colaborador Dado de Baja</th>
+                    <th class="py-3.5 px-4">Empresa & Cargo</th>
+                    <th class="py-3.5 px-4">Fecha de Baja</th>
+                    <th class="py-3.5 px-4">Autorizado Por</th>
+                    <th class="py-3.5 px-4 text-center">Registros Respaldados</th>
+                    <th class="py-3.5 px-4 text-right">Expediente Digital</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-surface-container-high text-sm">
+                  <tr v-for="arch in filteredArchives" :key="arch.id" class="hover:bg-surface-container-low/30 transition-colors">
+                    <!-- Colaborador -->
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-surface-container-high text-secondary flex items-center justify-center font-bold text-xs uppercase">
+                          {{ getInitials(arch.full_name) }}
+                        </div>
+                        <div>
+                          <div class="font-semibold text-on-surface">{{ arch.full_name }}</div>
+                          <div class="text-xs text-secondary">{{ arch.email || 'Sin correo registrado' }}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Empresa & Cargo -->
+                    <td class="py-3.5 px-4">
+                      <div class="font-medium text-on-surface">{{ arch.role_name || 'Sin cargo' }}</div>
+                      <div class="text-xs text-secondary flex items-center gap-1.5 mt-0.5">
+                        <span class="inline-block w-2 h-2 rounded-full" :class="arch.company === 'Futupro' ? 'bg-amber-500' : 'bg-primary'"></span>
+                        {{ arch.company || 'Elite Nutrition' }} • {{ arch.area_name || 'General' }}
+                      </div>
+                    </td>
+
+                    <!-- Fecha de Baja -->
+                    <td class="py-3.5 px-4 text-xs text-secondary whitespace-nowrap">
+                      <div class="font-medium text-on-surface">
+                        {{ new Date(arch.deleted_at).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' }) }}
+                      </div>
+                      <div>
+                        {{ new Date(arch.deleted_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) }}
+                      </div>
+                    </td>
+
+                    <!-- Autorizado Por -->
+                    <td class="py-3.5 px-4 text-xs">
+                      <div class="font-medium text-on-surface">{{ arch.deleted_by_name || 'Administrador' }}</div>
+                      <div class="text-secondary truncate max-w-[150px]" :title="arch.deletion_reason">
+                        {{ arch.deletion_reason || 'Baja laboral' }}
+                      </div>
+                    </td>
+
+                    <!-- Registros Respaldados -->
+                    <td class="py-3.5 px-4 text-center">
+                      <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container text-xs font-medium">
+                        <span title="Tareas diarias">{{ arch.total_completions_recorded || 0 }} tareas</span>
+                        <span>•</span>
+                        <span title="Cierres formales">{{ arch.total_closings_recorded || 0 }} cierres</span>
+                      </div>
+                    </td>
+
+                    <!-- Acciones de Descarga -->
+                    <td class="py-3.5 px-4 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button
+                          @click="openArchiveModal(arch)"
+                          class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
+                          title="Ver Resumen del Expediente"
+                        >
+                          <span class="material-symbols-outlined text-[18px]">visibility</span>
+                        </button>
+                        <button
+                          @click="downloadArchiveJson(arch)"
+                          class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
+                          title="Descargar Carpeta Completa (.json)"
+                        >
+                          <span class="material-symbols-outlined text-[18px]">download</span>
+                        </button>
+                        <button
+                          @click="downloadArchiveMarkdown(arch)"
+                          class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
+                          title="Descargar Acta Laboral (.md)"
+                        >
+                          <span class="material-symbols-outlined text-[18px]">description</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -639,6 +804,120 @@
         </div>
       </div>
 
+      <!-- Modal: Visor de Expediente Histórico / Carpeta de Baja -->
+      <div v-if="showArchiveModal && selectedArchive" class="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+          <!-- Modal Header -->
+          <div class="p-5 border-b border-surface-container-high flex justify-between items-center bg-surface-container-low/40">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">folder_zip</span>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-on-surface">Expediente Digital de Baja Laboral</h3>
+                <p class="text-xs text-secondary">{{ selectedArchive.full_name }} • {{ selectedArchive.role_name || 'Sin cargo' }}</p>
+              </div>
+            </div>
+            <button @click="showArchiveModal = false" class="text-secondary hover:text-on-surface p-1 rounded-lg">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <!-- Modal Body (Scrollable) -->
+          <div class="p-6 overflow-y-auto space-y-5 text-sm">
+            <!-- Tarjeta resumen rápido -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="p-3 bg-surface-container-low rounded-xl">
+                <span class="text-[11px] font-semibold text-secondary uppercase block">Empresa</span>
+                <span class="font-bold text-on-surface text-sm">{{ selectedArchive.company || 'Elite Nutrition' }}</span>
+              </div>
+              <div class="p-3 bg-surface-container-low rounded-xl">
+                <span class="text-[11px] font-semibold text-secondary uppercase block">Área</span>
+                <span class="font-bold text-on-surface text-sm">{{ selectedArchive.area_name || 'General' }}</span>
+              </div>
+              <div class="p-3 bg-surface-container-low rounded-xl">
+                <span class="text-[11px] font-semibold text-secondary uppercase block">Tareas Registradas</span>
+                <span class="font-bold text-primary text-sm">{{ selectedArchive.total_completions_recorded || 0 }}</span>
+              </div>
+              <div class="p-3 bg-surface-container-low rounded-xl">
+                <span class="text-[11px] font-semibold text-secondary uppercase block">Cierres Formales</span>
+                <span class="font-bold text-primary text-sm">{{ selectedArchive.total_closings_recorded || 0 }}</span>
+              </div>
+            </div>
+
+            <!-- Datos de Baja -->
+            <div class="p-4 bg-surface-container-low/60 rounded-xl border border-surface-container-high space-y-1.5 text-xs">
+              <div class="flex justify-between">
+                <span class="text-secondary font-medium">Fecha de Baja:</span>
+                <span class="font-semibold text-on-surface">
+                  {{ new Date(selectedArchive.deleted_at).toLocaleString('es-CO') }}
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-secondary font-medium">Autorizado Por:</span>
+                <span class="font-semibold text-on-surface">{{ selectedArchive.deleted_by_name || 'Administrador' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-secondary font-medium">Motivo:</span>
+                <span class="font-semibold text-on-surface">{{ selectedArchive.deletion_reason || 'Baja laboral' }}</span>
+              </div>
+              <div class="flex justify-between" v-if="selectedArchive.email">
+                <span class="text-secondary font-medium">Correo Original:</span>
+                <span class="font-mono text-on-surface">{{ selectedArchive.email }}</span>
+              </div>
+            </div>
+
+            <!-- Resumen Markdown / Acta -->
+            <div>
+              <label class="block text-xs font-semibold text-secondary uppercase mb-2">Acta Certificada de Custodia:</label>
+              <pre class="w-full p-4 bg-surface-container-lowest border border-surface-container-high rounded-xl text-xs font-mono text-on-surface whitespace-pre-wrap max-h-60 overflow-y-auto">{{ selectedArchive.markdown_summary }}</pre>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="p-4 border-t border-surface-container-high flex flex-wrap justify-between items-center gap-3 bg-surface-container-low/40">
+            <span class="text-xs text-secondary flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px] text-green-600">verified</span>
+              Historial respaldado e inmutable
+            </span>
+            <div class="flex gap-2">
+              <button
+                @click="downloadArchiveJson(selectedArchive)"
+                class="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <span class="material-symbols-outlined text-[16px]">download</span>
+                Descargar JSON Completo
+              </button>
+              <button
+                @click="downloadArchiveMarkdown(selectedArchive)"
+                class="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <span class="material-symbols-outlined text-[16px]">description</span>
+                Descargar Acta MD
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overlay de Carga durante la Baja -->
+      <div v-if="isDeletingEmployee" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center space-y-4">
+          <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto animate-pulse">
+            <span class="material-symbols-outlined text-[32px] animate-spin">progress_activity</span>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-on-surface">Procesando Baja y Archivando</h3>
+            <p class="text-xs text-secondary mt-1">
+              Compilando tareas, evidencias fotográficas y cierres de <strong class="text-on-surface">{{ deletingEmployeeName }}</strong>.
+            </p>
+          </div>
+          <div class="text-[11px] text-secondary font-mono bg-surface-container-low p-2 rounded-lg">
+            Generando expediente inmutable para auditoría laboral...
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </template>
@@ -749,6 +1028,28 @@ const passwordForm = ref({ id: '', full_name: '', email: '', newPassword: '' });
 const passwordLoading = ref(false);
 const passwordError = ref('');
 
+// State - Expedientes y Bajas Archivadas
+const archivedEmployees = ref([]);
+const archiveSearchQuery = ref('');
+const isDeletingEmployee = ref(false);
+const deletingEmployeeName = ref('');
+const showArchiveModal = ref(false);
+const selectedArchive = ref(null);
+
+const filteredArchives = computed(() => {
+  return archivedEmployees.value.filter(arch => {
+    if (!archiveSearchQuery.value.trim()) return true;
+    const q = archiveSearchQuery.value.toLowerCase();
+    const nameMatch = arch.full_name?.toLowerCase().includes(q);
+    const emailMatch = arch.email?.toLowerCase().includes(q);
+    const roleMatch = arch.role_name?.toLowerCase().includes(q);
+    const areaMatch = arch.area_name?.toLowerCase().includes(q);
+    const companyMatch = arch.company?.toLowerCase().includes(q);
+    const adminMatch = arch.deleted_by_name?.toLowerCase().includes(q);
+    return nameMatch || emailMatch || roleMatch || areaMatch || companyMatch || adminMatch;
+  });
+});
+
 // State - Contratos
 const selectedEmployeeForContract = ref('');
 const signatureCanvas = ref(null);
@@ -833,6 +1134,19 @@ const loadData = async () => {
   // 4. Noticias
   const { data: news } = await supabase.from('corporate_news').select('*').order('created_at', { ascending: false });
   activeNews.value = news || [];
+
+  // 5. Cargar expedientes archivados de colaboradores dados de baja
+  try {
+    const { data: archives, error: archErr } = await supabase
+      .from('deleted_user_archives')
+      .select('*')
+      .order('deleted_at', { ascending: false });
+    if (!archErr && archives) {
+      archivedEmployees.value = archives;
+    }
+  } catch (archEx) {
+    console.warn('Aviso al cargar deleted_user_archives:', archEx);
+  }
 };
 
 const getInitials = (name) => {
@@ -1246,29 +1560,145 @@ const toggleUserStatus = async (user) => {
   }
 };
 
+const downloadJsonFile = (filename, dataObj) => {
+  try {
+    const jsonStr = JSON.stringify(dataObj, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.warn('Error al descargar archivo JSON:', err);
+  }
+};
+
+const downloadTextFile = (filename, textContent) => {
+  try {
+    const blob = new Blob([textContent], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.warn('Error al descargar archivo de texto:', err);
+  }
+};
+
+const openArchiveModal = (arch) => {
+  selectedArchive.value = arch;
+  showArchiveModal.value = true;
+};
+
+const downloadArchiveJson = (arch) => {
+  const safeName = (arch.full_name || 'EXPEDIENTE').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  const dateStr = arch.deleted_at ? arch.deleted_at.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  const data = arch.archive_data || arch;
+  downloadJsonFile(`EXPEDIENTE_HISTORIAL_${safeName}_${dateStr}.json`, data);
+};
+
+const downloadArchiveMarkdown = (arch) => {
+  const safeName = (arch.full_name || 'EXPEDIENTE').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  const dateStr = arch.deleted_at ? arch.deleted_at.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  const md = arch.markdown_summary || `# Expediente de ${arch.full_name}`;
+  downloadTextFile(`ACTA_BAJA_LABORAL_${safeName}_${dateStr}.md`, md);
+};
+
 const handleDeleteEmployee = async (user) => {
-  if (!confirm(`¿Estás seguro de eliminar permanentemente la cuenta de ${user.full_name}? Esta acción no se puede deshacer.`)) return;
+  const confirmMsg = `¿Estás seguro de dar de baja y eliminar la cuenta de ${user.full_name}?\n\n` +
+    `📁 ARCHIVO OBLIGATORIO DE AUDITORÍA:\n` +
+    `• Se recopilará y guardará la Carpeta de Historial con todas sus tareas, evidencias y cierres.\n` +
+    `• El expediente digital se descargará de inmediato en tu equipo para custodia laboral.\n` +
+    `• Podrás consultarlo y volverlo a descargar en cualquier momento desde la pestaña "Carpeta de Bajas".`;
+
+  if (!confirm(confirmMsg)) return;
+
+  isDeletingEmployee.value = true;
+  deletingEmployeeName.value = user.full_name;
 
   try {
-    let backendSuccess = false;
+    let archiveData = null;
+    let markdownSummary = '';
+
+    // 1. Intentar mediante la Serverless Function de Vercel (/api/admin-delete-user)
     try {
-      const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/employee/${user.id}`, {
-        method: 'DELETE'
+      const res = await fetchWithAuth('/api/admin-delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: user.id,
+          reason: 'Baja administrativa autorizada por Liderazgo / RRHH'
+        })
       });
-      if (res.ok) backendSuccess = true;
+
+      if (res.ok) {
+        const payload = await res.json();
+        archiveData = payload.archive?.archive_data || payload.archive;
+        markdownSummary = payload.archive?.markdown_summary || payload.markdownSummary || '';
+      } else {
+        const errPayload = await res.json().catch(() => ({}));
+        console.warn('Aviso: /api/admin-delete-user respondió no-ok:', res.status, errPayload);
+      }
     } catch (apiErr) {
-      console.warn('Backend no disponible para borrado de Auth:', apiErr);
+      console.warn('Fallo al invocar /api/admin-delete-user:', apiErr);
     }
 
-    if (!backendSuccess) {
-      const { error } = await supabase.from('profiles').delete().eq('id', user.id);
-      if (error) throw error;
+    // 2. Si no respondió la serverless function (ej. entorno local desconectado), invocar RPC en Supabase
+    if (!archiveData) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentAdminId = sessionData?.session?.user?.id;
+
+      if (!currentAdminId) {
+        throw new Error('No se detectó sesión activa de administrador.');
+      }
+
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('archive_and_delete_user', {
+        p_target_user_id: user.id,
+        p_admin_id: currentAdminId,
+        p_reason: 'Baja administrativa autorizada'
+      });
+
+      if (rpcErr) {
+        throw new Error(rpcErr.message || 'No se pudo completar el proceso de baja en la base de datos.');
+      }
+
+      archiveData = rpcRes?.archive_data || rpcRes;
+      markdownSummary = rpcRes?.markdown_summary || '';
     }
 
+    // 3. Disparar la descarga automática de la Carpeta de Historial y el Acta
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const safeName = (user.full_name || 'COLABORADOR').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+
+    if (archiveData) {
+      downloadJsonFile(`EXPEDIENTE_HISTORIAL_${safeName}_${dateStr}.json`, archiveData);
+    }
+    if (markdownSummary) {
+      downloadTextFile(`ACTA_BAJA_LABORAL_${safeName}_${dateStr}.md`, markdownSummary);
+    }
+
+    // 4. Recargar datos en la vista
     await loadData();
-    alert(`Cuenta de ${user.full_name} eliminada.`);
+
+    alert(
+      `✅ Colaborador ${user.full_name} dado de baja exitosamente.\n\n` +
+      `📁 La Carpeta con su Historial Completo ha sido resguardada en la base de datos (pestaña "Carpeta de Bajas") ` +
+      `y el expediente digital ha sido descargado en tu equipo.`
+    );
   } catch (e) {
-    alert('Error al eliminar cuenta: ' + (e.message || e));
+    console.error('Error al dar de baja:', e);
+    alert('Error al dar de baja al colaborador: ' + (e.message || e));
+  } finally {
+    isDeletingEmployee.value = false;
+    deletingEmployeeName.value = '';
   }
 };
 

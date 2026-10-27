@@ -371,13 +371,130 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
 
 @app.delete("/api/v1/admin/employee/{user_id}")
 def delete_employee(user_id: str, user=Depends(verify_jwt)):
-    require_password_manager(user)
+    require_admin_or_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado en el backend")
     try:
+        # 1. Intentar vía procedimiento almacenado RPC
+        try:
+            rpc_res = supabase.rpc("archive_and_delete_user", {
+                "p_target_user_id": user_id,
+                "p_admin_id": user.id,
+                "p_reason": "Baja administrativa autorizada"
+            }).execute()
+            if rpc_res.data:
+                try:
+                    supabase.auth.admin.delete_user(user_id)
+                except Exception:
+                    pass
+                return {"status": "deleted", "archive": rpc_res.data}
+        except Exception as rpc_err:
+            print(f"Aviso: RPC archive_and_delete_user falló en backend ({rpc_err}), ejecutando archivado directo.")
+
+        # 2. Respaldo directo: recopilar perfil e historial
+        target_res = supabase.table("profiles").select("*, roles(name, areas(name))").eq("id", user_id).single().execute()
+        target_profile = target_res.data if target_res else None
+        
+        if not target_profile:
+            raise HTTPException(status_code=404, detail="Colaborador no encontrado en la base de datos")
+
+        role_name = (target_profile.get("roles") or {}).get("name", "Sin cargo")
+        area_name = ((target_profile.get("roles") or {}).get("areas") or {}).get("name", "General")
+
+        tasks_res = supabase.table("tasks").select("*").eq("assigned_to", user_id).execute()
+        completions_res = supabase.table("task_completions").select("*, role_task_templates(title)").eq("profile_id", user_id).execute()
+        closings_res = supabase.table("daily_closings").select("*").eq("profile_id", user_id).execute()
+        extraordinary_res = supabase.table("extraordinary_activities").select("*").eq("profile_id", user_id).execute()
+
+        tasks = tasks_res.data or []
+        completions = completions_res.data or []
+        closings = closings_res.data or []
+        extraordinary = extraordinary_res.data or []
+
+        archive_payload = {
+            "metadata": {
+                "version": "2.2",
+                "archived_by_id": user.id,
+                "deletion_reason": "Baja administrativa autorizada"
+            },
+            "profile": target_profile,
+            "summary_metrics": {
+                "total_tasks_assigned": len(tasks),
+                "total_task_completions": len(completions),
+                "total_daily_closings": len(closings),
+                "total_extraordinary_activities": len(extraordinary)
+            },
+            "history": {
+                "tasks": tasks,
+                "task_completions": completions,
+                "daily_closings": closings,
+                "extraordinary_activities": extraordinary
+            }
+        }
+
+        markdown_summary = f"""# EXPEDIENTE DE DESVINCULACIÓN Y ARCHIVO HISTÓRICO
+**Sistema Corporativo PROMETHEUS OS / NOVA WORK**
+
+- **Colaborador:** {target_profile.get('full_name')}
+- **Correo:** {target_profile.get('email', 'N/A')}
+- **Empresa:** {target_profile.get('company', 'Elite Nutrition')}
+- **Cargo:** {role_name}
+- **Área:** {area_name}
+- **Total Tareas Completadas:** {len(completions)}
+- **Total Cierres Diarios:** {len(closings)}
+"""
+
+        try:
+            supabase.table("deleted_user_archives").insert({
+                "original_user_id": user_id,
+                "full_name": target_profile.get("full_name"),
+                "email": target_profile.get("email"),
+                "company": target_profile.get("company"),
+                "role_id": target_profile.get("role_id"),
+                "role_name": role_name,
+                "area_name": area_name,
+                "deleted_by": user.id,
+                "deletion_reason": "Baja administrativa autorizada",
+                "total_tasks_recorded": len(tasks),
+                "total_completions_recorded": len(completions),
+                "total_closings_recorded": len(closings),
+                "total_extraordinary_recorded": len(extraordinary),
+                "archive_data": archive_payload,
+                "markdown_summary": markdown_summary
+            }).execute()
+        except Exception as arch_err:
+            print(f"Aviso al guardar en deleted_user_archives: {arch_err}")
+
+        # Limpiar dependencias foráneas
+        try:
+            supabase.table("tasks").update({"assigned_to": None}).eq("assigned_to", user_id).execute()
+            supabase.table("tasks").update({"assigned_by": None}).eq("assigned_by", user_id).execute()
+            supabase.table("task_completions").delete().eq("profile_id", user_id).execute()
+            supabase.table("daily_closings").delete().eq("profile_id", user_id).execute()
+            supabase.table("extraordinary_activities").delete().eq("profile_id", user_id).execute()
+            supabase.table("notifications").delete().eq("profile_id", user_id).execute()
+        except Exception:
+            pass
+
+        # Eliminar perfil y auth user
         supabase.table("profiles").delete().eq("id", user_id).execute()
-        supabase.auth.admin.delete_user(user_id)
-        return {"status": "deleted"}
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception:
+            pass
+
+        return {
+            "status": "deleted",
+            "message": f"Usuario {target_profile.get('full_name')} eliminado y archivado correctamente.",
+            "archive": {
+                "user_id": user_id,
+                "full_name": target_profile.get("full_name"),
+                "markdown_summary": markdown_summary,
+                "archive_data": archive_payload
+            }
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
