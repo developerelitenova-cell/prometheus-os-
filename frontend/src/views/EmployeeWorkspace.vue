@@ -65,7 +65,10 @@
               </div>
               <div>
                 <h2 class="text-xl font-semibold tracking-tight text-[#1d1d1f]">{{ currentProfile?.full_name || 'Cargando...' }}</h2>
-                <p class="text-[14px] text-[#b08d57] font-medium mt-0.5">{{ currentProfile?.is_master_admin ? 'Master Admin / Holding' : (currentRole?.name || '---') }}</p>
+                <p class="text-[14px] text-[#b08d57] font-medium mt-0.5">
+                  {{ currentRole?.name ? currentRole.name : (currentProfile?.is_master_admin ? 'Master Admin / Holding' : 'Sin cargo asignado') }}
+                  <span v-if="currentProfile?.is_master_admin && currentRole?.name" class="text-xs text-gray-400 font-normal ml-1">(Admin)</span>
+                </p>
                 <div class="flex items-center gap-2 mt-2">
                    <span class="px-2 py-0.5 bg-[#f5f5f7] border border-[#e5e5ea] rounded-full text-[11px] font-semibold text-[#86868b]">ID: {{ currentProfile?.id?.substring(0,6) }}</span>
                    <span class="px-2 py-0.5 bg-[#f5f5f7] border border-[#e5e5ea] rounded-full text-[11px] font-semibold text-[#86868b]">Ciclo: Activo</span>
@@ -387,18 +390,27 @@
           ═══════════════════════════════════════════════════ -->
           <div class="bg-white rounded-3xl border border-[#e5e5ea] shadow-sm overflow-hidden">
             <!-- Header con Título y Tabs -->
-            <div class="px-6 py-4 border-b border-[#e5e5ea] bg-gradient-to-r from-[#f0fdf4] via-white to-white flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-[#e5e5ea] bg-gradient-to-r from-[#f0fdf4] via-white to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-[#34c759]/15 text-[#248a3d] flex items-center justify-center shrink-0 shadow-xs">
                   <span class="material-symbols-outlined text-[22px]">checklist</span>
                 </div>
                 <div>
-                  <h3 class="text-base font-bold text-[#1d1d1f] leading-none">Gestión Diaria</h3>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-base font-bold text-[#1d1d1f] leading-none">Gestión Diaria</h3>
+                    <span v-if="currentRole?.name" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#b08d57]/15 text-[#8a6d3d] border border-[#b08d57]/30 shadow-2xs">
+                      <span class="material-symbols-outlined text-[13px]">badge</span>
+                      {{ currentRole.name }}
+                    </span>
+                    <span v-if="currentRole?.areas?.name" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                      {{ currentRole.areas.name }}
+                    </span>
+                  </div>
                   <p class="text-xs text-[#86868b] mt-1">Timeline Secuencial Obligatorio · Flujo Cronológico</p>
                 </div>
               </div>
               <!-- Tab selector Diario/Semanal/Mensual -->
-              <div class="flex items-center bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl p-1 gap-1">
+              <div class="flex items-center bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl p-1 gap-1 shrink-0 self-start sm:self-auto">
                 <button v-for="t in [{k:'daily',l:'Diario'},{k:'weekly',l:'Semanal'},{k:'monthly',l:'Mensual'}]" :key="t.k"
                   @click="dmTab = t.k"
                   :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
@@ -497,6 +509,19 @@
                     <!-- Fila Superior: Franja Horaria + Badges -->
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                       <div class="flex flex-wrap items-center gap-2">
+                        <!-- Número de Paso en la Secuencia -->
+                        <span 
+                          class="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-xs font-black"
+                          :class="[
+                            (task.completed || task.status === 'completed') ? 'bg-[#34c759]/15 text-[#248a3d]' :
+                            isTaskCurrentActive(task, index, activeDmTaskList) ? 'bg-[#0071e3] text-white' :
+                            'bg-gray-100 text-gray-700'
+                          ]"
+                          title="Orden en la secuencia"
+                        >
+                          #{{ index + 1 }}
+                        </span>
+
                         <!-- Franja Horaria -->
                         <span 
                           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold tracking-tight"
@@ -1723,6 +1748,18 @@ const initWorkspace = async () => {
     }
 
     currentRole.value = currentProfile.value?.roles || null;
+    if (!currentRole.value && currentProfile.value?.role_id) {
+      try {
+        const { data: rData } = await supabase
+          .from('roles')
+          .select('*, areas(name)')
+          .eq('id', currentProfile.value.role_id)
+          .maybeSingle();
+        if (rData) currentRole.value = rData;
+      } catch (err) {
+        console.warn('Fallback fetching role failed:', err);
+      }
+    }
 
     if (!currentProfile.value) return;
 
@@ -1985,7 +2022,7 @@ const fetchDailyClosing = async () => {
       .from('daily_closings')
       .select('*')
       .eq('profile_id', currentProfile.value.id)
-      .eq('closing_date', selectedDateStr.value)
+      .eq('period_key', selectedDateStr.value)
       .maybeSingle();
     if (!error && data) {
       currentDayClosing.value = data;
@@ -2010,6 +2047,7 @@ const consolidateAndCloseDay = async () => {
   try {
     const total = activeDmTaskList.value.length;
     const completed = activeDmTaskList.value.filter(t => t.completed || t.status === 'completed').length;
+    const unfulfilled = activeDmTaskList.value.filter(t => t.status === 'unfulfilled').length;
     const score = total > 0 ? Number(((completed / total) * 100).toFixed(1)) : 100;
 
     const summaryPayload = {
@@ -2026,17 +2064,22 @@ const consolidateAndCloseDay = async () => {
       }))
     };
 
+    const closingPayload = {
+      profile_id: currentProfile.value.id,
+      period_key: selectedDateStr.value,
+      compliance_percentage: score,
+      total_tasks: total,
+      completed_tasks: completed,
+      unfulfilled_tasks: unfulfilled,
+      extraordinary_tasks: 0,
+      notes: JSON.stringify(summaryPayload),
+      status: 'closed',
+      closed_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('daily_closings')
-      .upsert({
-        profile_id: currentProfile.value.id,
-        closing_date: selectedDateStr.value,
-        kpi_score: score,
-        total_tasks: total,
-        completed_tasks: completed,
-        summary: summaryPayload,
-        closed_at: new Date().toISOString()
-      }, { onConflict: 'profile_id,closing_date' })
+      .upsert(closingPayload, { onConflict: 'profile_id,period_key' })
       .select()
       .single();
 
@@ -2199,7 +2242,8 @@ const fetchDailyManagement = async (roleId, profileId) => {
       .select('*')
       .eq('role_id', roleId)
       .eq('active', true)
-      .order('sequence_order', { ascending: true, nullsFirst: false });
+      .order('sequence_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
     if (templatesError) throw templatesError;
 
     let completions = [];
@@ -2226,7 +2270,12 @@ const fetchDailyManagement = async (roleId, profileId) => {
     const withStatus = (frequency) => {
       const filtered = (templates || [])
         .filter(t => t.frequency === frequency)
-        .sort((a, b) => (a.sequence_order || 999) - (b.sequence_order || 999));
+        .sort((a, b) => {
+          const orderA = a.sequence_order !== null && a.sequence_order !== undefined ? a.sequence_order : 999;
+          const orderB = b.sequence_order !== null && b.sequence_order !== undefined ? b.sequence_order : 999;
+          if (orderA !== orderB) return orderA - orderB;
+          return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+        });
 
       return filtered.map(t => {
         const pKey = frequency === 'daily' ? selectedDateStr.value : getPeriodKey(frequency);

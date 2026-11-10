@@ -309,18 +309,65 @@
                       <!-- Tasks Grouped by frequency -->
                       <div v-for="freq in FREQUENCIES" :key="freq" class="bg-surface-container-lowest border border-surface-container-high rounded-xl overflow-hidden">
                         <div class="bg-surface-container-low px-3 py-2 font-label-sm text-label-sm font-semibold text-on-surface-variant flex items-center justify-between">
-                          {{ FREQUENCY_LABELS[freq] }}
-                          <span class="bg-surface-container-highest text-secondary px-2 rounded-full text-[10px]">{{ tasksByFrequency[freq].length }}</span>
+                          <div class="flex items-center gap-2">
+                            <span>{{ FREQUENCY_LABELS[freq] }}</span>
+                            <span class="bg-surface-container-highest text-secondary px-2 rounded-full text-[10px]">{{ tasksByFrequency[freq].length }}</span>
+                          </div>
+                          <button 
+                            v-if="canManageTasks && tasksByFrequency[freq].length > 1"
+                            type="button"
+                            @click="normalizeSequence(freq)"
+                            :disabled="reorderingTask"
+                            class="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            title="Fija el orden correlativo 1..N en la base de datos para asegurar la secuencia en el portal"
+                          >
+                            <span class="material-symbols-outlined text-[14px]">format_list_numbered</span>
+                            <span>Fijar Orden 1..N</span>
+                          </button>
                         </div>
                         
                         <ul class="divide-y divide-surface-container-high">
-                          <li v-for="task in tasksByFrequency[freq]" :key="task.id" class="p-3 hover:bg-surface-container/30 transition-colors" :class="{ 'opacity-60 bg-gray-50/50': !task.active }">
+                          <li v-for="(task, taskIdx) in tasksByFrequency[freq]" :key="task.id" class="p-3 hover:bg-surface-container/30 transition-colors" :class="{ 'opacity-60 bg-gray-50/50': !task.active }">
                             <div class="flex justify-between items-start gap-2">
-                              <div class="flex-1">
-                                <div class="flex items-center gap-2">
+                              <!-- Controles de Reordenamiento Secuencial -->
+                              <div v-if="canManageTasks" class="flex flex-col items-center justify-center shrink-0 -ml-1 mr-1">
+                                <button 
+                                  type="button"
+                                  @click="moveRoleTask(task, 'up', freq)" 
+                                  :disabled="taskIdx === 0 || reorderingTask"
+                                  class="p-0.5 rounded hover:bg-surface-container text-secondary disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                  title="Subir en la secuencia"
+                                >
+                                  <span class="material-symbols-outlined text-[18px]">expand_less</span>
+                                </button>
+                                <span class="text-[10px] font-mono font-bold text-on-surface bg-surface-container px-1 rounded" title="Posición en la secuencia">
+                                  #{{ taskIdx + 1 }}
+                                </span>
+                                <button 
+                                  type="button"
+                                  @click="moveRoleTask(task, 'down', freq)" 
+                                  :disabled="taskIdx === tasksByFrequency[freq].length - 1 || reorderingTask"
+                                  class="p-0.5 rounded hover:bg-surface-container text-secondary disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                  title="Bajar en la secuencia"
+                                >
+                                  <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                                </button>
+                              </div>
+                              <div v-else class="shrink-0 mr-1.5 self-center">
+                                <span class="text-[10px] font-mono font-bold text-secondary bg-surface-container px-1.5 py-0.5 rounded">#{{ taskIdx + 1 }}</span>
+                              </div>
+
+                              <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
                                   <span class="font-label-sm text-label-sm text-on-surface font-medium block">{{ task.title }}</span>
                                   <span :class="['text-[10px] font-bold px-1.5 py-0.5 rounded', task.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-500 border border-gray-200']">
                                     {{ task.active ? 'Activa' : 'Pausada' }}
+                                  </span>
+                                  <span v-if="task.evidence_requirement && task.evidence_requirement !== 'none'" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                    {{ task.evidence_requirement === 'photo_required' ? 'Foto requerida' : 'Nota requerida' }}
+                                  </span>
+                                  <span v-if="task.start_time && task.end_time" class="text-[10px] font-mono text-secondary bg-surface-container px-1.5 py-0.2 rounded">
+                                    {{ task.start_time.substring(0,5) }} - {{ task.end_time.substring(0,5) }}
                                   </span>
                                 </div>
                                 <p v-if="task.description" class="font-caption text-caption text-secondary mt-0.5">{{ task.description }}</p>
@@ -361,9 +408,25 @@
                               <option value="medium">Media</option>
                               <option value="low">Baja</option>
                             </select>
+                            <select v-model="newRoleTask.evidence_requirement" class="flex-1 bg-surface-container-lowest px-2 py-1.5 rounded-lg text-on-surface font-body-sm text-body-sm border border-surface-container-highest focus:outline-none" title="Requisito de evidencia">
+                              <option value="none">Sin evidencia</option>
+                              <option value="text_only">Nota obligatoria</option>
+                              <option value="photo_required">Foto obligatoria</option>
+                            </select>
                           </div>
-                          <button type="submit" :disabled="savingRoleTask" class="w-full mt-2 bg-inverse-surface text-inverse-on-surface font-label-sm text-label-sm py-2 rounded-lg hover:bg-on-surface transition-colors">
-                            {{ savingRoleTask ? 'Guardando...' : 'Agregar Tarea' }}
+
+                          <div class="flex items-center gap-2 pt-1 text-xs text-secondary">
+                            <span class="shrink-0 flex items-center gap-1 font-medium">
+                              <span class="material-symbols-outlined text-[15px]">schedule</span> Franja:
+                            </span>
+                            <input type="time" v-model="newRoleTask.start_time" class="bg-surface-container-lowest px-2 py-1 rounded text-on-surface border border-surface-container-highest text-xs focus:outline-none"/>
+                            <span>a</span>
+                            <input type="time" v-model="newRoleTask.end_time" class="bg-surface-container-lowest px-2 py-1 rounded text-on-surface border border-surface-container-highest text-xs focus:outline-none"/>
+                          </div>
+
+                          <button type="submit" :disabled="savingRoleTask" class="w-full mt-2 bg-inverse-surface text-inverse-on-surface font-label-sm text-label-sm py-2 rounded-lg hover:bg-on-surface transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50">
+                            <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                            <span>{{ savingRoleTask ? 'Guardando...' : 'Agregar Tarea a la Secuencia' }}</span>
                           </button>
                         </div>
                       </form>
@@ -964,7 +1027,16 @@ const deleteRole = async () => {
 const roleTasks = ref([]);
 const loadingRoleTasks = ref(false);
 const savingRoleTask = ref(false);
-const newRoleTask = ref({ title: '', description: '', frequency: 'daily', priority: 'medium' });
+const reorderingTask = ref(false);
+const newRoleTask = ref({
+  title: '',
+  description: '',
+  frequency: 'daily',
+  priority: 'medium',
+  evidence_requirement: 'none',
+  start_time: '',
+  end_time: ''
+});
 
 const canManageTasks = computed(() => {
   if (isMaster.value) return true;
@@ -977,6 +1049,14 @@ const tasksByFrequency = computed(() => {
   for (const t of roleTasks.value) {
     if (grouped[t.frequency]) grouped[t.frequency].push(t);
   }
+  for (const freq of ['daily', 'weekly', 'monthly']) {
+    grouped[freq].sort((a, b) => {
+      const orderA = a.sequence_order !== null && a.sequence_order !== undefined ? a.sequence_order : 999;
+      const orderB = b.sequence_order !== null && b.sequence_order !== undefined ? b.sequence_order : 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+    });
+  }
   return grouped;
 });
 
@@ -987,6 +1067,7 @@ const fetchRoleTasks = async (roleId) => {
       .from('role_task_templates')
       .select('*')
       .eq('role_id', roleId)
+      .order('sequence_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: true });
     if (error) throw error;
     roleTasks.value = data || [];
@@ -1003,21 +1084,95 @@ const addRoleTask = async () => {
   savingRoleTask.value = true;
   try {
     const { data: session } = await supabase.auth.getSession();
+    const currentList = tasksByFrequency.value[newRoleTask.value.frequency] || [];
+    const nextSeq = currentList.length + 1;
     const { error } = await supabase.from('role_task_templates').insert({
       role_id: selectedRole.value.id,
       title: newRoleTask.value.title.trim(),
       description: newRoleTask.value.description.trim() || null,
       frequency: newRoleTask.value.frequency,
       priority: newRoleTask.value.priority,
+      sequence_order: nextSeq,
+      start_time: newRoleTask.value.start_time ? `${newRoleTask.value.start_time}:00` : '08:00:00',
+      end_time: newRoleTask.value.end_time ? `${newRoleTask.value.end_time}:00` : '08:30:00',
+      evidence_requirement: newRoleTask.value.evidence_requirement || 'none',
       created_by: session?.session?.user?.id || null
     });
     if (error) throw error;
-    newRoleTask.value = { title: '', description: '', frequency: 'daily', priority: 'medium' };
+    newRoleTask.value = {
+      title: '',
+      description: '',
+      frequency: 'daily',
+      priority: 'medium',
+      evidence_requirement: 'none',
+      start_time: '',
+      end_time: ''
+    };
     await fetchRoleTasks(selectedRole.value.id);
   } catch (err) {
     alert('No se pudo agregar: ' + err.message);
   } finally {
     savingRoleTask.value = false;
+  }
+};
+
+const moveRoleTask = async (task, direction, freq) => {
+  const list = [...(tasksByFrequency.value[freq] || [])];
+  const index = list.findIndex(t => t.id === task.id);
+  if (index === -1) return;
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= list.length) return;
+
+  const targetTask = list[targetIndex];
+  list[index] = targetTask;
+  list[targetIndex] = task;
+
+  const updates = list.map((item, idx) => ({
+    id: item.id,
+    sequence_order: idx + 1
+  }));
+
+  for (const item of list) {
+    const found = roleTasks.value.find(t => t.id === item.id);
+    const u = updates.find(x => x.id === item.id);
+    if (found && u) found.sequence_order = u.sequence_order;
+  }
+
+  reorderingTask.value = true;
+  try {
+    for (const u of updates) {
+      await supabase
+        .from('role_task_templates')
+        .update({ sequence_order: u.sequence_order })
+        .eq('id', u.id);
+    }
+  } catch (err) {
+    console.error('Error al persistir orden:', err);
+    await fetchRoleTasks(selectedRole.value.id);
+  } finally {
+    reorderingTask.value = false;
+  }
+};
+
+const normalizeSequence = async (freq) => {
+  const list = [...(tasksByFrequency.value[freq] || [])];
+  if (list.length === 0) return;
+  reorderingTask.value = true;
+  try {
+    for (let idx = 0; idx < list.length; idx++) {
+      const item = list[idx];
+      await supabase
+        .from('role_task_templates')
+        .update({ sequence_order: idx + 1 })
+        .eq('id', item.id);
+      const found = roleTasks.value.find(t => t.id === item.id);
+      if (found) found.sequence_order = idx + 1;
+    }
+    alert(`Se guardó exitosamente el orden secuencial de ${list.length} tareas (1..${list.length}).`);
+  } catch (err) {
+    alert('Error al fijar orden: ' + err.message);
+  } finally {
+    reorderingTask.value = false;
   }
 };
 
