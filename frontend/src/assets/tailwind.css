@@ -6,6 +6,23 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (max-width: 767px) {
+    button,
+    a[role="button"],
+    select,
+    input[type="date"],
+    input[type="month"] {
+      min-height: 44px;
+    }
+  }
+
   .material-symbols-outlined {
     font-family: 'Material Symbols Outlined';
     font-weight: normal;

@@ -757,6 +757,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '../api/supabase';
 import { FREQUENCIES, FREQUENCY_LABELS } from '../utils/taskPeriods';
+import { notifyRoleChangeFallback } from '../utils/notifications';
 
 // Base reactive state
 const roles = ref([]);
@@ -976,15 +977,52 @@ const saveEditRole = async () => {
   if (!editingRole.value || !editForm.value.name.trim()) return;
   savingRole.value = true;
   try {
+    const prevRole = { ...editingRole.value };
+    const nextName = editForm.value.name.trim();
+    const nextArea = editForm.value.area_id;
+    const nextLevel = editForm.value.access_level;
+
     const { error } = await supabase
       .from('roles')
       .update({
-        name: editForm.value.name.trim(),
-        area_id: editForm.value.area_id,
-        access_level: editForm.value.access_level,
+        name: nextName,
+        area_id: nextArea,
+        access_level: nextLevel,
       })
       .eq('id', editingRole.value.id);
     if (error) throw error;
+
+    const changedFields = {};
+    const labels = [];
+    if (prevRole.name !== nextName) {
+      changedFields.name = { before: prevRole.name, after: nextName };
+      labels.push(`Título del cargo: '${prevRole.name}' -> '${nextName}'`);
+    }
+    if (prevRole.area_id !== nextArea) {
+      changedFields.area_id = { before: prevRole.area_id, after: nextArea };
+      labels.push('Área/Departamento actualizado');
+    }
+    if (prevRole.access_level !== nextLevel) {
+      changedFields.access_level = { before: prevRole.access_level, after: nextLevel };
+      labels.push(`Nivel: ${prevRole.access_level} -> ${nextLevel}`);
+    }
+
+    if (labels.length > 0) {
+      const { data: affected } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('role_id', editingRole.value.id);
+      for (const emp of (affected || [])) {
+        await notifyRoleChangeFallback({
+          affectedProfileId: emp.id,
+          employeeName: emp.full_name || 'Colaborador',
+          changedFields,
+          summary: labels.join('; '),
+          roleId: editingRole.value.id,
+        });
+      }
+    }
+
     showNotif(`Cargo actualizado correctamente.`, 'success');
     editingRole.value = null;
     await fetchRoles();

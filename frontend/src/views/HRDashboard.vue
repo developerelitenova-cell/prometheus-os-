@@ -926,6 +926,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../api/supabase';
+import { notifyRoleChangeFallback } from '../utils/notifications';
 
 const router = useRouter();
 const loading = ref(true);
@@ -1464,6 +1465,41 @@ const submitEditEmployee = async () => {
       }
 
       if (supaErr) throw supaErr;
+
+      // Notificar al colaborador y a RRHH si hubo cambios de cargo/perfil en el fallback directo
+      const prevEmp = allEmployees.value.find(e => e.id === editForm.value.id);
+      if (prevEmp) {
+        const changedFields = {};
+        const changeLabels = [];
+        const prevRoleId = prevEmp.role_id || null;
+        const nextRoleId = editForm.value.role_id || null;
+        if (prevRoleId !== nextRoleId) {
+          const oldRoleName = prevEmp.roles?.name || 'Sin cargo';
+          const newRoleObj = rolesList.value.find(r => r.id === nextRoleId);
+          const newRoleName = newRoleObj?.name || 'Sin cargo';
+          changedFields.role_id = { before: prevRoleId, after: nextRoleId };
+          changeLabels.push(`Cargo: '${oldRoleName}' -> '${newRoleName}'`);
+        }
+        const prevCompany = getEmployeeCompany(prevEmp);
+        const nextCompany = editForm.value.company || 'Elite Nutrition';
+        if (prevCompany !== nextCompany) {
+          changedFields.company = { before: prevCompany, after: nextCompany };
+          changeLabels.push(`Empresa: '${prevCompany}' -> '${nextCompany}'`);
+        }
+        if ((prevEmp.approval_status || 'approved') !== editForm.value.approval_status) {
+          changedFields.approval_status = { before: prevEmp.approval_status, after: editForm.value.approval_status };
+          changeLabels.push(`Estado: '${prevEmp.approval_status}' -> '${editForm.value.approval_status}'`);
+        }
+        if (changeLabels.length > 0) {
+          await notifyRoleChangeFallback({
+            affectedProfileId: editForm.value.id,
+            employeeName: editForm.value.full_name.trim(),
+            changedFields,
+            summary: changeLabels.join('; '),
+            roleId: nextRoleId,
+          });
+        }
+      }
     }
 
     showEditModal.value = false;

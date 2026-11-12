@@ -1762,6 +1762,7 @@ import { useRouter } from 'vue-router';
 import { getLatestRoleKpiScore } from '@/api/kpi';
 import { signOut, canAccessKpis } from '@/api/auth';
 import { getPeriodKey } from '@/utils/taskPeriods';
+import { scheduleTaskReminders } from '@/utils/notifications';
 
 const router = useRouter();
 const canManageKpis = computed(() => canAccessKpis());
@@ -3113,8 +3114,22 @@ const submitTask = async () => {
       status: 'pending'
     }));
 
-    const { error: taskError } = await supabase.from('tasks').insert(inserts);
+    const { data: insertedTasks, error: taskError } = await supabase.from('tasks').insert(inserts).select();
     if (taskError) throw taskError;
+
+    // Programar alertas de vencimiento 48h, 24h y 2h (o inmediata si falta < 2h)
+    for (const createdTask of (insertedTasks || [])) {
+      if (createdTask.due_date && createdTask.assigned_to) {
+        await scheduleTaskReminders({
+          taskId: createdTask.id,
+          assignedTo: createdTask.assigned_to,
+          dueDate: createdTask.due_date,
+          dueTime: createdTask.due_time,
+          title: createdTask.title,
+          status: createdTask.status || 'pending'
+        });
+      }
+    }
 
     // Generar notificaciones en tiempo real para cada colaborador
     const notifs = recipients.map(recipientId => ({

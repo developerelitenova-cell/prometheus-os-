@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+import asyncio
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +22,12 @@ from slowapi.errors import RateLimitExceeded
 from performance.task_manager import task_manager
 from performance.kpi_evaluator import kpi_evaluator
 from knowledge_base.role_agents import orchestrator
+from services.notification_service import notification_service
+from services.reminder_service import reminder_service
+from services.project_kanban_service import project_kanban_service, calculate_project_edt_progress, DEFAULT_KANBAN_COLUMNS
+from services.kpi_engine import kpi_engine
+from services.report_ai_agent import report_ai_agent
+from services.pyg_service import pyg_service, parse_pyg_csv, DEFAULT_CHANNELS
 
 # Cargar variables de entorno (asumiendo que están en frontend/.env.local)
 env_path = os.path.join(os.path.dirname(__file__), "..", "frontend", ".env.local")
@@ -43,8 +51,38 @@ else:
 orchestrator.initialize_clients(supabase, anthropic, claude_model)
 kpi_evaluator.initialize_clients(supabase, anthropic, claude_model)
 task_manager.initialize_clients(supabase)
+notification_service.initialize_clients(supabase)
+reminder_service.initialize_clients(supabase, notification_service)
+project_kanban_service.initialize_clients(supabase)
+kpi_engine.initialize_clients(supabase)
+report_ai_agent.initialize_clients(anthropic, claude_model)
+pyg_service.initialize_clients(supabase, notification_service, anthropic, claude_model)
 
-app = FastAPI(title="Gemelo Digital Corporativo - Elite Nutrition", version="2.0")
+
+async def _reminder_worker_loop():
+    """Cola periódica en segundo plano que procesa recordatorios de vencimiento cada 60s."""
+    while True:
+        try:
+            if reminder_service.supabase:
+                reminder_service.process_due_reminders()
+        except Exception as exc:
+            print(f"[ReminderWorker] Error en ciclo: {exc}")
+        await asyncio.sleep(60)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    worker_task = None
+    if os.environ.get("DISABLE_REMINDER_WORKER") != "1" and "PYTEST_CURRENT_TEST" not in os.environ:
+        worker_task = asyncio.create_task(_reminder_worker_loop())
+    try:
+        yield
+    finally:
+        if worker_task:
+            worker_task.cancel()
+
+
+app = FastAPI(title="Gemelo Digital Corporativo - Elite Nutrition", version="2.0", lifespan=lifespan)
 
 # Configurar CORS (Seguridad para Vercel)
 allowed_origins_str = os.environ.get("ALLOWED_ORIGINS", "*")
@@ -204,13 +242,63 @@ def create_role(role_data: dict, user=Depends(verify_jwt)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+def _sync_service_clients():
+    if supabase is not None:
+        if notification_service.supabase is not supabase:
+            notification_service.initialize_clients(supabase)
+        if reminder_service.supabase is not supabase:
+            reminder_service.initialize_clients(supabase, notification_service)
+        if project_kanban_service.supabase is not supabase:
+            project_kanban_service.initialize_clients(supabase)
+        if kpi_engine.supabase is not supabase:
+            kpi_engine.initialize_clients(supabase)
+        if pyg_service.supabase is not supabase:
+            pyg_service.initialize_clients(supabase, notification_service, anthropic, claude_model)
+kpi_engine.initialize_clients(supabase)
+report_ai_agent.initialize_clients(anthropic, claude_model)
+pyg_service.initialize_clients(supabase, notification_service, anthropic, claude_model)
+
+
 @app.put("/api/v1/roles/{role_id}")
 def update_role(role_id: str, role_data: dict, user=Depends(verify_jwt)):
     require_admin_or_manager(user)
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    try:
+        prev_res = supabase.table("roles").select("id, name, area_id, access_level").eq("id", role_id).single().execute()
+        prev_role = prev_res.data or {}
+    except Exception:
+        prev_role = {}
+
     try:
         res = supabase.table("roles").update(role_data).eq("id", role_id).execute()
+
+        # Auditar cambios relevantes del cargo (Req. 2.6)
+        auditable_keys = ("name", "area_id", "access_level")
+        changed_fields = {}
+        labels = []
+        for k in auditable_keys:
+            if k in role_data and prev_role.get(k) != role_data.get(k):
+                changed_fields[k] = {"before": prev_role.get(k), "after": role_data.get(k)}
+                labels.append(f"{k}: '{prev_role.get(k)}' -> '{role_data.get(k)}'")
+
+        if changed_fields:
+            summary = f"Se actualizó la definición del cargo ({', '.join(labels)})."
+            try:
+                affected = supabase.table("profiles").select("id, full_name").eq("role_id", role_id).execute()
+                for emp in (affected.data or []):
+                    notification_service.notify_role_change(
+                        affected_profile_id=emp["id"],
+                        employee_name=emp.get("full_name") or "Colaborador",
+                        changed_fields=changed_fields,
+                        summary=summary,
+                        changed_by=getattr(user, "id", None),
+                        role_id=role_id,
+                    )
+            except Exception as notif_exc:
+                print(f"[update_role] Notificación omitida: {notif_exc}")
+
         return {"status": "updated", "role_id": role_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -333,7 +421,22 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Error actualizando credenciales en Auth: {str(e)}")
 
-    # 2. Actualizar registro en profiles
+    # 2. Consultar estado anterior para auditoría de cambios de cargo (Req. 2.6)
+    _sync_service_clients()
+    prev_profile = {}
+    try:
+        prev_res = (
+            supabase.table("profiles")
+            .select("id, full_name, role_id, company, approval_status, is_master_admin, roles(name)")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+        prev_profile = prev_res.data or {}
+    except Exception:
+        prev_profile = {}
+
+    # 3. Actualizar registro en profiles
     profile_updates = {}
     if req.full_name is not None:
         profile_updates["full_name"] = req.full_name.strip()
@@ -366,6 +469,49 @@ def update_employee(user_id: str, req: UpdateEmployeeRequest, user=Depends(verif
                         raise HTTPException(status_code=400, detail=f"Error actualizando perfil: {str(retry_err)}")
             else:
                 raise HTTPException(status_code=400, detail=f"Error actualizando perfil: {err_msg}")
+
+        # Auditar cambios en campos de cargo/perfil y notificar a empleado y RRHH
+        auditable_fields = ("role_id", "company", "approval_status", "is_master_admin")
+        changed_fields = {}
+        change_descriptions = []
+        for field in auditable_fields:
+            if field in profile_updates and prev_profile.get(field) != profile_updates.get(field):
+                changed_fields[field] = {
+                    "before": prev_profile.get(field),
+                    "after": profile_updates.get(field),
+                }
+                if field == "role_id":
+                    old_role = (prev_profile.get("roles") or {}).get("name") or prev_profile.get("role_id") or "Sin cargo"
+                    new_role_name = profile_updates.get("role_id") or "Sin cargo"
+                    if profile_updates.get("role_id"):
+                        try:
+                            r_res = supabase.table("roles").select("name").eq("id", profile_updates["role_id"]).single().execute()
+                            if r_res.data and r_res.data.get("name"):
+                                new_role_name = r_res.data["name"]
+                        except Exception:
+                            pass
+                    change_descriptions.append(f"Cargo: '{old_role}' -> '{new_role_name}'")
+                elif field == "company":
+                    change_descriptions.append(f"Empresa: '{prev_profile.get('company')}' -> '{profile_updates.get('company')}'")
+                elif field == "approval_status":
+                    change_descriptions.append(f"Estado: '{prev_profile.get('approval_status')}' -> '{profile_updates.get('approval_status')}'")
+                elif field == "is_master_admin":
+                    change_descriptions.append(f"Nivel Admin: '{prev_profile.get('is_master_admin')}' -> '{profile_updates.get('is_master_admin')}'")
+
+        if changed_fields:
+            emp_name = profile_updates.get("full_name") or prev_profile.get("full_name") or "Colaborador"
+            summary = "; ".join(change_descriptions)
+            try:
+                notification_service.notify_role_change(
+                    affected_profile_id=user_id,
+                    employee_name=emp_name,
+                    changed_fields=changed_fields,
+                    summary=summary,
+                    changed_by=getattr(user, "id", None),
+                    role_id=profile_updates.get("role_id") or prev_profile.get("role_id"),
+                )
+            except Exception as notif_exc:
+                print(f"[update_employee] Error enviando notificación de cargo: {notif_exc}")
 
     return {"status": "updated", "user_id": user_id}
 
@@ -717,14 +863,50 @@ def delete_role(role_id: str, user=Depends(verify_jwt)):
 
 # --- Módulo de Desempeño: Tareas y KPIs ---
 class TaskCreate(BaseModel):
-    role_id: str
+    role_id: Optional[str] = None
     title: str
-    description: str
-    estimated_hours: float
+    description: Optional[str] = ""
+    estimated_hours: Optional[float] = None
+    assigned_to: Optional[str] = None
+    due_date: Optional[str] = None
+    due_time: Optional[str] = None
+    priority: str = "medium"
+    task_type: str = "once"
 
 @app.post("/api/v1/tasks")
 def create_task(task: TaskCreate, user=Depends(verify_jwt)):
-    t = task_manager.create_task(task.role_id, task.title, task.description, task.estimated_hours)
+    _sync_service_clients()
+    t = task_manager.create_task(
+        task.role_id,
+        task.title,
+        task.description,
+        task.estimated_hours,
+        assigned_to=task.assigned_to,
+        due_date=task.due_date,
+        due_time=task.due_time,
+        priority=task.priority,
+        task_type=task.task_type,
+    )
+    if task.assigned_to and t and t.get("id"):
+        try:
+            notification_service.notify_task_assigned(
+                profile_id=task.assigned_to,
+                task_id=t["id"],
+                title=task.title,
+                due_date=task.due_date,
+                priority=task.priority,
+            )
+            if task.due_date:
+                reminder_service.schedule_task_reminders(
+                    task_id=t["id"],
+                    assigned_to=task.assigned_to,
+                    due_date=task.due_date,
+                    title=task.title,
+                    due_time=task.due_time,
+                    status=t.get("status", "pending"),
+                )
+        except Exception as exc:
+            print(f"[create_task] Error disparando notificación/recordatorios: {exc}")
     return {"status": "created", "task": t}
 
 class TaskStatusUpdate(BaseModel):
@@ -732,10 +914,208 @@ class TaskStatusUpdate(BaseModel):
 
 @app.put("/api/v1/tasks/{task_id}/status")
 def update_task_status(task_id: str, body: TaskStatusUpdate, user=Depends(verify_jwt)):
+    _sync_service_clients()
     t = task_manager.update_task_status(task_id, body.status)
     if isinstance(t, dict) and "error" in t:
         raise HTTPException(status_code=400, detail=t["error"])
+    if body.status in ("completed", "cancelled"):
+        reminder_service.cancel_pending_reminders(task_id)
+    elif body.status in ("pending", "in_progress") and isinstance(t, dict) and t.get("due_date") and t.get("assigned_to"):
+        reminder_service.schedule_task_reminders(
+            task_id=task_id,
+            assigned_to=t["assigned_to"],
+            due_date=t["due_date"],
+            title=t.get("title", "Tarea"),
+            due_time=t.get("due_time"),
+            status=body.status,
+        )
     return {"status": "updated", "task": t}
+
+class TaskRescheduleRequest(BaseModel):
+    due_date: str
+    due_time: Optional[str] = None
+
+@app.put("/api/v1/tasks/{task_id}/reschedule")
+def reschedule_task(task_id: str, body: TaskRescheduleRequest, user=Depends(verify_jwt)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    update_fields = {"due_date": body.due_date}
+    if body.due_time is not None:
+        update_fields["due_time"] = body.due_time
+    res = supabase.table("tasks").update(update_fields).eq("id", task_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    task = res.data[0]
+    reminder_info = reminder_service.schedule_task_reminders(
+        task_id=task_id,
+        assigned_to=task.get("assigned_to"),
+        due_date=task.get("due_date"),
+        title=task.get("title", "Tarea"),
+        due_time=task.get("due_time"),
+        status=task.get("status", "pending"),
+    )
+    return {"status": "rescheduled", "task": task, "reminders": reminder_info}
+
+class ReminderScheduleRequest(BaseModel):
+    task_id: str
+    assigned_to: str
+    due_date: str
+    title: str
+    due_time: Optional[str] = None
+    status: str = "pending"
+
+@app.post("/api/v1/reminders/schedule")
+def schedule_reminders_endpoint(req: ReminderScheduleRequest, user=Depends(verify_jwt)):
+    _sync_service_clients()
+    if not reminder_service.supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    result = reminder_service.schedule_task_reminders(
+        task_id=req.task_id,
+        assigned_to=req.assigned_to,
+        due_date=req.due_date,
+        title=req.title,
+        due_time=req.due_time,
+        status=req.status,
+    )
+    return {"status": "scheduled", **result}
+
+@app.post("/api/v1/reminders/process")
+def process_reminders_endpoint(user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    _sync_service_clients()
+    if not reminder_service.supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    return reminder_service.process_due_reminders()
+
+
+# --- Módulo Kanban de Proyectos y Avance EDT ---
+class ProjectCreateRequest(BaseModel):
+    code: str = "PRJ"
+    name: str
+    description: Optional[str] = None
+    area_id: Optional[str] = None
+    owner_id: Optional[str] = None
+    kanban_columns: Optional[List[Dict]] = None
+
+
+class ProjectColumnsUpdate(BaseModel):
+    kanban_columns: List[Dict]
+
+
+class EdtItemCreateRequest(BaseModel):
+    parent_id: Optional[str] = None
+    edt_code: str
+    title: str
+    description: Optional[str] = None
+    status: str = "todo"
+    weight: float = 10.0
+    assignee_id: Optional[str] = None
+    due_date: Optional[str] = None
+    priority: str = "medium"
+    position: int = 0
+
+
+class EdtStatusTransitionRequest(BaseModel):
+    status: str
+    position: Optional[int] = None
+
+
+@app.get("/api/v1/projects")
+def list_projects(user=Depends(verify_jwt)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    res = supabase.table("projects").select("*, areas(name)").order("created_at", desc=True).execute()
+    return {"projects": res.data or []}
+
+
+@app.post("/api/v1/projects")
+def create_project(req: ProjectCreateRequest, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    payload = {
+        "code": req.code.strip().upper(),
+        "name": req.name.strip(),
+        "description": req.description,
+        "area_id": req.area_id,
+        "owner_id": req.owner_id or getattr(user, "id", None),
+        "kanban_columns": req.kanban_columns or DEFAULT_KANBAN_COLUMNS,
+        "created_by": getattr(user, "id", None),
+        "progress_percentage": 0.0,
+    }
+    res = supabase.table("projects").insert(payload).execute()
+    return {"status": "created", "project": res.data[0] if res.data else payload}
+
+
+@app.put("/api/v1/projects/{project_id}/columns")
+def update_project_columns(project_id: str, req: ProjectColumnsUpdate, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    supabase.table("projects").update({"kanban_columns": req.kanban_columns}).eq("id", project_id).execute()
+    progress = project_kanban_service.recalculate_and_persist_project_progress(project_id)
+    return {"status": "updated", "kanban_columns": req.kanban_columns, "progress": progress}
+
+
+@app.get("/api/v1/projects/{project_id}/board")
+def get_project_board(project_id: str, user=Depends(verify_jwt)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    proj_res = supabase.table("projects").select("*, areas(name)").eq("id", project_id).single().execute()
+    if not proj_res.data:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    edt_res = (
+        supabase.table("project_edt_items")
+        .select("*")
+        .eq("project_id", project_id)
+        .order("position")
+        .execute()
+    )
+    items = edt_res.data or []
+    progress = calculate_project_edt_progress(items, proj_res.data.get("kanban_columns"))
+    return {"project": proj_res.data, "items": items, "progress": progress}
+
+
+@app.post("/api/v1/projects/{project_id}/edt")
+def create_edt_item(project_id: str, req: EdtItemCreateRequest, user=Depends(verify_jwt)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    payload = {
+        "project_id": project_id,
+        "parent_id": req.parent_id,
+        "edt_code": req.edt_code.strip(),
+        "title": req.title.strip(),
+        "description": req.description,
+        "status": req.status,
+        "weight": req.weight,
+        "assignee_id": req.assignee_id,
+        "due_date": req.due_date,
+        "priority": req.priority,
+        "position": req.position,
+    }
+    res = supabase.table("project_edt_items").insert(payload).execute()
+    created = res.data[0] if res.data else payload
+    progress = project_kanban_service.recalculate_and_persist_project_progress(project_id)
+    return {"status": "created", "item": created, "progress": progress}
+
+
+@app.patch("/api/v1/edt/{edt_id}/status")
+def transition_edt_item_status(edt_id: str, req: EdtStatusTransitionRequest, user=Depends(verify_jwt)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    try:
+        result = project_kanban_service.transition_edt_status(
+            edt_id=edt_id,
+            target_status=req.status,
+            position=req.position,
+        )
+        return {"status": "updated", **result}
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))
 
 @app.get("/api/v1/tasks/{role_id}")
 def get_tasks(role_id: str, user=Depends(verify_jwt)):
@@ -749,6 +1129,220 @@ def evaluate_role(role_id: str, user=Depends(verify_jwt)):
     kpis = [{"name": "Cumplimiento Semanal", "target": 90}]
     evaluation = kpi_evaluator.evaluate_role(role_id, tasks, kpis)
     return {"status": "evaluated", "evaluation": evaluation}
+
+
+# --- Motor de Medición Automática de KPI e Informes con Agente IA (Req. 2.8 & 2.5) ---
+def _resolve_leader_area_scope(user) -> Optional[str]:
+    """Si el usuario es líder Nivel 2 (no master admin ni nivel 1), restringe al área propia."""
+    if not supabase or not getattr(user, "id", None):
+        return None
+    try:
+        res = (
+            supabase.table("profiles")
+            .select("is_master_admin, roles(access_level, area_id)")
+            .eq("id", user.id)
+            .single()
+            .execute()
+        )
+        prof = res.data or {}
+        if prof.get("is_master_admin"):
+            return None
+        role_obj = prof.get("roles") or {}
+        if role_obj.get("access_level") == 2:
+            return role_obj.get("area_id")
+    except Exception:
+        pass
+    return None
+
+
+@app.get("/api/v1/kpis/auto")
+def get_auto_kpi_report(
+    period_type: str = "monthly",
+    reference_date: Optional[str] = None,
+    area_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    user=Depends(verify_jwt),
+):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    scope_area_id = _resolve_leader_area_scope(user)
+    return kpi_engine.compute_report(
+        period_type=period_type,
+        reference_date=reference_date,
+        area_id=area_id,
+        user_id=user_id,
+        scope_area_id=scope_area_id,
+    )
+
+
+class ReportAIRequest(BaseModel):
+    report: Optional[Dict] = None
+    period_type: str = "monthly"
+    reference_date: Optional[str] = None
+    area_id: Optional[str] = None
+    user_id: Optional[str] = None
+
+
+@app.post("/api/v1/reports/ai-insights")
+def generate_report_ai_insights(req: ReportAIRequest, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    _sync_service_clients()
+    payload = req.report
+    if not payload:
+        if not supabase:
+            raise HTTPException(status_code=500, detail="Supabase no configurado")
+        scope_area_id = _resolve_leader_area_scope(user)
+        payload = kpi_engine.compute_report(
+            period_type=req.period_type,
+            reference_date=req.reference_date,
+            area_id=req.area_id,
+            user_id=req.user_id,
+            scope_area_id=scope_area_id,
+        )
+    analysis = report_ai_agent.analyze_report(payload)
+    return {"status": "ok", "report": payload, "analysis": analysis}
+
+
+# --- Módulo Financiero PyG (Pérdidas y Ganancias por Canal) ---
+class PygEntryCreate(BaseModel):
+    channel_id: str
+    period_month: str
+    gross_revenue: float = 0.0
+    returns_discounts: float = 0.0
+    cogs: float = 0.0
+    direct_opex: float = 0.0
+    depreciation_amort: float = 0.0
+    taxes_financial: float = 0.0
+    notes: Optional[str] = None
+    trigger_alerts: bool = True
+
+
+class PygIndirectExpenseCreate(BaseModel):
+    period_month: str
+    category: str
+    description: Optional[str] = None
+    amount: float
+    trigger_alerts: bool = True
+
+
+class PygCsvImportRequest(BaseModel):
+    csv_text: str
+    trigger_alerts: bool = True
+
+
+class PygAiAnalysisRequest(BaseModel):
+    report: Optional[Dict] = None
+    period_month: Optional[str] = None
+    trigger_alerts: bool = True
+
+
+@app.get("/api/v1/pyg/report")
+def get_pyg_report(period_month: str, trigger_alerts: bool = False, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    return pyg_service.compute_report(period_month=period_month, trigger_alerts=trigger_alerts)
+
+
+@app.post("/api/v1/pyg/entries")
+def create_pyg_entry(req: PygEntryCreate, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    payload = {
+        "channel_id": req.channel_id,
+        "period_month": req.period_month[:7],
+        "gross_revenue": req.gross_revenue,
+        "returns_discounts": req.returns_discounts,
+        "cogs": req.cogs,
+        "direct_opex": req.direct_opex,
+        "depreciation_amort": req.depreciation_amort,
+        "taxes_financial": req.taxes_financial,
+        "notes": req.notes,
+        "source": "manual",
+        "created_by": getattr(user, "id", None),
+    }
+    res = supabase.table("channel_financial_entries").insert(payload).execute()
+    report = pyg_service.compute_report(period_month=payload["period_month"], trigger_alerts=req.trigger_alerts)
+    return {"status": "created", "entry": res.data[0] if res.data else payload, "report": report}
+
+
+@app.post("/api/v1/pyg/indirect-expenses")
+def create_pyg_indirect_expense(req: PygIndirectExpenseCreate, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    payload = {
+        "period_month": req.period_month[:7],
+        "category": req.category.strip(),
+        "description": req.description,
+        "amount": req.amount,
+        "source": "manual",
+        "created_by": getattr(user, "id", None),
+    }
+    res = supabase.table("indirect_expenses").insert(payload).execute()
+    report = pyg_service.compute_report(period_month=payload["period_month"], trigger_alerts=req.trigger_alerts)
+    return {"status": "created", "expense": res.data[0] if res.data else payload, "report": report}
+
+
+@app.post("/api/v1/pyg/import-csv")
+def import_pyg_csv(req: PygCsvImportRequest, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+    ch_res = supabase.table("sales_channels").select("*").eq("active", True).execute()
+    channels = ch_res.data or DEFAULT_CHANNELS
+    parsed = parse_pyg_csv(req.csv_text, channels)
+    user_id = getattr(user, "id", None)
+
+    for entry in parsed["entries"]:
+        entry["created_by"] = user_id
+    for ind in parsed["indirects"]:
+        ind["created_by"] = user_id
+
+    if parsed["entries"]:
+        supabase.table("channel_financial_entries").insert(parsed["entries"]).execute()
+    if parsed["indirects"]:
+        supabase.table("indirect_expenses").insert(parsed["indirects"]).execute()
+
+    months = sorted({e["period_month"] for e in parsed["entries"]} | {i["period_month"] for i in parsed["indirects"]})
+    alerts_total = 0
+    if req.trigger_alerts:
+        for m in months:
+            rep = pyg_service.compute_report(period_month=m, trigger_alerts=True)
+            alerts_total += rep.get("alerts_triggered", 0)
+
+    return {
+        "status": "imported",
+        "entries_count": len(parsed["entries"]),
+        "indirects_count": len(parsed["indirects"]),
+        "errors": parsed["errors"],
+        "alerts_triggered": alerts_total,
+    }
+
+
+@app.post("/api/v1/pyg/ai-analysis")
+def analyze_pyg_endpoint(req: PygAiAnalysisRequest, user=Depends(verify_jwt)):
+    require_admin_or_manager(user)
+    _sync_service_clients()
+    report = req.report
+    if not report:
+        if not supabase or not req.period_month:
+            raise HTTPException(status_code=400, detail="Se requiere report o period_month")
+        report = pyg_service.compute_report(period_month=req.period_month, trigger_alerts=req.trigger_alerts)
+    elif req.trigger_alerts and supabase:
+        loss_chs = (report.get("monthly") or {}).get("loss_channels") or []
+        if loss_chs:
+            pyg_service.trigger_loss_alerts(loss_chs, report.get("period_month", ""))
+
+    analysis = pyg_service.analyze_costs_with_ai(report)
+    return {"status": "ok", "report": report, "analysis": analysis}
 
 # --- Módulo Inteligencia Artificial: Chatbots por Rol ---
 class ChatQuery(BaseModel):

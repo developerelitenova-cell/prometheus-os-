@@ -158,6 +158,18 @@ const routes = [
     component: () => import('../views/Planner.vue')
   },
   {
+    path: '/calendario',
+    alias: ['/deliveries-calendar'],
+    name: 'DeliveriesCalendar',
+    component: () => import('../views/DeliveriesCalendar.vue')
+  },
+  {
+    path: '/proyectos',
+    alias: ['/projects', '/kanban'],
+    name: 'ProjectsKanban',
+    component: () => import('../views/ProjectsKanban.vue')
+  },
+  {
     path: '/events',
     name: 'EventCalendar',
     component: () => import('../views/EventCalendar.vue'),
@@ -174,6 +186,20 @@ const routes = [
     name: 'KpiManager',
     component: () => import('../views/KpiManager.vue'),
     meta: { kpiAccessOnly: true }
+  },
+  {
+    path: '/informes-rendimiento',
+    alias: ['/performance-reports'],
+    name: 'PerformanceReports',
+    component: () => import('../views/PerformanceReportsView.vue'),
+    meta: { leaderOnly: true }
+  },
+  {
+    path: '/pyg',
+    alias: ['/finanzas-pyg', '/pnl'],
+    name: 'PygFinancial',
+    component: () => import('../views/PygFinancialView.vue'),
+    meta: { leaderOnly: true }
   },
   {
     path: '/:catchAll(.*)',

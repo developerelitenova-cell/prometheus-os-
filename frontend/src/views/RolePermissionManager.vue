@@ -311,6 +311,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { supabase } from '@/api/supabase'; // Assuming supabase instance
 import { generateRandomPassword } from '@/utils/passwordUtils';
+import { notifyRoleChangeFallback } from '@/utils/notifications';
 
 const areas = ref([]);
 const selectedRole = ref(null);
@@ -453,6 +454,7 @@ const saveRoleLevel = async () => {
   try {
     // 1. Guardar nivel de acceso si cambió
     if (pendingLevel.value !== selectedRole.value.access_level) {
+      const prevLevel = selectedRole.value.access_level;
       const { data, error } = await supabase
         .from('roles')
         .update({ access_level: pendingLevel.value })
@@ -463,6 +465,16 @@ const saveRoleLevel = async () => {
         throw new Error('Supabase no reportó ningún error, pero no se actualizó ninguna fila. Probablemente falten permisos (RLS) para editar cargos -- pedile a un desarrollador que corra fix_roles_areas_write_rls_migration.sql.');
       }
       selectedRole.value.access_level = pendingLevel.value;
+
+      for (const emp of (roleMembers.value || [])) {
+        await notifyRoleChangeFallback({
+          affectedProfileId: emp.id,
+          employeeName: emp.full_name || 'Colaborador',
+          changedFields: { access_level: { before: prevLevel, after: pendingLevel.value } },
+          summary: `Nivel del cargo ${selectedRole.value.name}: ${prevLevel} -> ${pendingLevel.value}`,
+          roleId: selectedRole.value.id,
+        });
+      }
     }
 
     // 2. Guardar delegación de contraseñas si cambió

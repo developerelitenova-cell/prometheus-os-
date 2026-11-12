@@ -139,6 +139,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { supabase } from '@/api/supabase';
+import { scheduleTaskReminders, cancelTaskReminders } from '@/utils/notifications';
 
 const tasks = ref([]);
 const currentView = ref('daily'); // daily, weekly, monthly
@@ -197,18 +198,33 @@ const createTask = async () => {
   isSaving.value = true;
   try {
     const { data: session } = await supabase.auth.getSession();
-    await supabase.from('tasks').insert([{
+    const { data: insertedRows, error: insertErr } = await supabase.from('tasks').insert([{
       ...newTask.value,
       assigned_by: session.session.user.id,
       status: 'pending'
-    }]);
+    }]).select();
+    if (insertErr) throw insertErr;
+
+    const createdTask = insertedRows?.[0];
+    if (createdTask?.id && createdTask.due_date && createdTask.assigned_to) {
+      await scheduleTaskReminders({
+        taskId: createdTask.id,
+        assignedTo: createdTask.assigned_to,
+        dueDate: createdTask.due_date,
+        dueTime: createdTask.due_time,
+        title: createdTask.title,
+        status: 'pending'
+      });
+    }
     
     // Si asignó a otra persona, crear notificacion
     if (newTask.value.assigned_to !== session.session.user.id) {
       await supabase.from('notifications').insert([{
         profile_id: newTask.value.assigned_to,
-        type: 'new_task',
-        message: `Te han asignado una nueva tarea: ${newTask.value.title}`
+        type: 'task_assigned',
+        message: `Te han asignado una nueva tarea: ${newTask.value.title}`,
+        action_url: '/workspace',
+        is_read: false
       }]);
     }
 
@@ -227,6 +243,18 @@ const updateTaskStatus = async (task, newStatus) => {
   task.status = newStatus; // optimistic UI update
   try {
     await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id);
+    if (newStatus === 'completed' || newStatus === 'cancelled') {
+      await cancelTaskReminders(task.id);
+    } else if ((newStatus === 'pending' || newStatus === 'in_progress') && task.due_date && task.assigned_to) {
+      await scheduleTaskReminders({
+        taskId: task.id,
+        assignedTo: task.assigned_to,
+        dueDate: task.due_date,
+        dueTime: task.due_time,
+        title: task.title,
+        status: newStatus
+      });
+    }
   } catch (e) {
     task.status = oldStatus;
   }

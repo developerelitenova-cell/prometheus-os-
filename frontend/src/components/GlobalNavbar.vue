@@ -55,6 +55,26 @@
           <span class="material-symbols-outlined text-[15px]">key</span> Cuentas & Accesos
         </router-link>
 
+        <!-- Calendario de Entregas -->
+        <router-link
+          v-if="isLoggedIn"
+          to="/calendario"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/calendario', '/deliveries-calendar'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+        >
+          <span class="material-symbols-outlined text-[15px]">calendar_month</span> Calendario
+        </router-link>
+
+        <!-- Proyectos Kanban & EDT -->
+        <router-link
+          v-if="isLoggedIn"
+          to="/proyectos"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/proyectos', '/projects', '/kanban'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+        >
+          <span class="material-symbols-outlined text-[15px]">view_kanban</span> Proyectos
+        </router-link>
+
         <!-- Escuela & Academia -->
         <router-link
           v-if="isLoggedIn"
@@ -83,6 +103,26 @@
           :class="['/kpis'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
         >
           <span class="material-symbols-outlined text-[15px]">analytics</span> KPIs & Actas
+        </router-link>
+
+        <!-- Informes de Rendimiento + Agente IA: Gerencia, Líderes de Área y Master Admin -->
+        <router-link
+          v-if="isLoggedIn && isControlUser"
+          to="/informes-rendimiento"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/informes-rendimiento', '/performance-reports'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+        >
+          <span class="material-symbols-outlined text-[15px]">query_stats</span> Informes IA
+        </router-link>
+
+        <!-- PyG Financiero por Canal -->
+        <router-link
+          v-if="isLoggedIn && isControlUser"
+          to="/pyg"
+          class="text-[12px] xl:text-[13px] font-medium transition-colors flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-md"
+          :class="['/pyg', '/finanzas-pyg', '/pnl'].includes(route.path) ? 'text-[#8a6d3d] font-bold bg-[#8a6d3d]/10' : 'text-[#1d1d1f]/70 hover:text-[#8a6d3d] hover:bg-[#8a6d3d]/5'"
+        >
+          <span class="material-symbols-outlined text-[15px]">account_balance</span> PyG
         </router-link>
 
         <router-link
@@ -172,9 +212,11 @@
           <!-- Hamburger Button (Mobile & Tablet) -->
           <button 
             @click="mobileMenuOpen = !mobileMenuOpen"
-            class="lg:hidden h-10 w-10 flex items-center justify-center rounded-full bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e5e5ea] transition-colors"
+            data-testid="mobile-menu-toggle"
+            aria-label="Abrir menú de navegación"
+            class="lg:hidden h-11 w-11 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e5e5ea] transition-colors"
           >
-            <span class="material-symbols-outlined text-[20px]">{{ mobileMenuOpen ? 'close' : 'menu' }}</span>
+            <span class="material-symbols-outlined text-[22px]">{{ mobileMenuOpen ? 'close' : 'menu' }}</span>
           </button>
         </template>
       </div>
@@ -184,7 +226,7 @@
     <transition name="fade">
       <div v-if="mobileMenuOpen" class="fixed inset-0 top-[64px] z-40 lg:hidden" @click="closeMobileMenu">
         <div class="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
-        <div class="absolute top-0 left-0 w-full bg-white/95 backdrop-blur-xl border-b border-[#e5e5ea] shadow-xl p-6 flex flex-col gap-3 lg:gap-4" @click.stop>
+        <div class="absolute top-0 left-0 w-full max-h-[calc(100vh-80px)] overflow-y-auto bg-white/95 backdrop-blur-xl border-b border-[#e5e5ea] shadow-xl p-6 flex flex-col gap-3 lg:gap-4" @click.stop>
           
           <!-- Perfil Móvil -->
           <div v-if="isLoggedIn" class="flex items-center gap-3 pb-4 border-b border-[#e5e5ea]">
@@ -219,6 +261,12 @@
             <router-link v-if="canManageAccounts" to="/cuentas" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">key</span> Cuentas & Accesos
             </router-link>
+            <router-link to="/calendario" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">calendar_month</span> Calendario de Entregas
+            </router-link>
+            <router-link to="/proyectos" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">view_kanban</span> Proyectos (Kanban EDT)
+            </router-link>
             <router-link to="/academia" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">school</span> Escuela & Academia
             </router-link>
@@ -237,6 +285,12 @@
             <router-link v-if="isKpiUser" to="/kpis" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <span class="material-symbols-outlined text-[20px] text-secondary">analytics</span> KPIs & Actas
             </router-link>
+            <router-link v-if="isControlUser" to="/informes-rendimiento" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">query_stats</span> Informes de Rendimiento IA
+            </router-link>
+            <router-link v-if="isControlUser" to="/pyg" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <span class="material-symbols-outlined text-[20px] text-secondary">account_balance</span> PyG Financiero por Canal
+            </router-link>
             <router-link v-if="isMasterUser" to="/master" @click="closeMobileMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-bold text-[#8a6d3d] bg-amber-50/50 hover:bg-amber-50">
               <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span> Auditoría Master
             </router-link>
@@ -251,6 +305,47 @@
         </div>
       </div>
     </transition>
+
+    <!-- Barra de Navegación Inferior Móvil (Mobile-First >= 44x44px touch targets) -->
+    <nav
+      v-if="isLoggedIn"
+      data-testid="mobile-bottom-nav"
+      class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e5e5ea] px-2 py-1 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
+      style="padding-bottom: max(0.25rem, env(safe-area-inset-bottom));"
+    >
+      <router-link
+        to="/workspace"
+        class="min-h-[44px] min-w-[60px] px-2 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+        :class="route.path === '/workspace' ? 'text-[#8a6d3d]' : 'text-[#86868b]'"
+      >
+        <span class="material-symbols-outlined text-[20px]">home</span>
+        <span>Espacio</span>
+      </router-link>
+      <router-link
+        to="/calendario"
+        class="min-h-[44px] min-w-[60px] px-2 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+        :class="['/calendario', '/deliveries-calendar'].includes(route.path) ? 'text-[#8a6d3d]' : 'text-[#86868b]'"
+      >
+        <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+        <span>Calendario</span>
+      </router-link>
+      <router-link
+        to="/proyectos"
+        class="min-h-[44px] min-w-[60px] px-2 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold"
+        :class="['/proyectos', '/projects', '/kanban'].includes(route.path) ? 'text-[#8a6d3d]' : 'text-[#86868b]'"
+      >
+        <span class="material-symbols-outlined text-[20px]">view_kanban</span>
+        <span>Proyectos</span>
+      </router-link>
+      <button
+        type="button"
+        @click="mobileMenuOpen = !mobileMenuOpen"
+        class="min-h-[44px] min-w-[60px] px-2 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-[#86868b]"
+      >
+        <span class="material-symbols-outlined text-[20px]">menu</span>
+        <span>Menú</span>
+      </button>
+    </nav>
   </header>
 </template>
 

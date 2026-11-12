@@ -1,6 +1,6 @@
 
 <template>
-  <div class="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans antialiased flex flex-col">
+  <div class="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans antialiased flex flex-col overflow-x-hidden pb-20 lg:pb-0">
 
     <!-- Main Content Grid -->
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 py-5 sm:px-6 sm:py-8">
@@ -636,10 +636,20 @@
                   <p class="text-[11px] text-[#86868b] mt-0.5">Asignados por liderazgo · Ejecución inmediata</p>
                 </div>
               </div>
-              <span v-if="pendingDayTasks.length > 0"
-                class="text-[11px] font-bold bg-[#b08d57] text-white px-2 py-0.5 rounded-full">
-                {{ pendingDayTasks.filter(t => t.status === 'pending' && !t.completed).length }} pendientes
-              </span>
+              <div class="flex items-center gap-2">
+                <span v-if="pendingDayTasks.length > 0"
+                  class="text-[11px] font-bold bg-[#b08d57] text-white px-2 py-0.5 rounded-full">
+                  {{ pendingDayTasks.filter(t => t.status === 'pending' && !t.completed).length }} pendientes
+                </span>
+                <router-link
+                  to="/calendario"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-[#e5e5ea] text-[11px] font-bold text-[#1d1d1f] hover:border-[#b08d57] hover:text-[#8a6d3d] transition-colors"
+                  title="Ver calendario integrado de entregas"
+                >
+                  <span class="material-symbols-outlined text-[14px]">calendar_month</span>
+                  <span>Calendario</span>
+                </router-link>
+              </div>
             </div>
             <!-- Atrasadas primero -->
             <div v-if="overdueTasks.length > 0" class="border-b border-[#ffcdd2] bg-[#fff5f5]">
@@ -945,6 +955,14 @@
         </button>
       </div>
     </transition>
+
+    <!-- Modal Bloqueante de Tareas Vencidas al Iniciar el Día (Req. 2.2) -->
+    <OverdueTasksModal
+      :visible="showOverdueModal"
+      :tasks="overdueTasks"
+      @acknowledge="acknowledgeOverdueModal"
+      @resolve-task="resolveOverdueTask"
+    />
   </div>
 </template>
 
@@ -958,6 +976,9 @@ import DOMPurify from 'dompurify';
 import { getPeriodKey } from '../utils/taskPeriods';
 import { getRoleKpiDetail } from '../api/kpi';
 import TaskEvidenceModal from '@/components/TaskEvidenceModal.vue';
+import OverdueTasksModal from '@/components/OverdueTasksModal.vue';
+import { getBogotaDateStr, isTaskOverdueBogota } from '../utils/bogotaTime';
+import { cancelTaskReminders } from '../utils/notifications';
 
 const canManageKpis = computed(() => canAccessKpis());
 
@@ -1159,11 +1180,42 @@ const setupMidnightTimer = () => {
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// Tareas atrasadas: vencidas y aún pendientes (ni completadas ni justificadas)
+// Tareas atrasadas: vencidas (America/Bogota) y aún pendientes (ni completadas ni justificadas)
 const overdueTasks = computed(() => {
   const all = allTasks.value || [];
-  return all.filter(t => t.status === 'pending' && t.due_date && new Date(t.due_date) < today);
+  return all.filter(t => isTaskOverdueBogota(t));
 });
+
+const showOverdueModal = ref(false);
+
+const getOverdueAckKey = () => {
+  const pid = currentProfile.value?.id || 'anon';
+  return `novawork_overdue_ack_${pid}`;
+};
+
+const evaluateOverdueModal = () => {
+  if (isAuditMode.value) {
+    showOverdueModal.value = false;
+    return;
+  }
+  if (overdueTasks.value.length === 0) {
+    showOverdueModal.value = false;
+    return;
+  }
+  const ackDate = localStorage.getItem(getOverdueAckKey());
+  const todayBogota = getBogotaDateStr();
+  showOverdueModal.value = ackDate !== todayBogota;
+};
+
+const acknowledgeOverdueModal = () => {
+  localStorage.setItem(getOverdueAckKey(), getBogotaDateStr());
+  showOverdueModal.value = false;
+};
+
+const resolveOverdueTask = (task) => {
+  acknowledgeOverdueModal();
+  openEvidenceModal(task, 'task');
+};
 
 // Helper para comprobar si una fecha corresponde al día de hoy
 const isSameDayAsToday = (dateStr) => {
@@ -1822,6 +1874,7 @@ const fetchChecklists = async (profileId) => {
       dailyTasks.value = tasks.filter(t => t.task_type === 'daily');
       weeklyTasks.value = tasks.filter(t => t.task_type === 'weekly');
       monthlyTasks.value = tasks.filter(t => t.task_type === 'monthly');
+      evaluateOverdueModal();
     }
   } catch (e) {
     console.error('Error fetching tasks:', e);
@@ -1879,6 +1932,10 @@ const handleEvidenceSave = async (payload) => {
       task.evidence_photo = evidence_photo;
       task.cancellation_reason = cancellation_reason;
       task.completed_at = finalCompletedAt;
+
+      if (isDone) {
+        await cancelTaskReminders(task.id);
+      }
     } else if (taskType === 'daily_management') {
       const completionPayload = {
         task_template_id: task.id,
