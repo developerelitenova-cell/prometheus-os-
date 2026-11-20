@@ -96,7 +96,25 @@ A partir de la retroalimentación cualitativa recopilada en las operaciones diar
 
 ---
 
-### 4. Garantía Técnica, Pruebas y Despliegue
+### 4. Arquitectura de Visualización y Alcance por Rol
+
+Para garantizar que la adopción sea fluida y que la cadena de mando mantenga la gobernanza de los datos, la interfaz y las funciones se adaptan automáticamente según el perfil del usuario autenticado:
+
+| Módulo / Implementación | 👤 Colaborador Operativo <br> *(Mi Portal / EmployeeWorkspace)* | 👔 Líder / Supervisor <br> *(Portal del Líder / LeaderDashboard)* | 👑 Dirección General y Presidencia <br> *(Admin Master / Directivo)* |
+| :--- | :--- | :--- | :--- |
+| **Radar de Atención Inmediata** | Visualiza **exclusivamente sus propios compromisos**: reuniones de hoy, tareas vencidas y entregas críticas de las próximas 48 horas. | Visualiza el **balance consolidado de su área**: alertas acumuladas de su equipo y colaboradores con compromisos en riesgo. | Visualiza el **semáforo corporativo global**: cuellos de botella transversales por departamento y áreas con mayor desvío. |
+| **Protocolo de Evidencias** | Identifica si su tarea es *Obligatoria* u *Opcional*. Si es obligatoria, **la plataforma no permite el cierre** sin adjuntar respaldo. | Configura los requerimientos de evidencia por cargo y audita el grado de cumplimiento documental del equipo. | Establece políticas de aseguramiento documental para auditorías contables, operativas o legales. |
+| **Multi-Captura (Hasta 5 fotos)** | Carga o pega (`Ctrl+V`) capturas directas. Dispone de galería y visor interactivo previo a radicar. | Abre las evidencias del colaborador en **visor ampliado (lightbox)** con botones siguiente/anterior para auditoría rápida. | Consulta muestreos de evidencias en revisiones de procesos o comités de calidad institucional. |
+| **Justificación de Desvíos de Tiempo** | Debe registrar de forma obligatoria la **causa raíz** del atraso si completa una tarea fuera del límite horario. | Revisa las justificaciones de atraso directamente en la tarjeta de auditoría y en el reporte diario recibido. | Detecta fallas estructurales de procesos, sobrecargas de capacidad o dependencias interdepartamentales no resueltas. |
+| **Anotaciones de Calendario** | Crea notas **personales** y consulta las notas públicas del área y de la empresa publicadas por sus líderes. | Crea y edita notas de alcance **"Área"** para fijar entregables grupales, fechas límite y reuniones de equipo. | Publica notas corporativas de alcance **"Empresa"** bajo la categoría oficial **`Nova`** (hitos institucionales). |
+| **Onboarding & Agente IA Asistido** | Cuenta con **tutorial interactivo de 4 pasos** y chips en 1 clic en el chat para redactar actas, minutas y consultar prioridades. | Monitorea la inducción de nuevos ingresos y la familiarización del equipo con el agente de su cargo. | Garantiza estandarización de procesos sin necesidad de capacitaciones presenciales repetitivas. |
+| **Exportación Multiformato** | Descarga su acta de jornada personal en **PDF, Word y Excel** para soporte y archivo propio. | Descarga matrices analíticas en **Excel (`.xlsx`)** del equipo completo para sesiones de retroalimentación. | Exporta balances ejecutivos consolidados en PDF/Word para presentación ante juntas o asambleas. |
+| **Despacho a Jefatura Inmediata** | Dispone del botón **`Enviar al Jefe Directo`** al finalizar su día, generando trazabilidad inalterable. | **Recibe notificación instantánea** con el porcentaje de logro, volumen de tareas cumplidas y enlace directo de revisión. | Audita el historial de despachos diarios entre áreas para medir la disciplina operativa de la empresa. |
+| **Analítica de Rendimiento (KPIs)** | Visualiza su gráfico personal de desempeño en cortes **Semanal**, **Quincenal** y **Mensual**. | Contrasta la evolución de cumplimiento de cada colaborador para estructurar planes de mejora y reconocimientos. | Evalúa tableros comparativos de productividad interdepartamental y efectividad operativa global. |
+
+---
+
+### 5. Garantía Técnica, Pruebas y Despliegue
 
 El despliegue de esta versión superó satisfactoriamente el ciclo completo de aseguramiento de calidad técnico:
 
@@ -117,7 +135,7 @@ El despliegue de esta versión superó satisfactoriamente el ciclo completo de a
 
 ---
 
-### 5. Recomendaciones para el Despliegue Operativo
+### 6. Recomendaciones para el Despliegue Operativo
 
 Para asegurar una adopción óptima y homogénea en toda la organización, se recomienda:
 1. **Comunicación Institucional:** Informar a los equipos sobre la disponibilidad del nuevo **Tutorial en Mi Portal** y los atajos del asistente de Inteligencia Artificial.
@@ -126,7 +144,7 @@ Para asegurar una adopción óptima y homogénea en toda la organización, se re
 
 ---
 
-### 6. Conclusión
+### 7. Conclusión
 
 Con la implementación de este conjunto de mejoras, **Nova Work** consolida su posicionamiento como una plataforma robusta, ágil y centrada en la excelencia operativa. El sistema no solo responde a las solicitudes del equipo directivo y operativo, sino que establece un estándar superior de trazabilidad, transparencia y facilidad de uso para toda la organización.
 
