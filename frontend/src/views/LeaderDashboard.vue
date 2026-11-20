@@ -324,9 +324,16 @@
                         <p v-else-if="t.cancellation_reason" class="text-[11px] text-[#ff3b30] line-clamp-1 italic">
                           Motivo: {{ t.cancellation_reason }}
                         </p>
-                        <div v-if="t.evidence_photo" class="flex items-center gap-2 mt-0.5">
-                          <button type="button" @click="reportZoomPhoto = t.evidence_photo" class="inline-flex items-center gap-1 text-[10px] font-bold text-[#0071e3] hover:underline bg-[#e8f0fe] px-2 py-0.5 rounded cursor-pointer">
-                            <span class="material-symbols-outlined text-[12px]">visibility</span> Ver captura
+                        <div v-if="getEvidencePhotos(t).length > 0" class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                          <button
+                            v-for="(_, pIdx) in getEvidencePhotos(t)"
+                            :key="'member-photo-' + pIdx"
+                            type="button"
+                            @click="openReportZoom(t.evidence_photo, pIdx)"
+                            class="inline-flex items-center gap-1 text-[10px] font-bold text-[#0071e3] hover:underline bg-[#e8f0fe] px-2 py-0.5 rounded cursor-pointer"
+                          >
+                            <span class="material-symbols-outlined text-[12px]">visibility</span>
+                            {{ getEvidencePhotos(t).length === 1 ? 'Ver captura' : `Captura #${pIdx + 1}` }}
                           </button>
                         </div>
                       </div>
@@ -587,13 +594,13 @@
                     </span>
 
                     <button 
-                      v-if="act.evidence_photo"
+                      v-if="getEvidencePhotos(act).length > 0"
                       type="button"
-                      @click="reportZoomPhoto = act.evidence_photo"
+                      @click="openReportZoom(act.evidence_photo, 0)"
                       class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                     >
                       <span class="material-symbols-outlined text-[14px]">photo_camera</span>
-                      <span>Ver Foto</span>
+                      <span>{{ getEvidencePhotos(act).length === 1 ? 'Ver Foto' : `Ver Fotos (${getEvidencePhotos(act).length})` }}</span>
                     </button>
                   </div>
                 </div>
@@ -856,6 +863,28 @@
               </button>
             </div>
 
+            <!-- Exigencia de Evidencia (Obligatoria vs Opcional) -->
+            <div class="flex flex-col gap-1.5 pt-1">
+              <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Exigencia de evidencia al colaborador</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="ev in [
+                    { k: 'none',           l: 'Evidencia Opcional', sub: 'Marcado directo',       activeC: 'bg-gray-100 border-gray-400 text-gray-800' },
+                    { k: 'text_only',      l: 'Nota Obligatoria',   sub: 'Exige resumen escrito', activeC: 'bg-amber-50 border-amber-400 text-amber-800' },
+                    { k: 'photo_required', l: 'Foto Obligatoria',   sub: 'Exige pantallazo/foto', activeC: 'bg-red-50 border-red-400 text-red-700' },
+                  ]"
+                  :key="ev.k"
+                  type="button"
+                  @click="newTask.evidence_requirement = ev.k"
+                  :class="['py-2 px-2 rounded-xl border text-center transition-all cursor-pointer',
+                    newTask.evidence_requirement === ev.k ? ev.activeC : 'bg-surface-container-low border-surface-container-high text-secondary hover:border-on-surface-variant']"
+                >
+                  <p class="text-xs font-bold leading-none">{{ ev.l }}</p>
+                  <p class="text-[10px] mt-0.5 opacity-80">{{ ev.sub }}</p>
+                </button>
+              </div>
+            </div>
+
             <!-- Nota interna para el líder -->
             <div class="flex flex-col gap-1">
               <label class="text-xs font-semibold text-secondary uppercase tracking-wide">Nota interna del líder (no visible para el empleado)</label>
@@ -889,6 +918,14 @@
                   </span>
                   <span v-if="newTask.priority === 'urgent'" class="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded animate-pulse">¡URGENTE!</span>
                   <span v-else-if="newTask.priority === 'high'" class="text-[10px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Alta Prioridad</span>
+                  <span
+                    :class="['text-[10px] font-bold px-1.5 py-0.5 rounded',
+                      newTask.evidence_requirement === 'photo_required' ? 'bg-red-50 text-red-700 border border-red-200' :
+                      newTask.evidence_requirement === 'text_only' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                      'bg-gray-100 text-gray-600']"
+                  >
+                    {{ newTask.evidence_requirement === 'photo_required' ? 'Evidencia Obligatoria · Foto' : newTask.evidence_requirement === 'text_only' ? 'Evidencia Obligatoria · Nota' : 'Evidencia Opcional' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1635,25 +1672,31 @@
                   {{ act.evidence_text || 'Sin texto de justificación reportado.' }}
                 </p>
 
-                <!-- Foto adjunta / Pantallazo -->
-                <div v-if="act.evidence_photo" class="flex items-center gap-3 pt-1">
-                  <div 
-                    @click="reportZoomPhoto = act.evidence_photo" 
-                    class="relative w-24 h-16 rounded-lg overflow-hidden border border-[#34c759]/30 bg-black/5 cursor-pointer group shrink-0 print:w-48 print:h-32"
+                <!-- Fotos adjuntas / Pantallazos -->
+                <div v-if="getEvidencePhotos(act).length > 0" class="flex flex-wrap items-center gap-2.5 pt-1">
+                  <div
+                    v-for="(photoUrl, pIdx) in getEvidencePhotos(act)"
+                    :key="'completed-photo-' + pIdx"
+                    @click="openReportZoom(act.evidence_photo, pIdx)"
+                    class="relative w-24 h-16 rounded-lg overflow-hidden border border-[#34c759]/30 bg-black/5 cursor-pointer group shrink-0 print:w-40 print:h-28"
                     title="Clic para ver pantallazo en tamaño completo"
                   >
-                    <img :src="act.evidence_photo" alt="Evidencia" class="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    <img :src="photoUrl" :alt="`Evidencia ${pIdx + 1}`" class="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    <span v-if="getEvidencePhotos(act).length > 1" class="absolute top-1 left-1 px-1 py-0.2 rounded bg-black/65 text-white text-[9px] font-bold">
+                      #{{ pIdx + 1 }}
+                    </span>
                     <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white print:hidden">
                       <span class="material-symbols-outlined text-[18px]">zoom_in</span>
                     </div>
                   </div>
                   <div class="print:hidden">
-                    <button 
-                      type="button" 
-                      @click="reportZoomPhoto = act.evidence_photo" 
+                    <button
+                      type="button"
+                      @click="openReportZoom(act.evidence_photo, 0)"
                       class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <span class="material-symbols-outlined text-[14px]">photo_camera</span> Ver Captura / Pantallazo
+                      <span class="material-symbols-outlined text-[14px]">photo_camera</span>
+                      {{ getEvidencePhotos(act).length === 1 ? 'Ver Captura / Pantallazo' : `Ver ${getEvidencePhotos(act).length} Capturas` }}
                     </button>
                     <span class="text-[10px] text-secondary block mt-0.5">Soporte gráfico verificado por el empleado</span>
                   </div>
@@ -1670,20 +1713,26 @@
                   "{{ act.cancellation_reason || 'Sin motivo reportado por el colaborador.' }}"
                 </p>
 
-                <!-- Foto adjunta opcional -->
-                <div v-if="act.evidence_photo" class="flex items-center gap-3 pt-1">
-                  <div 
-                    @click="reportZoomPhoto = act.evidence_photo" 
+                <!-- Fotos adjuntas opcionales -->
+                <div v-if="getEvidencePhotos(act).length > 0" class="flex flex-wrap items-center gap-2.5 pt-1">
+                  <div
+                    v-for="(photoUrl, pIdx) in getEvidencePhotos(act)"
+                    :key="'unfulfilled-photo-' + pIdx"
+                    @click="openReportZoom(act.evidence_photo, pIdx)"
                     class="relative w-24 h-16 rounded-lg overflow-hidden border border-[#ff3b30]/30 bg-black/5 cursor-pointer group shrink-0"
                   >
-                    <img :src="act.evidence_photo" alt="Soporte" class="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    <img :src="photoUrl" :alt="`Soporte ${pIdx + 1}`" class="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    <span v-if="getEvidencePhotos(act).length > 1" class="absolute top-1 left-1 px-1 py-0.2 rounded bg-black/65 text-white text-[9px] font-bold">
+                      #{{ pIdx + 1 }}
+                    </span>
                   </div>
-                  <button 
-                    type="button" 
-                    @click="reportZoomPhoto = act.evidence_photo" 
+                  <button
+                    type="button"
+                    @click="openReportZoom(act.evidence_photo, 0)"
                     class="text-xs font-semibold text-danger hover:underline flex items-center gap-1 print:hidden cursor-pointer"
                   >
-                    <span class="material-symbols-outlined text-[14px]">image</span> Ver soporte adjunto
+                    <span class="material-symbols-outlined text-[14px]">image</span>
+                    {{ getEvidencePhotos(act).length === 1 ? 'Ver soporte adjunto' : `Ver ${getEvidencePhotos(act).length} soportes adjuntos` }}
                   </button>
                 </div>
               </div>
@@ -1740,15 +1789,39 @@
     </div>
 
     <!-- Lightbox de Ampliación de Fotos / Pantallazos de Evidencia -->
-    <div v-if="reportZoomPhoto" class="fixed inset-0 z-[140] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in" @click="reportZoomPhoto = null">
+    <div v-if="reportZoomPhoto" class="fixed inset-0 z-[140] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in" @click="closeReportZoom">
       <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center" @click.stop>
-        <button 
-          @click="reportZoomPhoto = null" 
-          class="absolute -top-10 right-0 text-white/80 hover:text-white flex items-center gap-1 text-xs font-semibold cursor-pointer"
-        >
-          <span class="material-symbols-outlined text-[20px]">close</span> Cerrar
-        </button>
-        <img :src="reportZoomPhoto" alt="Evidencia en tamaño completo" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/20 bg-black/40" />
+        <div class="w-full flex items-center justify-between mb-2 text-white">
+          <span v-if="reportZoomPhotos.length > 1" class="px-2.5 py-0.5 rounded-full bg-white/15 text-xs font-bold">
+            {{ reportZoomIndex + 1 }} / {{ reportZoomPhotos.length }}
+          </span>
+          <span v-else></span>
+          <button 
+            @click="closeReportZoom" 
+            class="text-white/80 hover:text-white flex items-center gap-1 text-xs font-semibold cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-[20px]">close</span> Cerrar
+          </button>
+        </div>
+        <div class="relative flex items-center justify-center">
+          <button
+            v-if="reportZoomPhotos.length > 1"
+            type="button"
+            @click="prevReportZoom"
+            class="mr-3 w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/35 flex items-center justify-center cursor-pointer"
+          >
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <img :src="reportZoomPhoto" alt="Evidencia en tamaño completo" class="max-w-full max-h-[82vh] object-contain rounded-xl shadow-2xl border border-white/20 bg-black/40" />
+          <button
+            v-if="reportZoomPhotos.length > 1"
+            type="button"
+            @click="nextReportZoom"
+            class="ml-3 w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/35 flex items-center justify-center cursor-pointer"
+          >
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1763,6 +1836,7 @@ import { getLatestRoleKpiScore } from '@/api/kpi';
 import { signOut, canAccessKpis } from '@/api/auth';
 import { getPeriodKey } from '@/utils/taskPeriods';
 import { scheduleTaskReminders } from '@/utils/notifications';
+import { parseEvidencePhotos } from '@/utils/evidencePhotos';
 
 const router = useRouter();
 const canManageKpis = computed(() => canAccessKpis());
@@ -1850,7 +1924,7 @@ const buildCalendarDayObj = (d, dateStr, isCurrentMonth, todayStr) => {
   const completed = dayActivities.filter(a => a.status === 'completed');
   const unfulfilled = dayActivities.filter(a => a.status === 'unfulfilled');
   const pending = dayActivities.filter(a => a.status === 'pending');
-  const hasPhotos = completed.some(a => !!a.evidence_photo);
+  const hasPhotos = completed.some(a => parseEvidencePhotos(a.evidence_photo).length > 0);
 
   return {
     date: d,
@@ -1949,7 +2023,33 @@ const dailyReportSearch = ref('');
 const dailyReportLoading = ref(false);
 const dailyReportActivities = ref([]);
 const dailyReportCopySuccess = ref(false);
-const reportZoomPhoto = ref(null);
+const reportZoomPhotos = ref([]);
+const reportZoomIndex = ref(0);
+const reportZoomPhoto = computed(() => reportZoomPhotos.value[reportZoomIndex.value] || null);
+
+const getEvidencePhotos = (item) => parseEvidencePhotos(item?.evidence_photo);
+
+const openReportZoom = (photoRaw, idx = 0) => {
+  const list = parseEvidencePhotos(photoRaw);
+  if (!list.length) return;
+  reportZoomPhotos.value = list;
+  reportZoomIndex.value = Math.max(0, Math.min(idx, list.length - 1));
+};
+
+const closeReportZoom = () => {
+  reportZoomPhotos.value = [];
+  reportZoomIndex.value = 0;
+};
+
+const prevReportZoom = () => {
+  if (reportZoomPhotos.value.length <= 1) return;
+  reportZoomIndex.value = (reportZoomIndex.value - 1 + reportZoomPhotos.value.length) % reportZoomPhotos.value.length;
+};
+
+const nextReportZoom = () => {
+  if (reportZoomPhotos.value.length <= 1) return;
+  reportZoomIndex.value = (reportZoomIndex.value + 1) % reportZoomPhotos.value.length;
+};
 
 const setDailyReportToday = () => {
   dailyReportDate.value = new Date().toISOString().split('T')[0];
@@ -2062,7 +2162,9 @@ const copyDailyReportSummary = async () => {
     text += `👤 *${name}* (${list[0]?.memberRole || 'Cargo'}):\n`;
     list.forEach(item => {
       if (item.status === 'completed') {
-        text += `  ✅ *${item.title}*: ${item.evidence_text || 'Evidencia cargada'}${item.evidence_photo ? ' 📷 [Foto adjunta]' : ''}\n`;
+        const photoCount = parseEvidencePhotos(item.evidence_photo).length;
+        const photoSuffix = photoCount === 1 ? ' 📷 [1 Foto adjunta]' : photoCount > 1 ? ` 📷 [${photoCount} Fotos adjuntas]` : '';
+        text += `  ✅ *${item.title}*: ${item.evidence_text || 'Evidencia cargada'}${photoSuffix}\n`;
       } else if (item.status === 'unfulfilled') {
         text += `  🔴 *${item.title}* [NO EJECUTADA]: Motivo: ${item.cancellation_reason || 'Sin motivo'}\n`;
       } else {
@@ -2473,6 +2575,7 @@ const newTask = ref({
   estimated_minutes: '',
   leader_note: '',
   priority: 'medium',
+  evidence_requirement: 'none',
   task_type: 'once',
   due_date: '',
   assigned_to: '',
@@ -3066,6 +3169,7 @@ const openTaskModal = (member = null) => {
     estimated_minutes: '',
     leader_note: '',
     priority: 'medium',
+    evidence_requirement: 'none',
     task_type: 'once',
     due_date: new Date().toISOString().split('T')[0],
     assigned_to: member ? member.id : '',
@@ -3107,6 +3211,7 @@ const submitTask = async () => {
       estimated_minutes: newTask.value.estimated_minutes ? parseInt(newTask.value.estimated_minutes) : null,
       leader_note: newTask.value.leader_note?.trim() || null,
       priority: newTask.value.priority || 'medium',
+      evidence_requirement: newTask.value.evidence_requirement || 'none',
       task_type: newTask.value.task_type || 'once',
       due_date: newTask.value.due_date,
       assigned_to: recipientId,
@@ -3114,7 +3219,13 @@ const submitTask = async () => {
       status: 'pending'
     }));
 
-    const { data: insertedTasks, error: taskError } = await supabase.from('tasks').insert(inserts).select();
+    let { data: insertedTasks, error: taskError } = await supabase.from('tasks').insert(inserts).select();
+    if (taskError && String(taskError.message || '').includes('evidence_requirement')) {
+      const fallbackInserts = inserts.map(({ evidence_requirement: _omit, ...rest }) => rest);
+      const retryRes = await supabase.from('tasks').insert(fallbackInserts).select();
+      insertedTasks = retryRes.data;
+      taskError = retryRes.error;
+    }
     if (taskError) throw taskError;
 
     // Programar alertas de vencimiento 48h, 24h y 2h (o inmediata si falta < 2h)

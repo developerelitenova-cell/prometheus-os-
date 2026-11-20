@@ -1205,6 +1205,84 @@ def generate_report_ai_insights(req: ReportAIRequest, user=Depends(verify_jwt)):
     return {"status": "ok", "report": payload, "analysis": analysis}
 
 
+class SendReportToSupervisorRequest(BaseModel):
+    supervisor_id: Optional[str] = None
+    employee_id: Optional[str] = None
+    date_str: str
+    compliance_percentage: float
+    completed_tasks: int
+    total_tasks: int
+    unfulfilled_tasks: int = 0
+    export_format: str = "pdf"
+    notes: Optional[str] = None
+
+
+@app.post("/api/v1/reports/send-to-supervisor")
+def send_report_to_supervisor(req: SendReportToSupervisorRequest, user=Depends(verify_jwt)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase no configurado")
+    _sync_service_clients()
+
+    target_employee_id = req.employee_id or user.id
+    if req.employee_id and req.employee_id != user.id:
+        require_admin_or_manager(user)
+
+    employee_name = "Colaborador"
+    role_name = "Cargo Operativo"
+    try:
+        prof_res = (
+            supabase.table("profiles")
+            .select("id, full_name, roles(name)")
+            .eq("id", target_employee_id)
+            .single()
+            .execute()
+        )
+        if prof_res.data:
+            employee_name = prof_res.data.get("full_name") or employee_name
+            role_obj = prof_res.data.get("roles") or {}
+            if isinstance(role_obj, dict) and role_obj.get("name"):
+                role_name = role_obj.get("name")
+    except Exception as exc:
+        print(f"[SendReportToSupervisor] No se pudo consultar perfil {target_employee_id}: {exc}")
+
+    if req.supervisor_id:
+        recipient_ids = [req.supervisor_id]
+    else:
+        supervisors = notification_service.resolve_immediate_supervisors(target_employee_id)
+        recipient_ids = [s["id"] for s in supervisors if s.get("id")]
+
+    if not recipient_ids:
+        raise HTTPException(
+            status_code=404,
+            detail="No se encontró un supervisor o líder de área asignado para recibir el reporte",
+        )
+
+    sent = []
+    for sup_id in recipient_ids:
+        res = notification_service.notify_supervisor_report(
+            supervisor_profile_id=sup_id,
+            employee_id=target_employee_id,
+            employee_name=employee_name,
+            role_name=role_name,
+            date_str=req.date_str,
+            compliance_percentage=req.compliance_percentage,
+            completed_tasks=req.completed_tasks,
+            total_tasks=req.total_tasks,
+            unfulfilled_tasks=req.unfulfilled_tasks,
+            export_format=req.export_format,
+            notes=req.notes,
+        )
+        if res:
+            sent.append(res)
+
+    return {
+        "status": "sent",
+        "recipients": recipient_ids,
+        "notification_count": len(sent),
+        "date_str": req.date_str,
+    }
+
+
 # --- Módulo Financiero PyG (Pérdidas y Ganancias por Canal) ---
 class PygEntryCreate(BaseModel):
     channel_id: str

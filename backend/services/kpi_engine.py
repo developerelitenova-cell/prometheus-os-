@@ -1,7 +1,7 @@
 """
 Motor de medición automática de KPI a partir de actividades programadas vs. ejecutadas (Req. 2.8).
 Zona horaria operativa: America/Bogota (UTC-5).
-Períodos soportados: weekly, monthly, quarterly.
+Períodos soportados: weekly, biweekly, monthly, quarterly.
 """
 
 from calendar import monthrange
@@ -49,6 +49,7 @@ def get_period_bounds_bogota(
     """
     Calcula (start_date_str, end_date_str, label) en America/Bogota para:
       - weekly (lunes a domingo)
+      - biweekly (quincena 1-15 o 16-fin de mes)
       - monthly (día 1 a último día del mes)
       - quarterly (Q1..Q4)
     """
@@ -63,6 +64,16 @@ def get_period_bounds_bogota(
         end = start + timedelta(days=6)
         iso_year, iso_week, _ = start.isocalendar()
         return start.isoformat(), end.isoformat(), f"Semana {iso_year}-W{iso_week:02d}"
+
+    if p_type == "biweekly":
+        if ref.day <= 15:
+            start = date(ref.year, ref.month, 1)
+            end = date(ref.year, ref.month, 15)
+            return start.isoformat(), end.isoformat(), f"Quincena 1 ({ref.year}-{ref.month:02d})"
+        last_day = monthrange(ref.year, ref.month)[1]
+        start = date(ref.year, ref.month, 16)
+        end = date(ref.year, ref.month, last_day)
+        return start.isoformat(), end.isoformat(), f"Quincena 2 ({ref.year}-{ref.month:02d})"
 
     if p_type == "quarterly":
         q = (ref.month - 1) // 3 + 1

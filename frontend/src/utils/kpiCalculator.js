@@ -54,6 +54,26 @@ export function getPeriodBoundsBogota(periodType = 'monthly', referenceDateStr =
     };
   }
 
+  if (periodType === 'biweekly') {
+    const mm = String(m).padStart(2, '0');
+    if (d <= 15) {
+      const start = new Date(Date.UTC(y, m - 1, 1, 12, 0, 0));
+      const end = new Date(Date.UTC(y, m - 1, 15, 12, 0, 0));
+      return {
+        startDate: fmt(start),
+        endDate: fmt(end),
+        label: `Quincena 1 (${y}-${mm})`,
+      };
+    }
+    const start = new Date(Date.UTC(y, m - 1, 16, 12, 0, 0));
+    const end = new Date(Date.UTC(y, m, 0, 12, 0, 0));
+    return {
+      startDate: fmt(start),
+      endDate: fmt(end),
+      label: `Quincena 2 (${y}-${mm})`,
+    };
+  }
+
   if (periodType === 'quarterly') {
     const q = Math.floor((m - 1) / 3) + 1;
     const startMonth = (q - 1) * 3;

@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, roleId, roleContext, userId } = req.body;
+  const { message, roleId, roleContext, userId, liveWorkspaceContext } = req.body;
 
   if (!message || !roleId) {
     return res.status(400).json({ error: 'Message and RoleID are required' });
@@ -150,9 +150,16 @@ Si el empleado reporta un problema técnico, pérdida de contraseña, daño de e
 ${contactsText || 'No hay contactos disponibles.'}
 Formato de soporte: "Entiendo tu problema. Te recomiendo contactar a [Nombre/Rol] para que te ayude con esto: [Enlace de WhatsApp]"`;
 
-    const volatileContextText = contextText
-      ? `Información adicional de la Memoria Corporativa relevante para esta consulta:\n${contextText}`
-      : 'No se encontraron documentos corporativos adicionales para esta consulta.';
+    const cleanLiveContext =
+      typeof liveWorkspaceContext === 'string' && liveWorkspaceContext.trim()
+        ? `\n\nESTADO OPERATIVO ACTUAL DEL COLABORADOR HOY:\n${liveWorkspaceContext.trim().slice(0, 2000)}`
+        : '';
+
+    const volatileContextText =
+      (contextText
+        ? `Información adicional de la Memoria Corporativa relevante para esta consulta:\n${contextText}`
+        : 'No se encontraron documentos corporativos adicionales para esta consulta.') +
+      cleanLiveContext;
 
     const ROLE_TOOLS = [
       {

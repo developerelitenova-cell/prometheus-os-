@@ -20,8 +20,8 @@
           </div>
         </div>
 
-        <!-- Selector de Vista (Mes / Semana / Día) y Navegación -->
-        <div class="flex flex-wrap items-center gap-3">
+        <!-- Selector de Vista (Mes / Semana / Día), Navegación y Nueva Anotación -->
+        <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
           <div class="flex items-center bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl p-1 gap-1">
             <button
               v-for="v in VIEWS"
@@ -30,7 +30,7 @@
               :data-testid="`view-btn-${v.key}`"
               @click="viewMode = v.key"
               :class="[
-                'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                'min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
                 viewMode === v.key ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f]'
               ]"
             >
@@ -42,7 +42,7 @@
             <button
               type="button"
               @click="navigatePeriod(-1)"
-              class="p-1.5 rounded-lg hover:bg-white text-[#1d1d1f] transition-colors cursor-pointer"
+              class="min-h-[36px] min-w-[36px] p-1.5 rounded-lg hover:bg-white text-[#1d1d1f] transition-colors cursor-pointer flex items-center justify-center"
               title="Anterior"
             >
               <span class="material-symbols-outlined text-[18px]">chevron_left</span>
@@ -50,30 +50,46 @@
             <button
               type="button"
               @click="goToToday"
-              class="px-3 py-1 rounded-lg hover:bg-white text-xs font-bold text-[#1d1d1f] transition-colors cursor-pointer"
+              class="min-h-[36px] px-3 py-1 rounded-lg hover:bg-white text-xs font-bold text-[#1d1d1f] transition-colors cursor-pointer"
             >
               Hoy
             </button>
             <button
               type="button"
               @click="navigatePeriod(1)"
-              class="p-1.5 rounded-lg hover:bg-white text-[#1d1d1f] transition-colors cursor-pointer"
+              class="min-h-[36px] min-w-[36px] p-1.5 rounded-lg hover:bg-white text-[#1d1d1f] transition-colors cursor-pointer flex items-center justify-center"
               title="Siguiente"
             >
               <span class="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            data-testid="add-calendar-note-btn"
+            @click="openNewNoteModal(anchorDateStr, viewMode)"
+            class="min-h-[44px] px-4 py-2 rounded-xl bg-gradient-to-r from-[#b08d57] to-[#8a6d3d] text-white text-xs font-bold shadow-sm hover:brightness-105 transition-all cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <span class="material-symbols-outlined text-[16px]">edit_note</span>
+            <span>+ Nueva Anotación</span>
+          </button>
         </div>
       </div>
 
       <!-- Barra de Filtros y Título del Período -->
       <div class="bg-white rounded-2xl border border-[#e5e5ea] shadow-xs p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
           <h2 class="text-base sm:text-lg font-bold text-[#1d1d1f] capitalize" data-testid="calendar-period-title">
             {{ periodLabel }}
           </h2>
           <span class="text-xs font-semibold text-[#86868b] bg-[#f5f5f7] px-2.5 py-1 rounded-full">
             {{ filteredEvents.length }} {{ filteredEvents.length === 1 ? 'evento' : 'eventos' }}
+          </span>
+          <span
+            v-if="visibleNotes.length > 0"
+            class="text-xs font-semibold text-[#8a6d3d] bg-[#fdf8ee] border border-[#b08d57]/30 px-2.5 py-1 rounded-full"
+          >
+            {{ visibleNotes.length }} {{ visibleNotes.length === 1 ? 'anotación' : 'anotaciones' }}
           </span>
         </div>
 
@@ -135,7 +151,57 @@
 
       <!-- VISTA MES -->
       <div v-else-if="viewMode === 'month'" data-testid="calendar-month-view" class="space-y-4">
-        <!-- Móvil (< 768px): Selector compacto de fechas + lista de eventos del día -->
+        <!-- Anotaciones Mensuales (Bitácora Nova Work del Mes) -->
+        <div
+          data-testid="calendar-month-notes-panel"
+          class="bg-white rounded-2xl border border-[#e5e5ea] shadow-xs p-4 space-y-3"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="material-symbols-outlined text-[18px] text-[#8a6d3d]">sticky_note_2</span>
+              <h3 class="text-xs sm:text-sm font-bold text-[#1d1d1f]">Anotaciones del Mes</h3>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#fdf8ee] text-[#8a6d3d] border border-[#b08d57]/30">
+                {{ groupedNotes.monthNotes.length }}
+              </span>
+            </div>
+            <button
+              type="button"
+              data-testid="add-month-note-btn"
+              @click="openNewNoteModal(anchorDateStr, 'month')"
+              class="min-h-[36px] px-3 py-1.5 rounded-xl bg-[#fdf8ee] hover:bg-[#b08d57]/20 border border-[#b08d57]/40 text-[#8a6d3d] text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-[15px]">add</span>
+              <span>+ Nota Mensual</span>
+            </button>
+          </div>
+
+          <div v-if="groupedNotes.monthNotes.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <button
+              v-for="note in groupedNotes.monthNotes"
+              :key="note.id"
+              type="button"
+              data-testid="calendar-note-item"
+              @click="openNoteModal(note)"
+              class="text-left p-3 rounded-xl border transition-all hover:shadow-xs cursor-pointer space-y-1 min-w-0"
+              :class="getCategoryMeta(note.category).cardClasses"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border" :class="getCategoryMeta(note.category).badgeClasses">
+                  <span class="material-symbols-outlined text-[12px]">{{ getCategoryMeta(note.category).icon }}</span>
+                  {{ getCategoryMeta(note.category).label }}
+                </span>
+                <span class="text-[10px] font-semibold opacity-75">{{ visibilityLabel(note.visibility) }}</span>
+              </div>
+              <p class="text-xs font-bold truncate">{{ note.title }}</p>
+              <p v-if="note.content" class="text-[11px] opacity-85 line-clamp-2">{{ note.content }}</p>
+            </button>
+          </div>
+          <p v-else class="text-xs text-[#86868b] italic">
+            Sin anotaciones mensuales registradas. Usa "+ Nota Mensual" para destacar hitos o recordatorios de Nova Work.
+          </p>
+        </div>
+
+        <!-- Móvil (< 768px): Selector compacto de fechas + lista de eventos y notas del día -->
         <div class="md:hidden bg-white rounded-3xl border border-[#e5e5ea] shadow-sm overflow-hidden">
           <div class="grid grid-cols-7 bg-[#fbfbfd] border-b border-[#e5e5ea]">
             <div v-for="d in WEEKDAY_LABELS" :key="'mob-h-' + d" class="py-2 text-center text-[10px] font-bold uppercase text-[#86868b]">
@@ -155,37 +221,79 @@
               ]"
             >
               <span>{{ cell.dayNum }}</span>
-              <span
-                v-if="eventsByDate[cell.dateStr]?.length"
-                class="w-1.5 h-1.5 rounded-full"
-                :class="cell.dateStr === anchorDateStr ? 'bg-[#d4b06a]' : 'bg-[#0071e3]'"
-              ></span>
+              <div class="flex items-center gap-1 h-1.5">
+                <span
+                  v-if="eventsByDate[cell.dateStr]?.length"
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="cell.dateStr === anchorDateStr ? 'bg-[#0a84ff]' : 'bg-[#0071e3]'"
+                ></span>
+                <span
+                  v-if="(groupedNotes.dayNotesByDate[cell.dateStr] || []).length"
+                  class="w-1.5 h-1.5 rounded-full bg-[#d4b06a]"
+                ></span>
+              </div>
             </button>
           </div>
         </div>
 
-        <div class="md:hidden bg-white rounded-2xl border border-[#e5e5ea] p-4 space-y-2.5">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-[#86868b]">
-            Entregas del {{ anchorDateStr }} ({{ (eventsByDate[anchorDateStr] || []).length }})
-          </h3>
-          <p v-if="!(eventsByDate[anchorDateStr] || []).length" class="text-xs text-[#86868b] italic py-4 text-center">
-            Sin entregas programadas para este día.
-          </p>
-          <button
-            v-for="ev in (eventsByDate[anchorDateStr] || [])"
-            :key="'mob-ev-' + ev.id"
-            type="button"
-            @click="selectedEvent = ev"
-            class="w-full min-h-[44px] text-left p-3 rounded-xl border space-y-1 cursor-pointer"
-            :class="eventCardStyle(ev)"
-          >
-            <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase">
-              <span>{{ statusLabel(ev.status) }}</span>
-              <span>{{ priorityLabel(ev.priority) }}</span>
-            </div>
-            <p class="text-xs font-bold">{{ ev.title }}</p>
-            <p class="text-[11px] opacity-85">{{ ev.responsibleName }}</p>
-          </button>
+        <div class="md:hidden bg-white rounded-2xl border border-[#e5e5ea] p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#86868b]">
+              Agenda del {{ anchorDateStr }}
+            </h3>
+            <button
+              type="button"
+              @click="openNewNoteModal(anchorDateStr, 'day')"
+              class="min-h-[44px] px-3 py-1.5 rounded-xl bg-[#fdf8ee] border border-[#b08d57]/40 text-[#8a6d3d] text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[15px]">edit_note</span>
+              <span>+ Anotación</span>
+            </button>
+          </div>
+
+          <div v-if="(groupedNotes.dayNotesByDate[anchorDateStr] || []).length > 0" class="space-y-2">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-[#8a6d3d]">Anotaciones del día</p>
+            <button
+              v-for="note in (groupedNotes.dayNotesByDate[anchorDateStr] || [])"
+              :key="'mob-note-' + note.id"
+              type="button"
+              data-testid="calendar-note-item"
+              @click="openNoteModal(note)"
+              class="w-full min-h-[44px] text-left p-3 rounded-xl border space-y-1 cursor-pointer"
+              :class="getCategoryMeta(note.category).cardClasses"
+            >
+              <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase">
+                <span>{{ getCategoryMeta(note.category).label }}</span>
+                <span>{{ visibilityLabel(note.visibility) }}</span>
+              </div>
+              <p class="text-xs font-bold">{{ note.title }}</p>
+              <p v-if="note.content" class="text-[11px] opacity-85 line-clamp-2">{{ note.content }}</p>
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-[#86868b]">
+              Entregas ({{ (eventsByDate[anchorDateStr] || []).length }})
+            </p>
+            <p v-if="!(eventsByDate[anchorDateStr] || []).length" class="text-xs text-[#86868b] italic py-3 text-center">
+              Sin entregas programadas para este día.
+            </p>
+            <button
+              v-for="ev in (eventsByDate[anchorDateStr] || [])"
+              :key="'mob-ev-' + ev.id"
+              type="button"
+              @click="selectedEvent = ev"
+              class="w-full min-h-[44px] text-left p-3 rounded-xl border space-y-1 cursor-pointer"
+              :class="eventCardStyle(ev)"
+            >
+              <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase">
+                <span>{{ statusLabel(ev.status) }}</span>
+                <span>{{ priorityLabel(ev.priority) }}</span>
+              </div>
+              <p class="text-xs font-bold">{{ ev.title }}</p>
+              <p class="text-[11px] opacity-85">{{ ev.responsibleName }}</p>
+            </button>
+          </div>
         </div>
 
         <!-- Desktop (>= 768px): Grid completo 7 columnas -->
@@ -199,7 +307,7 @@
             <div
               v-for="cell in monthGridCells"
               :key="cell.dateStr"
-              class="min-h-[120px] p-2 flex flex-col gap-1 transition-colors"
+              class="min-h-[125px] p-2 flex flex-col gap-1 transition-colors group"
               :class="[
                 cell.inMonth ? 'bg-white' : 'bg-[#f5f5f7]/60 text-[#86868b]',
                 cell.dateStr === todayBogota ? 'ring-2 ring-inset ring-[#0071e3]/40 bg-blue-50/20' : ''
@@ -214,12 +322,36 @@
                 >
                   {{ cell.dayNum }}
                 </button>
-                <span v-if="eventsByDate[cell.dateStr]?.length" class="text-[10px] font-bold text-[#86868b]">
-                  {{ eventsByDate[cell.dateStr].length }}
-                </span>
+                <div class="flex items-center gap-1">
+                  <span v-if="eventsByDate[cell.dateStr]?.length" class="text-[10px] font-bold text-[#86868b]">
+                    {{ eventsByDate[cell.dateStr].length }}
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="quick-add-note-day"
+                    @click.stop="openNewNoteModal(cell.dateStr, 'day')"
+                    class="w-5 h-5 rounded-full bg-[#fdf8ee] hover:bg-[#b08d57] text-[#8a6d3d] hover:text-white border border-[#b08d57]/35 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                    :title="`Agregar anotación para ${cell.dateStr}`"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
-              <div class="space-y-1 overflow-y-auto max-h-[110px]">
+              <div class="space-y-1 overflow-y-auto max-h-[115px]">
+                <button
+                  v-for="note in (groupedNotes.dayNotesByDate[cell.dateStr] || [])"
+                  :key="note.id"
+                  type="button"
+                  @click.stop="openNoteModal(note)"
+                  data-testid="calendar-note-item"
+                  class="w-full text-left px-2 py-1 rounded-lg border text-[11px] leading-tight transition-all hover:shadow-xs cursor-pointer flex items-center gap-1"
+                  :class="getCategoryMeta(note.category).cardClasses"
+                >
+                  <span class="material-symbols-outlined text-[12px] shrink-0">{{ getCategoryMeta(note.category).icon }}</span>
+                  <span class="font-bold truncate">{{ note.title }}</span>
+                </button>
+
                 <button
                   v-for="ev in (eventsByDate[cell.dateStr] || [])"
                   :key="ev.id"
@@ -242,97 +374,242 @@
       </div>
 
       <!-- VISTA SEMANA -->
-      <div v-else-if="viewMode === 'week'" data-testid="calendar-week-view" class="grid grid-cols-1 md:grid-cols-7 gap-3">
+      <div v-else-if="viewMode === 'week'" data-testid="calendar-week-view" class="space-y-4">
+        <!-- Anotaciones de la Semana -->
         <div
-          v-for="day in weekDays"
-          :key="day.dateStr"
-          class="bg-white rounded-2xl border border-[#e5e5ea] shadow-xs flex flex-col min-h-[340px]"
-          :class="day.dateStr === todayBogota ? 'ring-2 ring-[#0071e3]/40' : ''"
+          data-testid="calendar-week-notes-panel"
+          class="bg-white rounded-2xl border border-[#e5e5ea] shadow-xs p-4 space-y-3"
         >
-          <div class="px-3 py-2.5 border-b border-[#e5e5ea] flex items-center justify-between bg-[#fbfbfd] rounded-t-2xl">
-            <div>
-              <p class="text-[10px] font-bold uppercase text-[#86868b]">{{ day.weekdayLabel }}</p>
-              <p class="text-sm font-bold text-[#1d1d1f]">{{ day.dayNum }} {{ day.monthShort }}</p>
-            </div>
-            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#f5f5f7] text-[#1d1d1f]">
-              {{ (eventsByDate[day.dateStr] || []).length }}
-            </span>
-          </div>
-
-          <div class="p-2.5 space-y-2 flex-1 overflow-y-auto">
-            <div v-if="!(eventsByDate[day.dateStr] || []).length" class="text-[11px] text-[#86868b] italic text-center py-6">
-              Sin entregas
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="material-symbols-outlined text-[18px] text-[#8a6d3d]">date_range</span>
+              <h3 class="text-xs sm:text-sm font-bold text-[#1d1d1f]">Anotaciones de la Semana</h3>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#fdf8ee] text-[#8a6d3d] border border-[#b08d57]/30">
+                {{ groupedNotes.weekNotes.length }}
+              </span>
             </div>
             <button
-              v-for="ev in (eventsByDate[day.dateStr] || [])"
-              :key="ev.id"
               type="button"
-              @click="selectedEvent = ev"
-              data-testid="calendar-event-item"
-              class="w-full text-left p-2.5 rounded-xl border transition-all hover:shadow-sm cursor-pointer space-y-1"
-              :class="eventCardStyle(ev)"
+              data-testid="add-week-note-btn"
+              @click="openNewNoteModal(weekDays[0]?.dateStr || anchorDateStr, 'week')"
+              class="min-h-[36px] px-3 py-1.5 rounded-xl bg-[#fdf8ee] hover:bg-[#b08d57]/20 border border-[#b08d57]/40 text-[#8a6d3d] text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
             >
-              <div class="flex items-center justify-between gap-1">
-                <span class="text-[10px] font-bold uppercase">{{ statusLabel(ev.status) }}</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/70">{{ priorityLabel(ev.priority) }}</span>
-              </div>
-              <p class="text-xs font-bold leading-snug">{{ ev.title }}</p>
-              <p class="text-[11px] opacity-85 flex items-center gap-1">
-                <span class="material-symbols-outlined text-[12px]">person</span>
-                <span class="truncate">{{ ev.responsibleName }}</span>
-              </p>
+              <span class="material-symbols-outlined text-[15px]">add</span>
+              <span>+ Nota Semanal</span>
             </button>
+          </div>
+
+          <div v-if="groupedNotes.weekNotes.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <button
+              v-for="note in groupedNotes.weekNotes"
+              :key="note.id"
+              type="button"
+              data-testid="calendar-note-item"
+              @click="openNoteModal(note)"
+              class="text-left p-3 rounded-xl border transition-all hover:shadow-xs cursor-pointer space-y-1 min-w-0"
+              :class="getCategoryMeta(note.category).cardClasses"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border" :class="getCategoryMeta(note.category).badgeClasses">
+                  <span class="material-symbols-outlined text-[12px]">{{ getCategoryMeta(note.category).icon }}</span>
+                  {{ getCategoryMeta(note.category).label }}
+                </span>
+                <span class="text-[10px] font-semibold opacity-75">{{ visibilityLabel(note.visibility) }}</span>
+              </div>
+              <p class="text-xs font-bold truncate">{{ note.title }}</p>
+              <p v-if="note.content" class="text-[11px] opacity-85 line-clamp-2">{{ note.content }}</p>
+            </button>
+          </div>
+          <p v-else class="text-xs text-[#86868b] italic">
+            Sin anotaciones semanales registradas para este período.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
+          <div
+            v-for="day in weekDays"
+            :key="day.dateStr"
+            class="bg-white rounded-2xl border border-[#e5e5ea] shadow-xs flex flex-col min-h-[340px]"
+            :class="day.dateStr === todayBogota ? 'ring-2 ring-[#0071e3]/40' : ''"
+          >
+            <div class="px-3 py-2.5 border-b border-[#e5e5ea] flex items-center justify-between bg-[#fbfbfd] rounded-t-2xl">
+              <div>
+                <p class="text-[10px] font-bold uppercase text-[#86868b]">{{ day.weekdayLabel }}</p>
+                <p class="text-sm font-bold text-[#1d1d1f]">{{ day.dayNum }} {{ day.monthShort }}</p>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#f5f5f7] text-[#1d1d1f]">
+                  {{ (eventsByDate[day.dateStr] || []).length + (groupedNotes.dayNotesByDate[day.dateStr] || []).length }}
+                </span>
+                <button
+                  type="button"
+                  data-testid="quick-add-note-day"
+                  @click.stop="openNewNoteModal(day.dateStr, 'day')"
+                  class="w-6 h-6 rounded-full bg-[#fdf8ee] hover:bg-[#b08d57] text-[#8a6d3d] hover:text-white border border-[#b08d57]/35 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                  :title="`Agregar anotación para ${day.dateStr}`"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div class="p-2.5 space-y-2 flex-1 overflow-y-auto">
+              <div
+                v-if="!(eventsByDate[day.dateStr] || []).length && !(groupedNotes.dayNotesByDate[day.dateStr] || []).length"
+                class="text-[11px] text-[#86868b] italic text-center py-6"
+              >
+                Sin entregas ni notas
+              </div>
+
+              <button
+                v-for="note in (groupedNotes.dayNotesByDate[day.dateStr] || [])"
+                :key="note.id"
+                type="button"
+                @click="openNoteModal(note)"
+                data-testid="calendar-note-item"
+                class="w-full text-left p-2 rounded-xl border transition-all hover:shadow-sm cursor-pointer space-y-1"
+                :class="getCategoryMeta(note.category).cardClasses"
+              >
+                <div class="flex items-center justify-between gap-1 text-[10px] font-bold uppercase">
+                  <span class="inline-flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[12px]">{{ getCategoryMeta(note.category).icon }}</span>
+                    Nota
+                  </span>
+                  <span>{{ getCategoryMeta(note.category).label }}</span>
+                </div>
+                <p class="text-xs font-bold leading-snug">{{ note.title }}</p>
+                <p v-if="note.content" class="text-[11px] opacity-85 line-clamp-2">{{ note.content }}</p>
+              </button>
+
+              <button
+                v-for="ev in (eventsByDate[day.dateStr] || [])"
+                :key="ev.id"
+                type="button"
+                @click="selectedEvent = ev"
+                data-testid="calendar-event-item"
+                class="w-full text-left p-2.5 rounded-xl border transition-all hover:shadow-sm cursor-pointer space-y-1"
+                :class="eventCardStyle(ev)"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[10px] font-bold uppercase">{{ statusLabel(ev.status) }}</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/70">{{ priorityLabel(ev.priority) }}</span>
+                </div>
+                <p class="text-xs font-bold leading-snug">{{ ev.title }}</p>
+                <p class="text-[11px] opacity-85 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">person</span>
+                  <span class="truncate">{{ ev.responsibleName }}</span>
+                </p>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- VISTA DÍA -->
-      <div v-else data-testid="calendar-day-view" class="bg-white rounded-3xl border border-[#e5e5ea] shadow-sm p-6 space-y-4">
-        <div class="flex items-center justify-between border-b border-[#e5e5ea] pb-4">
+      <div v-else data-testid="calendar-day-view" class="bg-white rounded-3xl border border-[#e5e5ea] shadow-sm p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5e5ea] pb-4">
           <div>
             <h3 class="text-lg font-bold text-[#1d1d1f]">Agenda del {{ anchorDateStr }}</h3>
-            <p class="text-xs text-[#86868b]">Detalle completo de tareas y entregas programadas para este día</p>
+            <p class="text-xs text-[#86868b]">Detalle completo de anotaciones, tareas y entregas programadas para este día</p>
+          </div>
+          <button
+            type="button"
+            data-testid="add-day-note-btn"
+            @click="openNewNoteModal(anchorDateStr, 'day')"
+            class="min-h-[44px] px-4 py-2 rounded-xl bg-[#fdf8ee] hover:bg-[#b08d57]/20 border border-[#b08d57]/40 text-[#8a6d3d] text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <span class="material-symbols-outlined text-[16px]">edit_note</span>
+            <span>+ Anotación del Día</span>
+          </button>
+        </div>
+
+        <!-- Anotaciones de la Jornada (Día + contexto Semanal/Mensual aplicable) -->
+        <div data-testid="calendar-day-notes-section" class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#8a6d3d] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px]">sticky_note_2</span>
+              <span>Anotaciones de la Jornada ({{ activeDayAllNotes.length }})</span>
+            </h4>
+          </div>
+
+          <div v-if="activeDayAllNotes.length === 0" class="p-4 rounded-2xl bg-[#fbfbfd] border border-dashed border-[#e5e5ea] text-xs text-[#86868b] italic text-center">
+            No hay anotaciones registradas para este día. Haz clic en "+ Anotación del Día" para agregar notas operativas.
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button
+              v-for="note in activeDayAllNotes"
+              :key="'day-view-' + note.id"
+              type="button"
+              data-testid="calendar-note-item"
+              @click="openNoteModal(note)"
+              class="text-left p-4 rounded-2xl border transition-all hover:shadow-sm cursor-pointer space-y-1.5"
+              :class="getCategoryMeta(note.category).cardClasses"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border" :class="getCategoryMeta(note.category).badgeClasses">
+                    <span class="material-symbols-outlined text-[12px]">{{ getCategoryMeta(note.category).icon }}</span>
+                    {{ getCategoryMeta(note.category).label }}
+                  </span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white/80 text-[#1d1d1f]">
+                    Alcance: {{ getScopeLabel(note.scope) }}
+                  </span>
+                </div>
+                <span class="text-[10px] font-bold uppercase opacity-75">
+                  {{ canEditCalendarNote(note, currentProfile) ? 'Editar' : visibilityLabel(note.visibility) }}
+                </span>
+              </div>
+              <h5 class="text-sm font-bold">{{ note.title }}</h5>
+              <p v-if="note.content" class="text-xs opacity-90 whitespace-pre-wrap">{{ note.content }}</p>
+            </button>
           </div>
         </div>
 
-        <div v-if="!(eventsByDate[anchorDateStr] || []).length" class="py-12 text-center text-sm text-[#86868b] italic">
-          No hay tareas ni entregas programadas para esta fecha con los filtros actuales.
-        </div>
+        <div class="space-y-3 pt-2 border-t border-[#f2f2f7]">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#86868b]">
+            Tareas y Entregas Programadas ({{ (eventsByDate[anchorDateStr] || []).length }})
+          </h4>
 
-        <div v-else class="space-y-3">
-          <div
-            v-for="ev in (eventsByDate[anchorDateStr] || [])"
-            :key="ev.id"
-            @click="selectedEvent = ev"
-            data-testid="calendar-event-item"
-            class="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-sm transition-all cursor-pointer"
-            :class="eventCardStyle(ev)"
-          >
-            <div class="space-y-1 min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white/80">
-                  {{ ev.sourceType === 'scheduled_delivery' ? 'Entrega Programada' : 'Tarea Asignada' }}
-                </span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white/80">
-                  {{ statusLabel(ev.status) }}
-                </span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white/80">
-                  Prioridad: {{ priorityLabel(ev.priority) }}
-                </span>
-                <span v-if="ev.time" class="text-xs font-mono font-bold flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[14px]">schedule</span>
-                  {{ ev.time }}
-                </span>
+          <div v-if="!(eventsByDate[anchorDateStr] || []).length" class="py-8 text-center text-sm text-[#86868b] italic">
+            No hay tareas ni entregas programadas para esta fecha con los filtros actuales.
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="ev in (eventsByDate[anchorDateStr] || [])"
+              :key="ev.id"
+              @click="selectedEvent = ev"
+              data-testid="calendar-event-item"
+              class="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-sm transition-all cursor-pointer"
+              :class="eventCardStyle(ev)"
+            >
+              <div class="space-y-1 min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white/80">
+                    {{ ev.sourceType === 'scheduled_delivery' ? 'Entrega Programada' : 'Tarea Asignada' }}
+                  </span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white/80">
+                    {{ statusLabel(ev.status) }}
+                  </span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white/80">
+                    Prioridad: {{ priorityLabel(ev.priority) }}
+                  </span>
+                  <span v-if="ev.time" class="text-xs font-mono font-bold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">schedule</span>
+                    {{ ev.time }}
+                  </span>
+                </div>
+                <h4 class="text-base font-bold">{{ ev.title }}</h4>
+                <p v-if="ev.description" class="text-xs opacity-85">{{ ev.description }}</p>
               </div>
-              <h4 class="text-base font-bold">{{ ev.title }}</h4>
-              <p v-if="ev.description" class="text-xs opacity-85">{{ ev.description }}</p>
-            </div>
 
-            <div class="flex items-center gap-2 shrink-0 text-xs font-semibold bg-white/70 px-3 py-2 rounded-xl">
-              <span class="material-symbols-outlined text-[16px]">person</span>
-              <div>
-                <p class="font-bold">{{ ev.responsibleName }}</p>
-                <p class="text-[10px] opacity-75">{{ ev.areaName }}</p>
+              <div class="flex items-center gap-2 shrink-0 text-xs font-semibold bg-white/70 px-3 py-2 rounded-xl">
+                <span class="material-symbols-outlined text-[16px]">person</span>
+                <div>
+                  <p class="font-bold">{{ ev.responsibleName }}</p>
+                  <p class="text-[10px] opacity-75">{{ ev.areaName }}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -382,16 +659,202 @@
           </div>
         </div>
       </div>
+
+      <!-- Modal Crear / Editar Anotación de Calendario -->
+      <div
+        v-if="showNoteModal"
+        data-testid="calendar-note-modal"
+        class="fixed inset-0 z-[145] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        @click.self="closeNoteModal"
+      >
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[#e5e5ea] overflow-hidden flex flex-col max-h-[92vh]">
+          <div class="px-6 py-4 border-b border-[#e5e5ea] flex items-center justify-between bg-[#fbfbfd]">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px] text-[#8a6d3d]">edit_calendar</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-[#8a6d3d]">
+                {{ !noteForm.id ? 'Nueva Anotación en Calendario' : (canEditActiveNote ? 'Editar Anotación' : 'Detalle de Anotación') }}
+              </span>
+            </div>
+            <button type="button" @click="closeNoteModal" class="text-[#86868b] hover:text-[#1d1d1f] cursor-pointer">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <form @submit.prevent="saveCalendarNote" class="p-6 space-y-4 overflow-y-auto">
+            <div v-if="noteError" class="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+              {{ noteError }}
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b]">
+                Título de la Anotación <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="noteForm.title"
+                type="text"
+                required
+                :disabled="!canEditActiveNote"
+                data-testid="note-title-input"
+                placeholder="Ej. Cierre fiscal Nova Work, Comité comercial, Novedad operativa..."
+                class="w-full px-3.5 py-2.5 rounded-xl border border-[#e5e5ea] text-sm outline-none focus:border-[#b08d57] disabled:bg-[#f5f5f7]"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b]">Alcance</label>
+                <select
+                  v-model="noteForm.scope"
+                  :disabled="!canEditActiveNote"
+                  data-testid="note-scope-select"
+                  class="w-full px-3 py-2 rounded-xl border border-[#e5e5ea] bg-[#fbfbfd] text-xs font-semibold outline-none focus:border-[#b08d57] disabled:bg-[#f5f5f7]"
+                >
+                  <option v-for="s in CALENDAR_NOTE_SCOPES" :key="s.key" :value="s.key">
+                    {{ s.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b]">Fecha de Referencia</label>
+                <input
+                  v-model="noteForm.note_date"
+                  type="date"
+                  required
+                  :disabled="!canEditActiveNote"
+                  data-testid="note-date-input"
+                  class="w-full px-3 py-2 rounded-xl border border-[#e5e5ea] bg-[#fbfbfd] text-xs font-semibold outline-none focus:border-[#b08d57] disabled:bg-[#f5f5f7]"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b]">Categoría</label>
+                <select
+                  v-model="noteForm.category"
+                  :disabled="!canEditActiveNote"
+                  data-testid="note-category-select"
+                  class="w-full px-3 py-2 rounded-xl border border-[#e5e5ea] bg-[#fbfbfd] text-xs font-semibold outline-none focus:border-[#b08d57] disabled:bg-[#f5f5f7]"
+                >
+                  <option v-for="c in CALENDAR_NOTE_CATEGORIES" :key="c.key" :value="c.key">
+                    {{ c.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b]">Visibilidad</label>
+                <select
+                  v-model="noteForm.visibility"
+                  :disabled="!canEditActiveNote"
+                  data-testid="note-visibility-select"
+                  class="w-full px-3 py-2 rounded-xl border border-[#e5e5ea] bg-[#fbfbfd] text-xs font-semibold outline-none focus:border-[#b08d57] disabled:bg-[#f5f5f7]"
+                >
+                  <option value="personal">Personal (Solo yo)</option>
+                  <option value="area">Mi Área</option>
+                  <option v-if="isMaster || isExecLeader || isAreaLeader" value="company">Toda la Empresa</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[11px] font-bold uppercase tracking-wider text-[#86868b]">Detalle / Observaciones</label>
+              <textarea
+                v-model="noteForm.content"
+                rows="3"
+                :disabled="!canEditActiveNote"
+                data-testid="note-content-input"
+                placeholder="Coloca anotaciones importantes respecto a Nova Work, novedades de operación, acuerdos o recordatorios clave..."
+                class="w-full px-3.5 py-2.5 rounded-xl border border-[#e5e5ea] text-sm outline-none focus:border-[#b08d57] disabled:bg-[#f5f5f7]"
+              ></textarea>
+            </div>
+
+            <div class="pt-3 border-t border-[#e5e5ea] flex flex-wrap items-center justify-between gap-2">
+              <div v-if="noteForm.id && canEditActiveNote" class="flex items-center gap-2">
+                <button
+                  v-if="!confirmingNoteDelete"
+                  type="button"
+                  data-testid="delete-note-btn"
+                  @click="confirmingNoteDelete = true"
+                  class="min-h-[40px] px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold cursor-pointer inline-flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-[15px]">delete</span>
+                  <span>Eliminar</span>
+                </button>
+                <div v-else class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    data-testid="confirm-delete-note-btn"
+                    :disabled="noteSaving"
+                    @click="removeCalendarNote"
+                    class="min-h-[40px] px-3 py-2 rounded-xl bg-[#ff3b30] text-white text-xs font-bold cursor-pointer"
+                  >
+                    Sí, eliminar
+                  </button>
+                  <button
+                    type="button"
+                    @click="confirmingNoteDelete = false"
+                    class="min-h-[40px] px-2.5 py-2 rounded-xl bg-[#f5f5f7] text-xs font-semibold text-[#1d1d1f] cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+              <span v-else></span>
+
+              <div class="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  @click="closeNoteModal"
+                  class="min-h-[40px] px-4 py-2 rounded-xl bg-[#f5f5f7] text-xs font-bold text-[#1d1d1f] cursor-pointer"
+                >
+                  Cerrar
+                </button>
+                <button
+                  v-if="canEditActiveNote"
+                  type="submit"
+                  data-testid="save-note-btn"
+                  :disabled="noteSaving"
+                  class="min-h-[40px] px-5 py-2 rounded-xl bg-[#1d1d1f] hover:bg-[#3a3a3c] text-white text-xs font-bold shadow-sm cursor-pointer disabled:opacity-60"
+                >
+                  {{ noteSaving ? 'Guardando...' : (noteForm.id ? 'Guardar Cambios' : 'Guardar Anotación') }}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Toast de confirmación -->
+      <div
+        v-if="calendarToast"
+        class="fixed bottom-6 right-6 z-[160] px-4 py-2.5 rounded-2xl bg-[#1d1d1f] text-white text-xs font-bold shadow-xl"
+      >
+        {{ calendarToast }}
+      </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { supabase } from '../api/supabase';
 import { currentProfile, loadCurrentProfile } from '../api/auth';
 import { getBogotaDateStr } from '../utils/bogotaTime';
 import { buildConsolidatedCalendarEvents } from '../utils/calendarEvents';
+import {
+  CALENDAR_NOTE_CATEGORIES,
+  CALENDAR_NOTE_SCOPES,
+  getCategoryMeta,
+  getScopeLabel,
+  filterVisibleCalendarNotes,
+  canEditCalendarNote,
+  groupCalendarNotesForView,
+  fetchCalendarNotesFromStore,
+  upsertCalendarNoteInStore,
+  deleteCalendarNoteInStore,
+} from '../utils/calendarNotes';
 
 const VIEWS = [
   { key: 'month', label: 'Mes' },
@@ -413,8 +876,26 @@ const selectedEvent = ref(null);
 const rawTasks = ref([]);
 const rawDeliveries = ref([]);
 const rawCompletions = ref([]);
+const rawCalendarNotes = ref([]);
 const allProfiles = ref([]);
 const areasList = ref([]);
+
+const showNoteModal = ref(false);
+const editingNote = ref(null);
+const noteForm = ref({
+  id: null,
+  title: '',
+  content: '',
+  note_date: todayBogota,
+  scope: 'day',
+  category: 'nova',
+  visibility: 'personal',
+});
+const noteError = ref('');
+const noteSaving = ref(false);
+const confirmingNoteDelete = ref(false);
+const calendarToast = ref('');
+let toastTimer = null;
 
 const filters = ref({
   areaId: 'all',
@@ -568,6 +1049,148 @@ const eventsByDate = computed(() => {
   return map;
 });
 
+const visibleNotes = computed(() => {
+  return filterVisibleCalendarNotes(rawCalendarNotes.value, currentProfile.value);
+});
+
+const groupedNotes = computed(() => {
+  return groupCalendarNotesForView(visibleNotes.value, {
+    anchorDateStr: anchorDateStr.value,
+    weekStartStr: weekDays.value[0]?.dateStr,
+    weekEndStr: weekDays.value[6]?.dateStr,
+  });
+});
+
+const activeDayAllNotes = computed(() => {
+  const combined = [
+    ...(groupedNotes.value.dayNotesByDate[anchorDateStr.value] || []),
+    ...(groupedNotes.value.weekNotes || []),
+    ...(groupedNotes.value.monthNotes || []),
+  ];
+  const seen = new Set();
+  return combined.filter((n) => {
+    if (!n?.id || seen.has(n.id)) return false;
+    seen.add(n.id);
+    return true;
+  });
+});
+
+const canEditActiveNote = computed(() => {
+  if (!noteForm.value.id) return true;
+  return canEditCalendarNote(editingNote.value, currentProfile.value);
+});
+
+const visibilityLabel = (v) => {
+  const map = { personal: 'Personal', area: 'Mi Área', company: 'Empresa' };
+  return map[v] || 'Personal';
+};
+
+const showToast = (msg) => {
+  calendarToast.value = msg;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    calendarToast.value = '';
+  }, 3000);
+};
+
+const openNewNoteModal = (dateStr = anchorDateStr.value, scope = 'day') => {
+  editingNote.value = null;
+  noteError.value = '';
+  confirmingNoteDelete.value = false;
+  noteForm.value = {
+    id: null,
+    title: '',
+    content: '',
+    note_date: dateStr || anchorDateStr.value,
+    scope: ['day', 'week', 'month'].includes(scope) ? scope : 'day',
+    category: 'nova',
+    visibility: 'personal',
+  };
+  showNoteModal.value = true;
+};
+
+const openNoteModal = (note) => {
+  if (!note) return;
+  editingNote.value = note;
+  noteError.value = '';
+  confirmingNoteDelete.value = false;
+  noteForm.value = {
+    id: note.id,
+    title: note.title || '',
+    content: note.content || '',
+    note_date: String(note.note_date || anchorDateStr.value).slice(0, 10),
+    scope: note.scope || 'day',
+    category: note.category || 'nova',
+    visibility: note.visibility || 'personal',
+    profile_id: note.profile_id,
+    area_id: note.area_id,
+    created_at: note.created_at,
+  };
+  showNoteModal.value = true;
+};
+
+const closeNoteModal = () => {
+  showNoteModal.value = false;
+  confirmingNoteDelete.value = false;
+  noteError.value = '';
+};
+
+const saveCalendarNote = async () => {
+  noteError.value = '';
+  if (!String(noteForm.value.title || '').trim()) {
+    noteError.value = 'El título de la anotación es obligatorio.';
+    return;
+  }
+  if (!String(noteForm.value.note_date || '').trim()) {
+    noteError.value = 'Debes seleccionar una fecha de referencia.';
+    return;
+  }
+
+  noteSaving.value = true;
+  try {
+    const isEditing = Boolean(noteForm.value.id);
+    const { note } = await upsertCalendarNoteInStore(
+      supabase,
+      { ...noteForm.value },
+      currentProfile.value
+    );
+
+    if (note) {
+      const idx = rawCalendarNotes.value.findIndex((n) => n.id === note.id);
+      if (idx >= 0) {
+        const next = [...rawCalendarNotes.value];
+        next[idx] = note;
+        rawCalendarNotes.value = next;
+      } else {
+        rawCalendarNotes.value = [...rawCalendarNotes.value, note];
+      }
+    }
+
+    closeNoteModal();
+    showToast(isEditing ? 'Anotación actualizada correctamente.' : 'Anotación guardada en el calendario.');
+  } catch (err) {
+    noteError.value = err?.message || 'Error al guardar la anotación.';
+  } finally {
+    noteSaving.value = false;
+  }
+};
+
+const removeCalendarNote = async () => {
+  if (!noteForm.value.id) return;
+  noteSaving.value = true;
+  noteError.value = '';
+  try {
+    await deleteCalendarNoteInStore(supabase, noteForm.value.id);
+    rawCalendarNotes.value = rawCalendarNotes.value.filter((n) => n.id !== noteForm.value.id);
+    closeNoteModal();
+    showToast('Anotación eliminada del calendario.');
+  } catch (err) {
+    noteError.value = err?.message || 'No fue posible eliminar la anotación.';
+  } finally {
+    noteSaving.value = false;
+  }
+};
+
 const navigatePeriod = (delta) => {
   const anchor = parseYmd(anchorDateStr.value);
   if (viewMode.value === 'month') {
@@ -619,12 +1242,13 @@ const fetchCalendarData = async () => {
       await loadCurrentProfile();
     }
 
-    const [tasksRes, deliveriesRes, completionsRes, profilesRes, areasRes] = await Promise.all([
+    const [tasksRes, deliveriesRes, completionsRes, profilesRes, areasRes, notesRes] = await Promise.all([
       supabase.from('tasks').select('*').order('due_date', { ascending: true }),
       supabase.from('scheduled_deliveries').select('*').eq('active', true),
       supabase.from('scheduled_delivery_completions').select('delivery_id, profile_id, period_key'),
       supabase.from('profiles').select('id, full_name, role_id, is_master_admin, roles(id, name, access_level, area_id, areas(id, name))'),
       supabase.from('areas').select('id, name').order('name'),
+      fetchCalendarNotesFromStore(supabase),
     ]);
 
     rawTasks.value = tasksRes.data || [];
@@ -632,6 +1256,7 @@ const fetchCalendarData = async () => {
     rawCompletions.value = completionsRes.data || [];
     allProfiles.value = profilesRes.data || [];
     areasList.value = areasRes.data || [];
+    rawCalendarNotes.value = notesRes?.notes || [];
   } catch (err) {
     console.error('Error cargando calendario de entregas:', err);
   } finally {
@@ -650,5 +1275,9 @@ watch(
 );
 
 onMounted(fetchCalendarData);
+
+onBeforeUnmount(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+});
 </script>
 

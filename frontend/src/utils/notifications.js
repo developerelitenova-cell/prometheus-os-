@@ -211,3 +211,195 @@ export async function notifyRoleChangeFallback({
   }
 }
 
+/**
+ * Resuelve candidatos a jefe inmediato para un colaborador:
+ * Prioridad 1: Líder de su misma área (access_level < propio o nivel 1/2 en la misma área).
+ * Prioridad 2: Dirección / Gerencia (access_level === 1) o Master Admin.
+ */
+export async function findImmediateSupervisors(currentProfile, currentRole) {
+  if (!currentProfile?.id) return [];
+  try {
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, is_master_admin, role_id, roles(id, name, area_id, access_level)');
+
+    if (error || !profiles) return [];
+
+    const myId = currentProfile.id;
+    const myAreaId = currentRole?.area_id || currentProfile?.roles?.area_id || null;
+    const myAccess = currentRole?.access_level ?? currentProfile?.roles?.access_level ?? 3;
+
+    const areaLeaders = [];
+    const executives = [];
+
+    for (const p of profiles) {
+      if (!p?.id || p.id === myId) continue;
+      const r = p.roles || {};
+      const rAccess = r.access_level;
+      const isAreaLeader =
+        myAreaId &&
+        r.area_id === myAreaId &&
+        (rAccess === 1 || rAccess === 2) &&
+        rAccess < myAccess;
+
+      if (isAreaLeader) {
+        areaLeaders.push({
+          id: p.id,
+          full_name: p.full_name || 'Líder de Área',
+          email: p.email || '',
+          roleName: r.name || 'Líder de Área',
+          accessLevel: rAccess,
+          relationLabel: 'Jefe Directo de Área',
+        });
+      } else if (rAccess === 1 || p.is_master_admin) {
+        executives.push({
+          id: p.id,
+          full_name: p.full_name || 'Dirección / Gerencia',
+          email: p.email || '',
+          roleName: r.name || (p.is_master_admin ? 'Master Admin' : 'Gerencia'),
+          accessLevel: rAccess ?? 1,
+          relationLabel: 'Dirección / Gerencia',
+        });
+      }
+    }
+
+    areaLeaders.sort((a, b) => (a.accessLevel === 2 ? -1 : b.accessLevel === 2 ? 1 : 0));
+    executives.sort((a, b) => (a.accessLevel ?? 1) - (b.accessLevel ?? 1));
+    return [...areaLeaders, ...executives];
+  } catch (err) {
+    console.warn('Error resolviendo jefes inmediatos:', err);
+    return [];
+  }
+}
+
+/**
+ * Envía el reporte formal de cumplimiento diario al jefe inmediato:
+ * 1. Backend FastAPI (/api/v1/reports/send-to-supervisor) si está disponible.
+ * 2. Fallback RPC SECURITY DEFINER en Supabase (notify_supervisor_report).
+ * 3. Fallback insert directo en notifications.
+ */
+export async function sendReportToSupervisor({
+  supervisorId,
+  supervisorName = 'Jefe Inmediato',
+  supervisorEmail = '',
+  employeeId,
+  employeeName = 'Colaborador',
+  roleName = 'Cargo Operativo',
+  dateStr,
+  compliancePercentage = 100,
+  completedTasks = 0,
+  totalTasks = 0,
+  unfulfilledTasks = 0,
+  exportFormat = 'excel',
+  notes = '',
+}) {
+  if (!supervisorId) {
+    return { ok: false, error: 'Selecciona un supervisor destinatario.' };
+  }
+
+  const cleanNotes = String(notes || '').trim();
+  const fmtUpper = String(exportFormat || 'pdf').toUpperCase();
+  const unfulfilledPart = unfulfilledTasks > 0 ? `, ${unfulfilledTasks} no ejecutadas` : '';
+  const summaryMessage = `Reporte operativo de ${employeeName} (${roleName}) · Jornada ${dateStr}: ${compliancePercentage}% cumplimiento (${completedTasks}/${totalTasks} completadas${unfulfilledPart}). Formato: ${fmtUpper}.${cleanNotes ? ` Obs: ${cleanNotes}` : ''}`;
+
+  // 1. Intentar Backend FastAPI
+  try {
+    if (apiUrl) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const res = await fetch(`${apiUrl}/api/v1/reports/send-to-supervisor`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            supervisor_id: supervisorId,
+            employee_id: employeeId,
+            date_str: dateStr,
+            compliance_percentage: Number(compliancePercentage),
+            completed_tasks: Number(completedTasks),
+            total_tasks: Number(totalTasks),
+            unfulfilled_tasks: Number(unfulfilledTasks),
+            export_format: exportFormat,
+            notes: cleanNotes || null,
+          }),
+        });
+        if (res.ok) {
+          return {
+            ok: true,
+            channel: 'api',
+            message: `Reporte notificado a ${supervisorName} correctamente.`,
+            supervisorEmail,
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Backend send-to-supervisor no disponible, usando fallback Supabase:', err);
+  }
+
+  // 2. Fallback RPC SECURITY DEFINER en Supabase
+  try {
+    if (typeof supabase.rpc === 'function') {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('notify_supervisor_report', {
+        p_supervisor_id: supervisorId,
+        p_employee_name: employeeName,
+        p_role_name: roleName,
+        p_date_str: dateStr,
+        p_compliance: Number(compliancePercentage),
+        p_completed: Number(completedTasks),
+        p_total: Number(totalTasks),
+        p_unfulfilled: Number(unfulfilledTasks),
+        p_export_format: exportFormat,
+        p_notes: cleanNotes || null,
+      });
+      if (!rpcError && rpcData?.ok !== false) {
+        return {
+          ok: true,
+          channel: 'rpc',
+          message: `Reporte enviado a ${supervisorName} en su bandeja Nova Work.`,
+          supervisorEmail,
+        };
+      }
+    }
+  } catch (rpcErr) {
+    console.warn('RPC notify_supervisor_report fallback al insert directo:', rpcErr);
+  }
+
+  // 3. Fallback insert directo en notifications
+  try {
+    const actionUrl = employeeId ? `/workspace?view_as=${employeeId}` : '/workspace';
+    const { error } = await supabase.from('notifications').insert({
+      profile_id: supervisorId,
+      type: 'message',
+      message: summaryMessage,
+      action_url: actionUrl,
+      is_read: false,
+    });
+    if (!error) {
+      return {
+        ok: true,
+        channel: 'supabase_insert',
+        message: `Notificación enviada a ${supervisorName}.`,
+        supervisorEmail,
+      };
+    }
+    return {
+      ok: false,
+      channel: 'none',
+      error: error.message || 'No fue posible registrar la notificación.',
+      supervisorEmail,
+      summaryMessage,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      channel: 'none',
+      error: err?.message || 'Error enviando reporte.',
+      supervisorEmail,
+      summaryMessage,
+    };
+  }
+}
+

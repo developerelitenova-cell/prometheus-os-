@@ -119,6 +119,15 @@
               <div :class="['mt-3 px-3 py-1 rounded-full text-xs font-bold border border-current opacity-80', kpiColor]">
                 Calificación IA en tiempo real
               </div>
+              <button
+                type="button"
+                data-testid="open-kpis-from-card-btn"
+                @click="dmTab = 'kpis'"
+                class="mt-3 text-[11px] font-bold text-[#0071e3] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span class="material-symbols-outlined text-[14px]">monitoring</span>
+                <span>Ver gráfico semanal / quincenal / mensual →</span>
+              </button>
             </div>
           </div>
 
@@ -335,8 +344,8 @@
                 </button>
               </div>
 
-              <!-- Badge de Estado de la Jornada -->
-              <div>
+              <!-- Badge de Estado de la Jornada y Guía Interactiva -->
+              <div class="flex flex-wrap items-center gap-2">
                 <span v-if="isReadOnlyDay" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
                   <span class="material-symbols-outlined text-[13px]">lock</span>
                   Jornada Cerrada (Solo Lectura)
@@ -345,6 +354,16 @@
                   <span class="material-symbols-outlined text-[13px]">timer</span>
                   Jornada Activa (00:01 - 23:59)
                 </span>
+                <button
+                  type="button"
+                  data-testid="open-tutorial-btn"
+                  @click="openPortalTutorial"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#b08d57]/12 hover:bg-[#b08d57]/20 text-[#8a6d3d] text-[11px] font-bold border border-[#b08d57]/30 transition-colors cursor-pointer"
+                  title="Ver tutorial interactivo de Mi Portal"
+                >
+                  <span class="material-symbols-outlined text-[14px]">help</span>
+                  <span>Guía Rápida</span>
+                </button>
               </div>
             </div>
 
@@ -356,11 +375,27 @@
                 <span>+ Actividad Extraordinaria</span>
               </button>
 
-              <div class="flex items-center gap-2">
-                <!-- Botón Descargar PDF de Cumplimiento -->
-                <button type="button" @click="downloadCompliancePdf" class="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50/50 text-[#0071e3] text-[11px] font-bold border border-[#0071e3]/30 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer" title="Descargar verificación de cumplimiento para el jefe">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <!-- Botones Exportar PDF / Excel / Word -->
+                <button type="button" data-testid="export-pdf-btn" @click="downloadCompliancePdf" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-blue-50/50 text-[#0071e3] text-[11px] font-bold border border-[#0071e3]/30 flex items-center gap-1 transition-all active:scale-95 shadow-2xs cursor-pointer" title="Descargar Acta Oficial en PDF">
                   <span class="material-symbols-outlined text-[15px]">picture_as_pdf</span>
-                  <span>Descargar Acta PDF</span>
+                  <span>PDF</span>
+                </button>
+
+                <button type="button" data-testid="export-excel-btn" @click="exportExcelReport" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-300 flex items-center gap-1 transition-all active:scale-95 shadow-2xs cursor-pointer" title="Exportar gestión diaria a Excel (.xlsx)">
+                  <span class="material-symbols-outlined text-[15px]">table_view</span>
+                  <span>Excel</span>
+                </button>
+
+                <button type="button" data-testid="export-word-btn" @click="exportWordReport" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-700 text-[11px] font-bold border border-indigo-200 flex items-center gap-1 transition-all active:scale-95 shadow-2xs cursor-pointer" title="Exportar Acta en formato Word (.doc)">
+                  <span class="material-symbols-outlined text-[15px]">description</span>
+                  <span>Word</span>
+                </button>
+
+                <!-- Botón Enviar al Jefe Inmediato -->
+                <button type="button" data-testid="send-supervisor-btn" @click="openSendReportModal" class="px-3 py-1.5 rounded-xl bg-[#b08d57] hover:bg-[#8a6d3d] text-white text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm cursor-pointer" title="Enviar resumen y archivo al jefe inmediato">
+                  <span class="material-symbols-outlined text-[15px]">forward_to_inbox</span>
+                  <span>Enviar al Jefe</span>
                 </button>
 
                 <!-- Botón Guardar y Consolidar Gestión Diaria (Solo día actual) -->
@@ -373,14 +408,104 @@
             </div>
           </div>
 
-          <!-- Alerta de tareas atrasadas -->
-          <div v-if="overdueTasks.length > 0" class="bg-[#ffebee] border border-[#ffcdd2] rounded-2xl p-4 flex items-start gap-3 shadow-sm">
-            <span class="material-symbols-outlined text-[#c62828] mt-0.5">warning</span>
-            <div>
-              <h4 class="text-[#c62828] font-bold text-[14px]">Alerta de Seguimiento</h4>
-              <p class="text-[#b71c1c] text-[13px] mt-1 leading-snug">
-                Tienes <strong>{{ overdueTasks.length }}</strong> tareas vencidas que impactan tu KPI. Ciérralas lo antes posible.
-              </p>
+          <!-- Radar de Atención Inmediata (Reuniones próximas, Compromisos vencidos y Urgentes) -->
+          <div
+            v-if="upcomingMeetings.length > 0 || overdueTasks.length > 0 || urgentPendingTasks.length > 0"
+            data-testid="attention-radar-banner"
+            class="bg-white border border-[#ffcdd2] rounded-2xl p-4 shadow-sm space-y-3"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-[#ffebee] text-[#c62828] flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-[19px]">radar</span>
+                </div>
+                <div>
+                  <h4 class="text-[13px] font-bold text-[#1d1d1f] leading-tight">Radar de Atención Inmediata</h4>
+                  <p class="text-[11px] text-[#86868b]">Identificación prioritaria de eventos próximos, vencidos y urgentes</p>
+                </div>
+              </div>
+              <router-link
+                to="/calendario"
+                class="text-[11px] font-bold text-[#0071e3] hover:underline flex items-center gap-1"
+              >
+                <span class="material-symbols-outlined text-[14px]">calendar_month</span>
+                <span>Ver Calendario</span>
+              </router-link>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <!-- Reuniones / Eventos Próximos -->
+              <div
+                v-if="upcomingMeetings.length > 0"
+                data-testid="radar-meetings-card"
+                class="rounded-xl bg-blue-50/70 border border-blue-200 p-3 flex flex-col justify-between gap-1.5"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-[#0071e3] flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">groups</span>
+                    Reuniones / Eventos
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded-full bg-[#0071e3] text-white text-[10px] font-bold">
+                    {{ upcomingMeetings.length }}
+                  </span>
+                </div>
+                <p class="text-xs font-bold text-[#1d1d1f] truncate">
+                  {{ upcomingMeetings[0].title }}
+                </p>
+                <p class="text-[11px] text-[#5e6c84]">
+                  {{ formatMeetingTime(upcomingMeetings[0].event_date) }}
+                </p>
+              </div>
+
+              <!-- Compromisos Vencidos -->
+              <div
+                v-if="overdueTasks.length > 0"
+                data-testid="radar-overdue-card"
+                class="rounded-xl bg-[#fff5f5] border border-[#ffcdd2] p-3 flex flex-col justify-between gap-1.5"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-[#c62828] flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">warning</span>
+                    Compromisos Vencidos
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded-full bg-[#c62828] text-white text-[10px] font-bold">
+                    {{ overdueTasks.length }}
+                  </span>
+                </div>
+                <p class="text-[11px] text-[#b71c1c] leading-snug">
+                  Tienes <strong>{{ overdueTasks.length }}</strong> {{ overdueTasks.length === 1 ? 'tarea vencida' : 'tareas vencidas' }} que impactan tu KPI.
+                </p>
+                <button
+                  type="button"
+                  @click="showOverdueModal = true"
+                  class="text-[11px] font-bold text-[#c62828] hover:underline text-left cursor-pointer"
+                >
+                  Gestionar vencidas →
+                </button>
+              </div>
+
+              <!-- Tareas Urgentes / Alta Prioridad -->
+              <div
+                v-if="urgentPendingTasks.length > 0"
+                data-testid="radar-urgent-card"
+                class="rounded-xl bg-amber-50/70 border border-amber-200 p-3 flex flex-col justify-between gap-1.5"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">priority_high</span>
+                    Atención Inmediata
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-bold">
+                    {{ urgentPendingTasks.length }}
+                  </span>
+                </div>
+                <p class="text-xs font-bold text-[#1d1d1f] truncate">
+                  {{ urgentPendingTasks[0].title }}
+                </p>
+                <p class="text-[11px] text-[#5e6c84]">
+                  Prioridad {{ getPriorityBadge(urgentPendingTasks[0].priority).label }} pendiente
+                </p>
+              </div>
             </div>
           </div>
 
@@ -409,217 +534,256 @@
                   <p class="text-xs text-[#86868b] mt-1">Timeline Secuencial Obligatorio · Flujo Cronológico</p>
                 </div>
               </div>
-              <!-- Tab selector Diario/Semanal/Mensual -->
-              <div class="flex items-center bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl p-1 gap-1 shrink-0 self-start sm:self-auto">
-                <button v-for="t in [{k:'daily',l:'Diario'},{k:'weekly',l:'Semanal'},{k:'monthly',l:'Mensual'}]" :key="t.k"
+              <!-- Tab selector Diario/Semanal/Mensual/Mis KPIs -->
+              <div class="flex flex-wrap items-center bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl p-1 gap-1 shrink-0 self-start sm:self-auto">
+                <button
+                  v-for="t in [{k:'daily',l:'Diario'},{k:'weekly',l:'Semanal'},{k:'monthly',l:'Mensual'},{k:'kpis',l:'Mis KPIs'}]"
+                  :key="t.k"
+                  type="button"
+                  :data-testid="`dm-tab-${t.k}`"
                   @click="dmTab = t.k"
-                  :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1',
                     dmTab === t.k ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f]']"
-                >{{ t.l }}</button>
-              </div>
-            </div>
-
-            <!-- Barra de Progreso Segmentada de la Jornada -->
-            <div v-if="activeDmTaskList.length > 0" class="px-6 py-3.5 bg-[#fbfbfd] border-b border-[#f2f2f7]">
-              <div class="flex items-center justify-between text-xs mb-2">
-                <span class="font-bold text-[#1d1d1f] flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-[#34c759] animate-pulse"></span>
-                  Ritmo de Cumplimiento de la Jornada
-                </span>
-                <span class="text-[#86868b] font-medium">
-                  <strong class="text-[#1d1d1f]">{{ dmStats.completed }}</strong> de {{ dmStats.total }} completadas ({{ dmStats.percent }}%)
-                </span>
-              </div>
-              <div class="flex gap-1.5 h-2 w-full rounded-full overflow-hidden bg-gray-100 p-0.5">
-                <div v-for="(t, i) in activeDmTaskList" :key="'seg-'+t.id"
-                  class="flex-1 rounded-full transition-all duration-500"
-                  :class="[
-                    (t.completed || t.status === 'completed') ? 'bg-[#34c759] shadow-xs' :
-                    t.status === 'unfulfilled' ? 'bg-[#ff3b30]' :
-                    isTaskCurrentActive(t, i, activeDmTaskList) ? 'bg-[#0071e3] animate-pulse' :
-                    isTaskBlocked(i, activeDmTaskList) ? 'bg-gray-200' : 'bg-gray-300'
-                  ]"
-                  :title="t.title"
-                ></div>
-              </div>
-            </div>
-
-            <!-- Contenedor del Stepper Timeline Vertical -->
-            <div class="p-6 relative">
-              <div v-if="activeDmTaskList.length === 0" class="py-12 text-center text-sm text-[#86868b] italic">
-                No hay actividades registradas en esta frecuencia.
-              </div>
-
-              <div v-else class="space-y-4 relative">
-                <!-- Tarjeta de Actividad en el Timeline -->
-                <div 
-                  v-for="(task, index) in activeDmTaskList" 
-                  :key="task.id"
-                  class="relative flex items-start gap-4 group"
                 >
-                  <!-- Riel Vertical (Línea conectora entre nodos) -->
-                  <div 
-                    v-if="index < activeDmTaskList.length - 1"
-                    class="absolute left-5 top-10 bottom-[-16px] w-0.5 transition-colors duration-500 z-0"
+                  <span v-if="t.k === 'kpis'" class="material-symbols-outlined text-[14px] text-[#b08d57]">monitoring</span>
+                  <span>{{ t.l }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Pestaña Analítica Personal (Gráfico Semanal / Quincenal / Mensual) -->
+            <PersonalKpiChartPanel
+              v-if="dmTab === 'kpis'"
+              :profile="currentProfile"
+              :role="currentRole"
+              :daily-closings="dailyClosingsHistory"
+              :task-completions="allTaskCompletions"
+              :daily-templates-count="dmDailyTasks.length"
+              :ad-hoc-tasks="allTasks"
+              :reference-date="selectedDateStr"
+              @exported="onKpiFeedbackExported"
+            />
+
+            <template v-else>
+              <!-- Barra de Progreso Segmentada de la Jornada + Leyenda de Evidencia -->
+              <div v-if="activeDmTaskList.length > 0" class="px-6 py-3.5 bg-[#fbfbfd] border-b border-[#f2f2f7] space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span class="font-bold text-[#1d1d1f] flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-[#34c759] animate-pulse"></span>
+                    Ritmo de Cumplimiento de la Jornada
+                  </span>
+                  <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-2 text-[10px] font-semibold">
+                      <span class="inline-flex items-center gap-1 text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Evidencia Obligatoria
+                      </span>
+                      <span class="inline-flex items-center gap-1 text-gray-600 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">
+                        <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> Opcional
+                      </span>
+                    </div>
+                    <span class="text-[#86868b] font-medium">
+                      <strong class="text-[#1d1d1f]">{{ dmStats.completed }}</strong> de {{ dmStats.total }} completadas ({{ dmStats.percent }}%)
+                    </span>
+                  </div>
+                </div>
+                <div class="flex gap-1.5 h-2 w-full rounded-full overflow-hidden bg-gray-100 p-0.5">
+                  <div v-for="(t, i) in activeDmTaskList" :key="'seg-'+t.id"
+                    class="flex-1 rounded-full transition-all duration-500"
                     :class="[
-                      (task.completed || task.status === 'completed') ? 'bg-[#34c759]' :
-                      isTaskBlocked(index + 1, activeDmTaskList) ? 'border-l-2 border-dashed border-gray-200' : 'bg-gray-200'
+                      (t.completed || t.status === 'completed') ? 'bg-[#34c759] shadow-xs' :
+                      t.status === 'unfulfilled' ? 'bg-[#ff3b30]' :
+                      isTaskCurrentActive(t, i, activeDmTaskList) ? 'bg-[#0071e3] animate-pulse' :
+                      isTaskBlocked(i, activeDmTaskList) ? 'bg-gray-200' : 'bg-gray-300'
                     ]"
+                    :title="t.title"
                   ></div>
+                </div>
+              </div>
 
-                  <!-- Nodo / Hito Circular del Timeline -->
-                  <button 
-                    type="button"
-                    @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
-                    :disabled="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay"
-                    class="relative z-10 w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300"
-                    :class="[
-                      (task.completed || task.status === 'completed') ? 'bg-[#34c759] text-white shadow-[0_4px_12px_rgba(52,199,89,0.35)] scale-100 hover:scale-105 cursor-pointer' :
-                      task.status === 'unfulfilled' ? 'bg-[#ff3b30] text-white shadow-[0_4px_12px_rgba(255,59,48,0.3)] cursor-pointer' :
-                      isTaskCurrentActive(task, index, activeDmTaskList) ? 'bg-white text-[#0071e3] border-2 border-[#0071e3] shadow-[0_0_0_4px_rgba(0,113,227,0.18)] scale-105 animate-pulse cursor-pointer' :
-                      isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' :
-                      'bg-white text-gray-500 border-2 border-gray-300 hover:border-[#0071e3] hover:text-[#0071e3] cursor-pointer'
-                    ]"
-                    :title="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'Bloqueada por secuencia cronológica' : 'Ver / Registrar Actividad'"
-                  >
-                    <!-- Icono dinámico según estado -->
-                    <span v-if="task.completed || task.status === 'completed'" class="material-symbols-outlined text-[20px] font-bold">check</span>
-                    <span v-else-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-[20px] font-bold">close</span>
-                    <span v-else-if="isTaskCurrentActive(task, index, activeDmTaskList)" class="material-symbols-outlined text-[20px] font-bold">play_arrow</span>
-                    <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="material-symbols-outlined text-[18px]">lock</span>
-                    <span v-else class="text-xs font-bold">{{ index + 1 }}</span>
-                  </button>
+              <!-- Contenedor del Stepper Timeline Vertical -->
+              <div class="p-6 relative">
+                <div v-if="activeDmTaskList.length === 0" class="py-12 text-center text-sm text-[#86868b] italic">
+                  No hay actividades registradas en esta frecuencia.
+                </div>
 
-                  <!-- Tarjeta de Contenido de la Tarea (Frosted Glass si está bloqueada, pulida si está activa) -->
+                <div v-else class="space-y-4 relative">
+                  <!-- Tarjeta de Actividad en el Timeline -->
                   <div 
-                    @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
-                    class="flex-1 rounded-2xl p-4 sm:p-5 transition-all duration-200 relative z-10"
-                    :class="[
-                      isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay
-                        ? 'bg-white/50 backdrop-blur-md border border-dashed border-gray-300/80 cursor-not-allowed select-none opacity-70'
-                        : isTaskCurrentActive(task, index, activeDmTaskList)
-                        ? 'bg-gradient-to-r from-blue-50/50 via-white to-white border-2 border-[#0071e3]/50 shadow-md hover:shadow-lg cursor-pointer hover:-translate-y-0.5'
-                        : (task.completed || task.status === 'completed')
-                        ? 'bg-[#f0fdf4]/50 border border-[#34c759]/30 shadow-xs hover:shadow-sm cursor-pointer'
-                        : task.status === 'unfulfilled'
-                        ? 'bg-[#fff5f5] border border-[#ff3b30]/30 shadow-xs cursor-pointer'
-                        : 'bg-white border border-[#e5e5ea] shadow-xs hover:shadow-md cursor-pointer hover:-translate-y-0.5'
-                    ]"
+                    v-for="(task, index) in activeDmTaskList" 
+                    :key="task.id"
+                    class="relative flex items-start gap-4 group"
                   >
-                    <!-- Fila Superior: Franja Horaria + Badges -->
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <!-- Número de Paso en la Secuencia -->
-                        <span 
-                          class="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-xs font-black"
-                          :class="[
-                            (task.completed || task.status === 'completed') ? 'bg-[#34c759]/15 text-[#248a3d]' :
-                            isTaskCurrentActive(task, index, activeDmTaskList) ? 'bg-[#0071e3] text-white' :
-                            'bg-gray-100 text-gray-700'
-                          ]"
-                          title="Orden en la secuencia"
-                        >
-                          #{{ index + 1 }}
-                        </span>
+                    <!-- Riel Vertical (Línea conectora entre nodos) -->
+                    <div 
+                      v-if="index < activeDmTaskList.length - 1"
+                      class="absolute left-5 top-10 bottom-[-16px] w-0.5 transition-colors duration-500 z-0"
+                      :class="[
+                        (task.completed || task.status === 'completed') ? 'bg-[#34c759]' :
+                        isTaskBlocked(index + 1, activeDmTaskList) ? 'border-l-2 border-dashed border-gray-200' : 'bg-gray-200'
+                      ]"
+                    ></div>
 
-                        <!-- Franja Horaria -->
-                        <span 
-                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold tracking-tight"
-                          :class="[
-                            isCurrentTimeSlot(task.start_time, task.end_time) 
-                              ? 'bg-[#0071e3] text-white shadow-xs animate-pulse'
-                              : isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay
-                              ? 'bg-gray-200/80 text-gray-500'
-                              : 'bg-blue-50 text-[#0071e3] border border-blue-100'
-                          ]"
-                        >
-                          <span class="material-symbols-outlined text-[14px]">schedule</span>
-                          <span>{{ task.start_time ? task.start_time.substring(0,5) : '08:00' }} - {{ task.end_time ? task.end_time.substring(0,5) : '08:30' }}</span>
-                          <span v-if="isCurrentTimeSlot(task.start_time, task.end_time)" class="ml-1 text-[9px] uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded font-black">Ahora</span>
-                        </span>
+                    <!-- Nodo / Hito Circular del Timeline -->
+                    <button 
+                      type="button"
+                      @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
+                      :disabled="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay"
+                      class="relative z-10 w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300"
+                      :class="[
+                        (task.completed || task.status === 'completed') ? 'bg-[#34c759] text-white shadow-[0_4px_12px_rgba(52,199,89,0.35)] scale-100 hover:scale-105 cursor-pointer' :
+                        task.status === 'unfulfilled' ? 'bg-[#ff3b30] text-white shadow-[0_4px_12px_rgba(255,59,48,0.3)] cursor-pointer' :
+                        isTaskCurrentActive(task, index, activeDmTaskList) ? 'bg-white text-[#0071e3] border-2 border-[#0071e3] shadow-[0_0_0_4px_rgba(0,113,227,0.18)] scale-105 animate-pulse cursor-pointer' :
+                        isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' :
+                        'bg-white text-gray-500 border-2 border-gray-300 hover:border-[#0071e3] hover:text-[#0071e3] cursor-pointer'
+                      ]"
+                      :title="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'Bloqueada por secuencia cronológica' : 'Ver / Registrar Actividad'"
+                    >
+                      <!-- Icono dinámico según estado -->
+                      <span v-if="task.completed || task.status === 'completed'" class="material-symbols-outlined text-[20px] font-bold">check</span>
+                      <span v-else-if="task.status === 'unfulfilled'" class="material-symbols-outlined text-[20px] font-bold">close</span>
+                      <span v-else-if="isTaskCurrentActive(task, index, activeDmTaskList)" class="material-symbols-outlined text-[20px] font-bold">play_arrow</span>
+                      <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="material-symbols-outlined text-[18px]">lock</span>
+                      <span v-else class="text-xs font-bold">{{ index + 1 }}</span>
+                    </button>
 
-                        <!-- Badge Requisito de Evidencia -->
-                        <span 
-                          v-if="task.evidence_requirement === 'photo_required'"
-                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
-                          title="Requiere foto o comprobante visual obligatorio"
-                        >
-                          <span class="material-symbols-outlined text-[12px]">photo_camera</span>
-                          <span>Foto Requerida</span>
-                        </span>
-                        <span 
-                          v-else-if="task.evidence_requirement === 'text_only'"
-                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200"
-                        >
-                          <span class="material-symbols-outlined text-[12px]">edit_note</span>
-                          <span>Nota Requerida</span>
-                        </span>
+                    <!-- Tarjeta de Contenido de la Tarea -->
+                    <div 
+                      @click="onTaskClick(task, index, activeDmTaskList, 'daily_management')"
+                      class="flex-1 rounded-2xl p-4 sm:p-5 transition-all duration-200 relative z-10"
+                      :class="[
+                        isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay
+                          ? 'bg-white/50 backdrop-blur-md border border-dashed border-gray-300/80 cursor-not-allowed select-none opacity-70'
+                          : isTaskCurrentActive(task, index, activeDmTaskList)
+                          ? 'bg-gradient-to-r from-blue-50/50 via-white to-white border-2 border-[#0071e3]/50 shadow-md hover:shadow-lg cursor-pointer hover:-translate-y-0.5'
+                          : (task.completed || task.status === 'completed')
+                          ? 'bg-[#f0fdf4]/50 border border-[#34c759]/30 shadow-xs hover:shadow-sm cursor-pointer'
+                          : task.status === 'unfulfilled'
+                          ? 'bg-[#fff5f5] border border-[#ff3b30]/30 shadow-xs cursor-pointer'
+                          : 'bg-white border border-[#e5e5ea] shadow-xs hover:shadow-md cursor-pointer hover:-translate-y-0.5'
+                      ]"
+                    >
+                      <!-- Fila Superior: Franja Horaria + Prioridad + Requisito Evidencia -->
+                      <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                          <!-- Número de Paso en la Secuencia -->
+                          <span 
+                            class="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-xs font-black"
+                            :class="[
+                              (task.completed || task.status === 'completed') ? 'bg-[#34c759]/15 text-[#248a3d]' :
+                              isTaskCurrentActive(task, index, activeDmTaskList) ? 'bg-[#0071e3] text-white' :
+                              'bg-gray-100 text-gray-700'
+                            ]"
+                            title="Orden en la secuencia"
+                          >
+                            #{{ index + 1 }}
+                          </span>
+
+                          <!-- Franja Horaria -->
+                          <span 
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold tracking-tight"
+                            :class="[
+                              isCurrentTimeSlot(task.start_time, task.end_time) 
+                                ? 'bg-[#0071e3] text-white shadow-xs animate-pulse'
+                                : isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay
+                                ? 'bg-gray-200/80 text-gray-500'
+                                : 'bg-blue-50 text-[#0071e3] border border-blue-100'
+                            ]"
+                          >
+                            <span class="material-symbols-outlined text-[14px]">schedule</span>
+                            <span>{{ task.start_time ? task.start_time.substring(0,5) : '08:00' }} - {{ task.end_time ? task.end_time.substring(0,5) : '08:30' }}</span>
+                            <span v-if="isCurrentTimeSlot(task.start_time, task.end_time)" class="ml-1 text-[9px] uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded font-black">Ahora</span>
+                          </span>
+
+                          <!-- Badge de Prioridad -->
+                          <span
+                            data-testid="priority-badge"
+                            :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold', getPriorityBadge(task.priority).classes]"
+                          >
+                            <span class="material-symbols-outlined text-[12px]">{{ getPriorityBadge(task.priority).icon }}</span>
+                            <span>{{ getPriorityBadge(task.priority).label }}</span>
+                          </span>
+
+                          <!-- Badge Explícito de Evidencia (Obligatoria vs Opcional) -->
+                          <span
+                            :data-testid="getEvidenceBadge(task.evidence_requirement).testId"
+                            :class="['inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold', getEvidenceBadge(task.evidence_requirement).classes]"
+                            :title="getEvidenceBadge(task.evidence_requirement).tooltip"
+                          >
+                            <span class="material-symbols-outlined text-[12px]">{{ getEvidenceBadge(task.evidence_requirement).icon }}</span>
+                            <span>{{ getEvidenceBadge(task.evidence_requirement).label }}</span>
+                          </span>
+                        </div>
+
+                        <!-- Badge de Estado Derecho -->
+                        <div>
+                          <span v-if="task.completed || task.status === 'completed'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#34c759]/15 text-[#248a3d]">
+                            <span class="material-symbols-outlined text-[14px]">verified</span>
+                            <span>Completada</span>
+                          </span>
+                          <span v-else-if="task.status === 'unfulfilled'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#ff3b30]/10 text-[#d70015]">
+                            <span class="material-symbols-outlined text-[14px]">cancel</span>
+                            <span>No ejecutada</span>
+                          </span>
+                          <span v-else-if="isTaskCurrentActive(task, index, activeDmTaskList)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#0071e3] border border-blue-200">
+                            <span class="w-2 h-2 rounded-full bg-[#0071e3] animate-ping"></span>
+                            <span>En Turno</span>
+                          </span>
+                          <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-200/60 text-gray-500">
+                            <span class="material-symbols-outlined text-[13px]">lock</span>
+                            <span>Bloqueada</span>
+                          </span>
+                          <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
+                            <span>Pendiente</span>
+                          </span>
+                        </div>
                       </div>
 
-                      <!-- Badge de Estado Derecho -->
+                      <!-- Título y Descripción -->
                       <div>
-                        <span v-if="task.completed || task.status === 'completed'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#34c759]/15 text-[#248a3d]">
-                          <span class="material-symbols-outlined text-[14px]">verified</span>
-                          <span>Completada</span>
+                        <h4 
+                          class="text-sm sm:text-[15px] font-bold leading-snug tracking-tight"
+                          :class="[
+                            (task.completed || task.status === 'completed') ? 'text-[#86868b] line-through' :
+                            task.status === 'unfulfilled' ? 'text-[#ff3b30]' :
+                            isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'text-gray-500' : 'text-[#1d1d1f]'
+                          ]"
+                        >
+                          {{ task.title }}
+                        </h4>
+                        <p v-if="task.description" class="text-xs text-[#86868b] mt-1 leading-relaxed">
+                          {{ task.description }}
+                        </p>
+                      </div>
+
+                      <!-- Resumen de Evidencia o Motivo Registrado -->
+                      <div v-if="task.evidence_text || task.cancellation_reason || countEvidencePhotos(task.evidence_photo) > 0" class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2 text-xs">
+                        <span class="truncate max-w-[75%] text-gray-600 italic">
+                          <strong v-if="task.status === 'unfulfilled'" class="text-[#ff3b30] not-italic">Motivo:</strong>
+                          <strong v-else class="text-[#34c759] not-italic">Soporte:</strong>
+                          {{ task.cancellation_reason || task.evidence_text || (countEvidencePhotos(task.evidence_photo) === 1 ? 'Comprobante fotográfico adjunto' : `${countEvidencePhotos(task.evidence_photo)} comprobantes fotográficos adjuntos`) }}
                         </span>
-                        <span v-else-if="task.status === 'unfulfilled'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#ff3b30]/10 text-[#d70015]">
-                          <span class="material-symbols-outlined text-[14px]">cancel</span>
-                          <span>No ejecutada</span>
-                        </span>
-                        <span v-else-if="isTaskCurrentActive(task, index, activeDmTaskList)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#0071e3] border border-blue-200">
-                          <span class="w-2 h-2 rounded-full bg-[#0071e3] animate-ping"></span>
-                          <span>En Turno</span>
-                        </span>
-                        <span v-else-if="isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-200/60 text-gray-500">
-                          <span class="material-symbols-outlined text-[13px]">lock</span>
-                          <span>Bloqueada</span>
-                        </span>
-                        <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
-                          <span>Pendiente</span>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <span v-if="countEvidencePhotos(task.evidence_photo) > 0" class="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#0071e3] bg-[#e8f0fe] px-1.5 py-0.5 rounded-full">
+                            📷 {{ countEvidencePhotos(task.evidence_photo) }}
+                          </span>
+                          <span class="text-[11px] text-gray-400 font-mono shrink-0">
+                            {{ task.completed_at ? new Date(task.completed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '' }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Botón de Llamada a la Acción (CTA) -->
+                      <div v-if="!isReadOnlyDay && !isTaskBlocked(index, activeDmTaskList) && !task.completed && task.status !== 'completed' && task.status !== 'unfulfilled'" class="mt-3 flex justify-end">
+                        <span class="inline-flex items-center gap-1 text-xs font-bold text-[#0071e3] hover:underline">
+                          <span>Registrar cumplimiento</span>
+                          <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
                         </span>
                       </div>
-                    </div>
-
-                    <!-- Título y Descripción -->
-                    <div>
-                      <h4 
-                        class="text-sm sm:text-[15px] font-bold leading-snug tracking-tight"
-                        :class="[
-                          (task.completed || task.status === 'completed') ? 'text-[#86868b] line-through' :
-                          task.status === 'unfulfilled' ? 'text-[#ff3b30]' :
-                          isTaskBlocked(index, activeDmTaskList) && !isReadOnlyDay ? 'text-gray-500' : 'text-[#1d1d1f]'
-                        ]"
-                      >
-                        {{ task.title }}
-                      </h4>
-                      <p v-if="task.description" class="text-xs text-[#86868b] mt-1 leading-relaxed">
-                        {{ task.description }}
-                      </p>
-                    </div>
-
-                    <!-- Resumen de Evidencia o Motivo Registrado -->
-                    <div v-if="task.evidence_text || task.cancellation_reason || task.evidence_photo" class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
-                      <span class="truncate max-w-[80%] text-gray-600 italic">
-                        <strong v-if="task.status === 'unfulfilled'" class="text-[#ff3b30] not-italic">Motivo:</strong>
-                        <strong v-else class="text-[#34c759] not-italic">Soporte:</strong>
-                        {{ task.cancellation_reason || task.evidence_text || 'Comprobante fotográfico adjunto' }}
-                      </span>
-                      <span class="text-[11px] text-gray-400 font-mono shrink-0">
-                        {{ task.completed_at ? new Date(task.completed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '' }}
-                      </span>
-                    </div>
-
-                    <!-- Botón de Llamada a la Acción (CTA) -->
-                    <div v-if="!isReadOnlyDay && !isTaskBlocked(index, activeDmTaskList) && !task.completed && task.status !== 'completed' && task.status !== 'unfulfilled'" class="mt-3 flex justify-end">
-                      <span class="inline-flex items-center gap-1 text-xs font-bold text-[#0071e3] hover:underline">
-                        <span>Registrar cumplimiento</span>
-                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
 
           <!-- ═══════════════════════════════════════════════════
@@ -680,9 +844,23 @@
                         <span class="material-symbols-outlined text-[12px]">photo_camera</span> Con Evidencia
                       </span>
                     </div>
-                    <span class="text-[10px] bg-[#ffebee] text-[#c62828] font-bold px-1.5 py-0.5 rounded mt-1 inline-block">
-                      Venció: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}
-                    </span>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                      <span class="text-[10px] bg-[#ffebee] text-[#c62828] font-bold px-1.5 py-0.5 rounded">
+                        Venció: {{ new Date(task.due_date).toLocaleDateString('es-CO') }}
+                      </span>
+                      <span
+                        :class="['inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded', getPriorityBadge(task.priority).classes]"
+                      >
+                        <span>{{ getPriorityBadge(task.priority).label }}</span>
+                      </span>
+                      <span
+                        :data-testid="getEvidenceBadge(task.evidence_requirement).testId"
+                        :class="['inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded', getEvidenceBadge(task.evidence_requirement).classes]"
+                      >
+                        <span class="material-symbols-outlined text-[11px]">{{ getEvidenceBadge(task.evidence_requirement).icon }}</span>
+                        <span>{{ getEvidenceBadge(task.evidence_requirement).label }}</span>
+                      </span>
+                    </div>
                   </div>
                 </li>
               </ul>
@@ -718,11 +896,23 @@
                       class="text-[10px] font-bold bg-[#e8f0fe] text-[#0071e3] px-1.5 py-0.5 rounded flex items-center gap-1">
                       <span class="material-symbols-outlined text-[11px]">calendar_today</span> Entrega Programada
                     </span>
-                    <!-- Prioridad -->
-                    <span v-if="task.priority === 'urgent'"
-                      class="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded animate-pulse">¡URGENTE!</span>
-                    <span v-else-if="task.priority === 'high'"
-                      class="text-[10px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Alta Prioridad</span>
+                    <!-- Prioridad consistente -->
+                    <span
+                      data-testid="priority-badge"
+                      :class="['inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded', getPriorityBadge(task.priority).classes]"
+                    >
+                      <span class="material-symbols-outlined text-[11px]">{{ getPriorityBadge(task.priority).icon }}</span>
+                      <span>{{ getPriorityBadge(task.priority).label }}</span>
+                    </span>
+                    <!-- Exigencia de Evidencia (Obligatoria vs Opcional) -->
+                    <span
+                      :data-testid="getEvidenceBadge(task.evidence_requirement).testId"
+                      :class="['inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded', getEvidenceBadge(task.evidence_requirement).classes]"
+                      :title="getEvidenceBadge(task.evidence_requirement).tooltip"
+                    >
+                      <span class="material-symbols-outlined text-[11px]">{{ getEvidenceBadge(task.evidence_requirement).icon }}</span>
+                      <span>{{ getEvidenceBadge(task.evidence_requirement).label }}</span>
+                    </span>
                     <span v-if="task.description" class="text-[11px] text-[#86868b] truncate">{{ task.description }}</span>
                   </div>
                 </div>
@@ -769,8 +959,17 @@
                       <span class="material-symbols-outlined text-[11px]">calendar_month</span>
                       {{ scheduledRecurrenceLabel(sd) }}
                     </span>
-                    <span v-if="sd.priority === 'urgent'" class="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded">Urgente</span>
-                    <span v-else-if="sd.priority === 'high'" class="text-[10px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Alta</span>
+                    <span
+                      :class="['inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded', getPriorityBadge(sd.priority).classes]"
+                    >
+                      <span>{{ getPriorityBadge(sd.priority).label }}</span>
+                    </span>
+                    <span
+                      :data-testid="getEvidenceBadge(sd.evidence_requirement).testId"
+                      :class="['inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded', getEvidenceBadge(sd.evidence_requirement).classes]"
+                    >
+                      <span>{{ getEvidenceBadge(sd.evidence_requirement).shortLabel }}</span>
+                    </span>
                   </div>
                   <p v-if="sd.description" class="text-[11px] text-[#86868b] mt-1 line-clamp-1">{{ sd.description }}</p>
                 </div>
@@ -804,8 +1003,39 @@
           
           <!-- Chat Messages -->
           <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f5f5f7]/20" ref="chatContainer">
-            <div v-if="messages.length === 0" class="text-center text-[13px] text-[#86868b] mt-10">
-              Hola, soy la IA de Nova Work. ¿En qué te puedo asistir hoy?
+            <div
+              v-if="messages.length === 0"
+              data-testid="ai-agent-empty-guide"
+              class="rounded-2xl bg-white border border-[#e5e5ea] p-4 shadow-2xs space-y-3 mt-2"
+            >
+              <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#b08d57] to-[#80663f] text-white flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-[18px]">psychology</span>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-[#1d1d1f]">
+                    Asistente entrenado para {{ currentRole?.name || 'tu cargo' }}
+                  </p>
+                  <p class="text-[11px] text-[#5e6c84] mt-0.5 leading-snug">
+                    No necesitas escribir comandos complejos. Toca cualquiera de estas acciones rápidas para empezar:
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <button
+                  v-for="chip in agentQuickPrompts"
+                  :key="chip.key"
+                  type="button"
+                  data-testid="ai-quick-chip"
+                  :disabled="isTyping"
+                  @click="handleQuickPrompt(chip)"
+                  class="w-full text-left px-3 py-2 rounded-xl bg-[#f5f5f7] hover:bg-[#b08d57]/12 border border-[#e5e5ea] hover:border-[#b08d57]/40 text-[11px] font-semibold text-[#1d1d1f] flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <span class="material-symbols-outlined text-[15px] text-[#b08d57] shrink-0">{{ chip.icon }}</span>
+                  <span class="leading-snug">{{ chip.label }}</span>
+                </button>
+              </div>
             </div>
             
             <div v-for="(msg, index) in messages" :key="index" 
@@ -836,14 +1066,42 @@
             </div>
           </div>
 
-          <!-- Chat Input -->
-          <div class="p-3 border-t border-[#e5e5ea] bg-white">
+          <!-- Chips rápidos cuando ya existe historial + Chat Input -->
+          <div class="p-3 border-t border-[#e5e5ea] bg-white space-y-2">
+            <div
+              v-if="messages.length > 0"
+              data-testid="ai-quick-chip-bar"
+              class="flex items-center gap-1.5 overflow-x-auto pb-1"
+            >
+              <button
+                v-for="chip in agentQuickPrompts"
+                :key="'bar-' + chip.key"
+                type="button"
+                data-testid="ai-quick-chip"
+                :disabled="isTyping"
+                @click="handleQuickPrompt(chip)"
+                class="shrink-0 px-2.5 py-1 rounded-full bg-[#f5f5f7] hover:bg-[#b08d57]/15 border border-[#e5e5ea] text-[10px] font-bold text-[#1d1d1f] flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <span class="material-symbols-outlined text-[12px] text-[#b08d57]">{{ chip.icon }}</span>
+                <span>{{ chip.shortLabel }}</span>
+              </button>
+            </div>
             <div class="relative">
-              <input type="text" v-model="newMessage" @keyup.enter="sendMessage" :disabled="isTyping" 
-                     placeholder="Haz una consulta a la IA..." 
-                     class="w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl pl-4 pr-10 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#b08d57]/30 focus:border-[#b08d57] transition-all" />
-              <button @click="sendMessage" :disabled="isTyping" 
-                      class="absolute right-2 top-1/2 -translate-y-1/2 text-[#b08d57] hover:text-[#80663f] p-1 disabled:opacity-50 transition-colors">
+              <input
+                ref="chatInputRef"
+                type="text"
+                v-model="newMessage"
+                @keyup.enter="() => sendMessage()"
+                :disabled="isTyping"
+                placeholder="Haz una consulta o usa un acceso rápido..."
+                class="w-full bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl pl-4 pr-10 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#b08d57]/30 focus:border-[#b08d57] transition-all"
+              />
+              <button
+                type="button"
+                @click="() => sendMessage()"
+                :disabled="isTyping"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-[#b08d57] hover:text-[#80663f] p-1 disabled:opacity-50 transition-colors cursor-pointer"
+              >
                 <span class="material-symbols-outlined text-[20px]">send</span>
               </button>
             </div>
@@ -963,6 +1221,30 @@
       @acknowledge="acknowledgeOverdueModal"
       @resolve-task="resolveOverdueTask"
     />
+
+    <!-- Tutorial Interactivo de Inducción a Mi Portal -->
+    <PortalTutorialModal
+      v-model="showPortalTutorial"
+      :role-name="currentRole?.name || ''"
+      :user-name="currentProfile?.full_name || ''"
+      @completed="onTutorialCompleted"
+    />
+
+    <!-- Modal de Envío de Reporte Oficial al Jefe Inmediato -->
+    <SendReportModal
+      v-model="showSendReportModal"
+      :profile="currentProfile"
+      :role="currentRole"
+      :date-str="selectedDateStr"
+      :kpi-score="activeReportScore"
+      :completed-count="activeReportCompleted"
+      :total-count="activeReportTotal"
+      :unfulfilled-count="activeReportUnfulfilled"
+      :supervisors="immediateSupervisors"
+      :loading-supervisors="loadingSupervisors"
+      @export-file="handleSendModalExportFile"
+      @sent="handleSupervisorReportSent"
+    />
   </div>
 </template>
 
@@ -977,8 +1259,14 @@ import { getPeriodKey } from '../utils/taskPeriods';
 import { getRoleKpiDetail } from '../api/kpi';
 import TaskEvidenceModal from '@/components/TaskEvidenceModal.vue';
 import OverdueTasksModal from '@/components/OverdueTasksModal.vue';
+import PortalTutorialModal from '@/components/PortalTutorialModal.vue';
+import SendReportModal from '@/components/SendReportModal.vue';
+import PersonalKpiChartPanel from '@/components/PersonalKpiChartPanel.vue';
 import { getBogotaDateStr, isTaskOverdueBogota } from '../utils/bogotaTime';
-import { cancelTaskReminders } from '../utils/notifications';
+import { cancelTaskReminders, findImmediateSupervisors } from '../utils/notifications';
+import { getPriorityBadge, getEvidenceBadge } from '../utils/taskBadges';
+import { escapeHtml, exportDailyComplianceExcel, exportDailyComplianceWord } from '../utils/reportExporter';
+import { countEvidencePhotos } from '../utils/evidencePhotos';
 
 const canManageKpis = computed(() => canAccessKpis());
 
@@ -1191,6 +1479,123 @@ const showOverdueModal = ref(false);
 const getOverdueAckKey = () => {
   const pid = currentProfile.value?.id || 'anon';
   return `novawork_overdue_ack_${pid}`;
+};
+
+// ── Tutorial Guiado de Mi Portal ─────────────────────────────────────────
+const showPortalTutorial = ref(false);
+const getTutorialSeenKey = () => {
+  const pid = currentProfile.value?.id || 'anon';
+  return `novawork_portal_tutorial_seen_${pid}`;
+};
+const openPortalTutorial = () => {
+  showPortalTutorial.value = true;
+};
+const onTutorialCompleted = () => {
+  try {
+    localStorage.setItem(getTutorialSeenKey(), '1');
+  } catch (_) {}
+  showPortalTutorial.value = false;
+};
+const evaluatePortalTutorial = () => {
+  if (isAuditMode.value || showOverdueModal.value || overdueTasks.value.length > 0) return;
+  try {
+    if (!localStorage.getItem(getTutorialSeenKey())) {
+      showPortalTutorial.value = true;
+    }
+  } catch (_) {}
+};
+
+// ── Radar de Reuniones Próximas y Tareas Urgentes ───────────────────────
+const upcomingMeetings = ref([]);
+const fetchUpcomingMeetings = async (profile, role) => {
+  if (!profile?.id) {
+    upcomingMeetings.value = [];
+    return;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('event_date', { ascending: true });
+    if (error || !data) {
+      upcomingMeetings.value = [];
+      return;
+    }
+
+    const nowMs = Date.now();
+    const todayStr = getBogotaDateStr();
+    const todayStartMs = new Date(`${todayStr}T00:00:00-05:00`).getTime();
+    const windowEndMs = nowMs + 48 * 3600 * 1000;
+
+    upcomingMeetings.value = data.filter((ev) => {
+      if (!ev?.event_date) return false;
+      const evMs = new Date(ev.event_date).getTime();
+      if (Number.isNaN(evMs) || evMs < todayStartMs || evMs > windowEndMs) return false;
+
+      if (!ev.target_level || ev.target_level === 'company') return true;
+      if (ev.target_level === 'area') return Boolean(role?.area_id && ev.target_area_id === role.area_id);
+      if (ev.target_level === 'worker') return ev.target_profile_id === profile.id;
+      return true;
+    });
+  } catch (err) {
+    console.warn('Error cargando eventos próximos:', err);
+    upcomingMeetings.value = [];
+  }
+};
+
+const formatMeetingTime = (dateStr) => {
+  if (!dateStr) return '';
+  const dt = new Date(dateStr);
+  if (Number.isNaN(dt.getTime())) return String(dateStr);
+  return dt.toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const urgentPendingTasks = computed(() => {
+  const combined = [
+    ...(allTasks.value || []),
+    ...(dmDailyTasks.value || []),
+    ...(scheduledDeliveries.value || []).filter((sd) => sd._triggersToday),
+  ];
+  const seen = new Set();
+  return combined.filter((t) => {
+    if (!t || t.completed || t.status === 'completed' || t.status === 'unfulfilled') return false;
+    const p = String(t.priority || '').toLowerCase();
+    if (p !== 'urgent' && p !== 'high') return false;
+    const key = `${t.id}-${t.title}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+});
+
+// ── Historial de Cierres y Completions para Gráfico KPI Personal ─────────
+const dailyClosingsHistory = ref([]);
+const allTaskCompletions = ref([]);
+
+const fetchDailyClosingsHistory = async (profileId) => {
+  if (!profileId) {
+    dailyClosingsHistory.value = [];
+    return;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('daily_closings')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('period_key', { ascending: false })
+      .limit(35);
+    if (!error && data) {
+      dailyClosingsHistory.value = data;
+    }
+  } catch (err) {
+    console.warn('Error cargando historial de cierres:', err);
+  }
 };
 
 const evaluateOverdueModal = () => {
@@ -1826,8 +2231,11 @@ const initWorkspace = async () => {
     }
     await fetchChecklists(currentProfile.value.id);
     await fetchNotifications(currentProfile.value.id, currentRole.value);
+    await fetchUpcomingMeetings(currentProfile.value, currentRole.value);
+    await fetchDailyClosingsHistory(currentProfile.value.id);
     await fetchNews();
     await fetchUserAcademyVideos();
+    evaluatePortalTutorial();
     setupRealtime(currentProfile.value.id);
   } catch(err) { console.error("Workspace Load Error:", err); } finally {
     loadingProfile.value = false;
@@ -1969,6 +2377,15 @@ const handleEvidenceSave = async (payload) => {
       task.evidence_photo = evidence_photo;
       task.cancellation_reason = cancellation_reason;
       task.completed_at = finalCompletedAt;
+
+      const idx = allTaskCompletions.value.findIndex(
+        (c) => c.task_template_id === task.id && c.period_key === task.periodKey
+      );
+      if (idx >= 0) {
+        allTaskCompletions.value[idx] = { ...completionPayload };
+      } else {
+        allTaskCompletions.value = [...allTaskCompletions.value, { ...completionPayload }];
+      }
     } else if (taskType === 'scheduled') {
       const scheduledPayload = {
         delivery_id: task.id,
@@ -2048,6 +2465,9 @@ const handleTaskReopen = async (payload) => {
       task.evidence_photo = null;
       task.cancellation_reason = null;
       task.completed_at = null;
+      allTaskCompletions.value = allTaskCompletions.value.filter(
+        (c) => !(c.task_template_id === task.id && c.period_key === task.periodKey)
+      );
     } else if (taskType === 'scheduled') {
       await supabase
         .from('scheduled_delivery_completions')
@@ -2142,6 +2562,7 @@ const consolidateAndCloseDay = async () => {
 
     if (error) throw error;
     currentDayClosing.value = data;
+    await fetchDailyClosingsHistory(currentProfile.value.id);
     showToast('Jornada consolidada y cerrada exitosamente.');
   } catch (err) {
     console.error('Error closing daily management:', err);
@@ -2151,11 +2572,77 @@ const consolidateAndCloseDay = async () => {
   }
 };
 
+// ── Exportación Multi-Formato y Envío Formal al Jefe Inmediato ─────────
+const showSendReportModal = ref(false);
+const immediateSupervisors = ref([]);
+const loadingSupervisors = ref(false);
+
+const activeReportTasks = computed(() => {
+  const dm = activeDmTaskList.value || [];
+  const adHoc = todayPendingTasks.value || [];
+  return [...dm, ...adHoc];
+});
+
+const activeReportTotal = computed(() => activeReportTasks.value.length);
+const activeReportCompleted = computed(
+  () => activeReportTasks.value.filter((t) => t.completed || t.status === 'completed').length
+);
+const activeReportUnfulfilled = computed(
+  () => activeReportTasks.value.filter((t) => t.status === 'unfulfilled').length
+);
+const activeReportScore = computed(() => {
+  if (activeReportTotal.value === 0) return kpiPercentage.value;
+  return Number(((activeReportCompleted.value / activeReportTotal.value) * 100).toFixed(1));
+});
+
+const buildDailyExportPayload = () => ({
+  userName: currentProfile.value?.full_name || 'Colaborador',
+  roleName: currentRole.value?.name || 'Cargo Operativo',
+  areaName: currentRole.value?.areas?.name || 'General',
+  dateStr: selectedDateStr.value,
+  kpiScore: activeReportScore.value,
+  tasks: activeReportTasks.value,
+});
+
+const exportExcelReport = () => {
+  const res = exportDailyComplianceExcel(buildDailyExportPayload());
+  showToast(`📊 Archivo Excel descargado: ${res.filename}`);
+};
+
+const exportWordReport = () => {
+  const res = exportDailyComplianceWord(buildDailyExportPayload());
+  showToast(`📄 Documento Word descargado: ${res.filename}`);
+};
+
+const openSendReportModal = async () => {
+  showSendReportModal.value = true;
+  loadingSupervisors.value = true;
+  try {
+    immediateSupervisors.value = await findImmediateSupervisors(currentProfile.value, currentRole.value);
+  } finally {
+    loadingSupervisors.value = false;
+  }
+};
+
+const handleSendModalExportFile = (fmt) => {
+  if (fmt === 'excel') exportExcelReport();
+  else if (fmt === 'word') exportWordReport();
+  else downloadCompliancePdf();
+};
+
+const handleSupervisorReportSent = ({ supervisor }) => {
+  showToast(`📤 Reporte oficial enviado a ${supervisor?.full_name || 'tu jefe inmediato'}.`);
+};
+
+const onKpiFeedbackExported = ({ filename }) => {
+  showToast(`📈 Informe de Feedback descargado: ${filename}`);
+};
+
 const downloadCompliancePdf = () => {
   const userName = currentProfile.value?.full_name || 'Colaborador';
   const roleName = currentRole.value?.name || 'Cargo Operativo';
   const dateStr = selectedDateStr.value;
-  const tasks = activeDmTaskList.value || [];
+  const tasks = activeReportTasks.value || [];
   const total = tasks.length;
   const completed = tasks.filter(t => t.completed || t.status === 'completed').length;
   const unfulfilled = tasks.filter(t => t.status === 'unfulfilled').length;
@@ -2164,6 +2651,8 @@ const downloadCompliancePdf = () => {
   const rowsHtml = tasks.map((t, idx) => {
     const order = idx + 1;
     const slot = (t.start_time && t.end_time) ? `${t.start_time.substring(0,5)} - ${t.end_time.substring(0,5)}` : 'Jornada';
+    const pBadge = getPriorityBadge(t.priority);
+    const eBadge = getEvidenceBadge(t.evidence_requirement);
     let statusBadge = '<span style="color:#d97706; font-weight:bold;">Pendiente</span>';
     if (t.completed || t.status === 'completed') {
       statusBadge = '<span style="color:#16a34a; font-weight:bold;">Completado ✓</span>';
@@ -2171,28 +2660,39 @@ const downloadCompliancePdf = () => {
       statusBadge = '<span style="color:#dc2626; font-weight:bold;">No Ejecutado ✕</span>';
     }
 
-    const note = t.status === 'unfulfilled' 
-      ? `<strong>Motivo:</strong> ${t.cancellation_reason || 'Sin justificación'}` 
-      : (t.evidence_text ? `<strong>Evidencia:</strong> ${t.evidence_text}` : (t.evidence_photo ? '<em>Foto adjuntada en sistema</em>' : '<em>Ejecutado conforme</em>'));
+    const photoCount = countEvidencePhotos(t.evidence_photo);
+    const photoNote = photoCount > 0
+      ? `<em>${photoCount === 1 ? '1 captura adjunta en sistema' : `${photoCount} capturas adjuntas en sistema`}</em>`
+      : '';
+    const note = t.status === 'unfulfilled'
+      ? `<strong>Motivo:</strong> ${escapeHtml(t.cancellation_reason || 'Sin justificación')}${photoNote ? ` (${photoNote})` : ''}`
+      : (t.evidence_text
+          ? `<strong>Evidencia:</strong> ${escapeHtml(t.evidence_text)}${photoNote ? ` · ${photoNote}` : ''}`
+          : (photoNote || '<em>Ejecutado conforme</em>'));
 
     return `
       <tr>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: bold;">${order}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #4b5563;">${slot}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #111827;">${t.title}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #4b5563;">${escapeHtml(slot)}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #111827;">${escapeHtml(t.title)}<div style="font-size:10px;color:#6b7280;font-weight:normal;margin-top:2px;">Prioridad: ${escapeHtml(pBadge.label)} · ${escapeHtml(eBadge.label)}</div></td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${statusBadge}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 11px; color: #374151;">${note}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 11px; color: #6b7280; text-align: center;">${t.completed_at ? new Date(t.completed_at).toLocaleTimeString() : '-'}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 11px; color: #6b7280; text-align: center;">${t.completed_at ? escapeHtml(new Date(t.completed_at).toLocaleTimeString()) : '-'}</td>
       </tr>
     `;
   }).join('');
+
+  const safeUserName = escapeHtml(userName);
+  const safeRoleName = escapeHtml(roleName);
+  const safeDateStr = escapeHtml(dateStr);
+  const auditId = escapeHtml(`${currentProfile.value?.id ? currentProfile.value.id.substring(0,8) : 'AUD'}-${dateStr}`);
 
   const printHtml = `
     <!DOCTYPE html>
     <html lang="es">
     <head>
       <meta charset="UTF-8">
-      <title>Acta de Verificación de Cumplimiento - ${userName} - ${dateStr}</title>
+      <title>Acta de Verificación de Cumplimiento - ${safeUserName} - ${safeDateStr}</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2937; margin: 0; padding: 24px; }
         .header { border-bottom: 2px solid #b08d57; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -2221,27 +2721,27 @@ const downloadCompliancePdf = () => {
           <div class="subtitle">Acta Oficial de Verificación de Cumplimiento Operativo</div>
         </div>
         <div style="text-align: right; font-size: 11px; color: #6b7280;">
-          <div><strong>Fecha Emisión:</strong> ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
-          <div><strong>ID Auditoría:</strong> ${currentProfile.value?.id ? currentProfile.value.id.substring(0,8) : 'AUD'}-${dateStr}</div>
+          <div><strong>Fecha Emisión:</strong> ${escapeHtml(new Date().toLocaleDateString())} ${escapeHtml(new Date().toLocaleTimeString())}</div>
+          <div><strong>ID Auditoría:</strong> ${auditId}</div>
         </div>
       </div>
 
       <div class="info-grid">
         <div class="info-item">
           <span class="info-label">Colaborador</span>
-          <span class="info-value">${userName}</span>
+          <span class="info-value">${safeUserName}</span>
         </div>
         <div class="info-item">
           <span class="info-label">Cargo / Área</span>
-          <span class="info-value">${roleName}</span>
+          <span class="info-value">${safeRoleName}</span>
         </div>
         <div class="info-item">
           <span class="info-label">Fecha de Jornada</span>
-          <span class="info-value">${dateStr}</span>
+          <span class="info-value">${safeDateStr}</span>
         </div>
         <div class="info-item">
           <span class="info-label">Cumplimiento KPI</span>
-          <span class="info-value" style="color: #16a34a; font-size: 16px;">${kpiScore}% (${completed}/${total})</span>
+          <span class="info-value" style="color: #16a34a; font-size: 16px;">${kpiScore}% (${completed}/${total} · ${unfulfilled} no ejec.)</span>
         </div>
       </div>
 
@@ -2263,7 +2763,7 @@ const downloadCompliancePdf = () => {
 
       <div class="signatures">
         <div class="sig-box">
-          <div class="sig-name">${userName}</div>
+          <div class="sig-name">${safeUserName}</div>
           <div class="sig-role">Firma del Colaborador</div>
         </div>
         <div class="sig-box">
@@ -2319,6 +2819,7 @@ const fetchDailyManagement = async (roleId, profileId) => {
       completions = compData || [];
     }
 
+    allTaskCompletions.value = completions;
     const compMap = new Map();
     (completions || []).forEach(c => {
       compMap.set(`${c.task_template_id}::${c.period_key}`, c);
@@ -2565,12 +3066,98 @@ const clearChatHistory = async () => {
   }
 };
 
-const sendMessage = async () => {
-  const text = newMessage.value.trim();
-  if (!text || !currentRole.value) return;
+const chatInputRef = ref(null);
+
+const agentQuickPrompts = computed(() => {
+  const roleLabel = currentRole.value?.name || 'mi cargo';
+  return [
+    {
+      key: 'today',
+      icon: 'today',
+      shortLabel: 'Prioridades de hoy',
+      label: '¿Cuáles son mis tareas críticas y prioridades para hoy según mi cargo?',
+      prompt: `Según las responsabilidades oficiales de ${roleLabel} y mi estado actual del día, ¿cuáles son mis prioridades inmediatas y en qué orden me recomiendas ejecutarlas?`,
+    },
+    {
+      key: 'email',
+      icon: 'mail',
+      shortLabel: 'Redactar correo',
+      label: 'Ayúdame a redactar un correo formal o citación ejecutiva de mi área.',
+      prompt: `Ayúdame a redactar un correo corporativo claro, breve y profesional desde el rol de ${roleLabel}, dejando espacio para destinatario, asunto y puntos clave.`,
+    },
+    {
+      key: 'minutes',
+      icon: 'edit_note',
+      shortLabel: 'Armar minuta',
+      label: 'Ayúdame a estructurar el acta o minuta de una reunión con compromisos.',
+      prompt: `Genera una plantilla práctica de acta o minuta ejecutiva adaptada a ${roleLabel} (asistentes, decisiones, responsables y fechas de compromiso).`,
+    },
+    {
+      key: 'guide',
+      icon: 'verified',
+      shortLabel: 'Evidencias y cierre',
+      label: '¿Cómo subo evidencias obligatorias y cierro mi jornada correctamente?',
+      prompt: 'Explícame paso a paso cómo distinguir las tareas con evidencia obligatoria vs opcional, cargar soportes rápido y cerrar mi jornada en Nova Work.',
+    },
+    {
+      key: 'remember',
+      icon: 'bookmark_add',
+      shortLabel: 'Guardar directriz',
+      label: 'Recuerda esta directriz importante de mi cargo...',
+      prompt: 'Recuerda esta directriz importante de mi cargo: ',
+      prefill: true,
+    },
+  ];
+});
+
+const handleQuickPrompt = (chip) => {
+  if (!chip) return;
+  if (chip.prefill) {
+    newMessage.value = chip.prompt;
+    nextTick(() => {
+      chatInputRef.value?.focus?.();
+    });
+    return;
+  }
+  sendMessage(chip.prompt);
+};
+
+const buildLiveWorkspaceContext = () => {
+  const pendingTitles = (todayPendingTasks.value || [])
+    .filter((t) => !t.completed && t.status !== 'completed' && t.status !== 'unfulfilled')
+    .slice(0, 6)
+    .map((t) => t.title);
+  const overdueTitles = (overdueTasks.value || []).slice(0, 4).map((t) => t.title);
+  const meetingTitles = (upcomingMeetings.value || []).slice(0, 3).map((m) => m.title);
+
+  return [
+    `Fecha jornada: ${selectedDateStr.value}`,
+    `KPI actual: ${kpiPercentage.value}%`,
+    `Gestión Diaria: ${dmStats.value.completed}/${dmStats.value.total} completadas`,
+    `Tareas vencidas (${overdueTasks.value.length}): ${overdueTitles.join('; ') || 'Ninguna'}`,
+    `Pendientes del día activos (${pendingTitles.length}): ${pendingTitles.join('; ') || 'Ninguno'}`,
+    `Reuniones/Eventos próximos (${upcomingMeetings.value.length}): ${meetingTitles.join('; ') || 'Ninguno'}`,
+  ].join('\n');
+};
+
+const sendMessage = async (overrideText = null) => {
+  const rawInput = typeof overrideText === 'string' ? overrideText : newMessage.value;
+  const text = String(rawInput || '').trim();
+  if (!text) return;
+
+  if (!currentRole.value) {
+    messages.value.push({ sender: 'user', text });
+    if (typeof overrideText !== 'string') newMessage.value = '';
+    messages.value.push({
+      sender: 'ai',
+      text: 'Tu perfil aún no tiene un cargo asignado. Solicita a tu líder o administrador asignar tu cargo para activar el asistente especializado.',
+    });
+    scrollToBottom();
+    return;
+  }
 
   messages.value.push({ sender: 'user', text });
-  newMessage.value = '';
+  if (typeof overrideText !== 'string') newMessage.value = '';
   isTyping.value = true;
   scrollToBottom();
 
@@ -2587,6 +3174,7 @@ const sendMessage = async () => {
         roleId: currentRole.value.id,
         roleName: currentRole.value.name,
         roleContext: roleContextStr.value,
+        liveWorkspaceContext: buildLiveWorkspaceContext(),
         userId: currentProfile.value?.id
       })
     });
@@ -2614,7 +3202,7 @@ const scrollToBottom = () => {
 };
 
 const formatMessage = (text) => {
-  return marked.parse(text);
+  return DOMPurify.sanitize(marked.parse(String(text || '')));
 };
 
 const getInitials = (name) => {

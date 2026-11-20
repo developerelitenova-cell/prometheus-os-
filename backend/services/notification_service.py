@@ -264,6 +264,98 @@ class NotificationService:
 
         return results
 
+    def resolve_immediate_supervisors(self, employee_profile_id: str) -> List[Dict[str, Any]]:
+        """Resuelve candidatos a jefe inmediato: primero líder de la misma área y luego dirección/master."""
+        if not self.supabase or not employee_profile_id:
+            return []
+        try:
+            res = (
+                self.supabase.table("profiles")
+                .select("id, full_name, email, is_master_admin, role_id, roles(id, name, area_id, access_level)")
+                .execute()
+            )
+            rows = res.data or []
+        except Exception as exc:
+            print(f"[NotificationService] Error consultando supervisores: {exc}")
+            return []
+
+        emp_row = next((r for r in rows if r.get("id") == employee_profile_id), None)
+        emp_role = (emp_row or {}).get("roles") or {}
+        emp_area_id = emp_role.get("area_id")
+        emp_access = emp_role.get("access_level")
+        if emp_access is None:
+            emp_access = 3
+
+        area_leaders: List[Dict[str, Any]] = []
+        executives: List[Dict[str, Any]] = []
+
+        for row in rows:
+            pid = row.get("id")
+            if not pid or pid == employee_profile_id:
+                continue
+            role_obj = row.get("roles") or {}
+            role_area_id = role_obj.get("area_id")
+            role_access = role_obj.get("access_level")
+            is_master = bool(row.get("is_master_admin"))
+
+            if (
+                emp_area_id
+                and role_area_id == emp_area_id
+                and role_access in (1, 2)
+                and role_access < emp_access
+            ):
+                area_leaders.append(row)
+            elif role_access == 1 or is_master:
+                executives.append(row)
+
+        area_leaders.sort(key=lambda r: (0 if (r.get("roles") or {}).get("access_level") == 2 else 1))
+        return area_leaders if area_leaders else executives
+
+    def notify_supervisor_report(
+        self,
+        supervisor_profile_id: str,
+        employee_id: str,
+        employee_name: str,
+        role_name: str,
+        date_str: str,
+        compliance_percentage: float,
+        completed_tasks: int,
+        total_tasks: int,
+        unfulfilled_tasks: int = 0,
+        export_format: str = "pdf",
+        notes: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Envía al jefe inmediato el resumen de cumplimiento operativo vía in-app + correo."""
+        fmt_upper = (export_format or "pdf").upper()
+        unfulfilled_part = f", {unfulfilled_tasks} no ejecutadas" if unfulfilled_tasks > 0 else ""
+        notes_part = f" Observaciones: {notes.strip()}" if notes and notes.strip() else ""
+        msg = (
+            f"Reporte operativo de {employee_name} ({role_name}) · Jornada {date_str}: "
+            f"{compliance_percentage}% de cumplimiento ({completed_tasks}/{total_tasks} completadas{unfulfilled_part}). "
+            f"Formato generado: {fmt_upper}.{notes_part}"
+        )
+        return self.notify_user(
+            profile_id=supervisor_profile_id,
+            notif_type="message",
+            message=msg,
+            action_url=f"/workspace?view_as={employee_id}",
+            metadata={
+                "kind": "supervisor_daily_report",
+                "employee_id": employee_id,
+                "employee_name": employee_name,
+                "role_name": role_name,
+                "date_str": date_str,
+                "compliance_percentage": compliance_percentage,
+                "completed_tasks": completed_tasks,
+                "total_tasks": total_tasks,
+                "unfulfilled_tasks": unfulfilled_tasks,
+                "export_format": export_format,
+                "notes": notes,
+            },
+            email_subject=f"Reporte de Cumplimiento Operativo · {employee_name} ({date_str})",
+            send_email=True,
+        )
+
 
 notification_service = NotificationService()
 

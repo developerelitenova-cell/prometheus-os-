@@ -30,6 +30,7 @@
             class="px-3 py-2 rounded-xl bg-[#f5f5f7] border border-[#e5e5ea] text-xs font-bold outline-none focus:border-[#b08d57]"
           >
             <option value="weekly">Semanal</option>
+            <option value="biweekly">Quincenal</option>
             <option value="monthly">Mensual</option>
             <option value="quarterly">Trimestral</option>
           </select>
@@ -59,6 +60,30 @@
             <option value="all">Todo el equipo</option>
             <option v-for="u in scopedUsers" :key="u.id" :value="u.id">{{ u.full_name }}</option>
           </select>
+
+          <button
+            type="button"
+            data-testid="team-export-excel-btn"
+            :disabled="!report"
+            @click="exportTeamExcel"
+            class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-40"
+            title="Exportar informe y feedback a Excel (.xlsx)"
+          >
+            <span class="material-symbols-outlined text-[15px]">table_view</span>
+            <span>Excel</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="team-export-word-btn"
+            :disabled="!report"
+            @click="exportTeamWord"
+            class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0071e3] border border-blue-200 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-40"
+            title="Exportar informe de feedback a Word (.doc)"
+          >
+            <span class="material-symbols-outlined text-[15px]">description</span>
+            <span>Word</span>
+          </button>
         </div>
       </div>
 
@@ -250,6 +275,7 @@ import {
   calculateKpisFromActivities,
   buildLocalGroundedAnalysis,
 } from '../utils/kpiCalculator';
+import { exportTeamPerformanceExcel, exportTeamPerformanceWord } from '../utils/reportExporter';
 
 const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
@@ -440,6 +466,16 @@ const generateAiAnalysis = async () => {
   } finally {
     aiLoading.value = false;
   }
+};
+
+const exportTeamExcel = () => {
+  if (!report.value) return;
+  exportTeamPerformanceExcel(report.value);
+};
+
+const exportTeamWord = () => {
+  if (!report.value) return;
+  exportTeamPerformanceWord(report.value);
 };
 
 onMounted(async () => {
