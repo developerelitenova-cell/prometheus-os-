@@ -271,7 +271,7 @@ class NotificationService:
         try:
             res = (
                 self.supabase.table("profiles")
-                .select("id, full_name, email, is_master_admin, role_id, roles(id, name, area_id, access_level)")
+                .select("id, full_name, is_master_admin, role_id, roles(id, name, area_id, access_level)")
                 .execute()
             )
             rows = res.data or []
@@ -286,6 +286,9 @@ class NotificationService:
         if emp_access is None:
             emp_access = 3
 
+        import re
+        leadership_pattern = re.compile(r"coordinador|lider|líder|director|gerente|jefe", re.IGNORECASE)
+
         area_leaders: List[Dict[str, Any]] = []
         executives: List[Dict[str, Any]] = []
 
@@ -296,16 +299,17 @@ class NotificationService:
             role_obj = row.get("roles") or {}
             role_area_id = role_obj.get("area_id")
             role_access = role_obj.get("access_level")
+            role_name = role_obj.get("name") or ""
             is_master = bool(row.get("is_master_admin"))
+            has_leader_title = bool(leadership_pattern.search(role_name))
 
-            if (
-                emp_area_id
-                and role_area_id == emp_area_id
-                and role_access in (1, 2)
-                and role_access < emp_access
-            ):
+            if emp_area_id and role_area_id == emp_area_id and (role_access in (1, 2) or has_leader_title):
                 area_leaders.append(row)
-            elif role_access == 1 or is_master:
+            elif (
+                role_access == 1
+                or is_master
+                or bool(re.search(r"presidente|presidencia|gerente general|director general|auditor", role_name, re.IGNORECASE))
+            ):
                 executives.append(row)
 
         area_leaders.sort(key=lambda r: (0 if (r.get("roles") or {}).get("access_level") == 2 else 1))

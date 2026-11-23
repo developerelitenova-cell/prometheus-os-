@@ -221,9 +221,12 @@ export async function findImmediateSupervisors(currentProfile, currentRole) {
   try {
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email, is_master_admin, role_id, roles(id, name, area_id, access_level)');
+      .select('id, full_name, is_master_admin, role_id, roles(id, name, area_id, access_level, areas(id, name))');
 
-    if (error || !profiles) return [];
+    if (error || !profiles) {
+      if (error) console.warn('[findImmediateSupervisors] Error consultando perfiles:', error);
+      return [];
+    }
 
     const myId = currentProfile.id;
     const myAreaId = currentRole?.area_id || currentProfile?.roles?.area_id || null;
@@ -232,40 +235,74 @@ export async function findImmediateSupervisors(currentProfile, currentRole) {
     const areaLeaders = [];
     const executives = [];
 
+    const isLeadershipTitle = (name) =>
+      /coordinador|lider|líder|director|gerente|jefe/i.test(name || '');
+
     for (const p of profiles) {
       if (!p?.id || p.id === myId) continue;
       const r = p.roles || {};
       const rAccess = r.access_level;
+      const roleName = r.name || '';
+      const hasLeaderTitle = isLeadershipTitle(roleName);
+
+      // Líder de la misma área:
+      // Si comparte área y tiene nivel 1 o 2 (o título de liderazgo)
       const isAreaLeader =
         myAreaId &&
         r.area_id === myAreaId &&
-        (rAccess === 1 || rAccess === 2) &&
-        rAccess < myAccess;
+        ((rAccess === 1 || rAccess === 2) || hasLeaderTitle);
 
       if (isAreaLeader) {
         areaLeaders.push({
           id: p.id,
           full_name: p.full_name || 'Líder de Área',
-          email: p.email || '',
-          roleName: r.name || 'Líder de Área',
-          accessLevel: rAccess,
+          email: '',
+          roleName: roleName || 'Líder de Área',
+          accessLevel: rAccess ?? 2,
           relationLabel: 'Jefe Directo de Área',
         });
-      } else if (rAccess === 1 || p.is_master_admin) {
+      } else if (
+        rAccess === 1 ||
+        p.is_master_admin ||
+        /presidente|presidencia|gerente general|director general|auditor/i.test(roleName)
+      ) {
         executives.push({
           id: p.id,
           full_name: p.full_name || 'Dirección / Gerencia',
-          email: p.email || '',
-          roleName: r.name || (p.is_master_admin ? 'Master Admin' : 'Gerencia'),
+          email: '',
+          roleName: roleName || (p.is_master_admin ? 'Presidencia / Admin Master' : 'Dirección'),
           accessLevel: rAccess ?? 1,
-          relationLabel: 'Dirección / Gerencia',
+          relationLabel: p.is_master_admin ? 'Presidencia / Admin Master' : 'Dirección / Gerencia',
         });
       }
     }
 
     areaLeaders.sort((a, b) => (a.accessLevel === 2 ? -1 : b.accessLevel === 2 ? 1 : 0));
-    executives.sort((a, b) => (a.accessLevel ?? 1) - (b.accessLevel ?? 1));
-    return [...areaLeaders, ...executives];
+    executives.sort((a, b) => {
+      if (a.relationLabel.includes('Presidencia') && !b.relationLabel.includes('Presidencia')) return -1;
+      if (!a.relationLabel.includes('Presidencia') && b.relationLabel.includes('Presidencia')) return 1;
+      return (a.accessLevel ?? 1) - (b.accessLevel ?? 1);
+    });
+
+    const candidates = [...areaLeaders, ...executives];
+
+    // Fallback de contingencia: si por alguna razón no hay líderes directos ni ejecutivos,
+    // devolver los perfiles Master Admin existentes para nunca dejar al colaborador bloqueado.
+    if (candidates.length === 0) {
+      const masters = profiles
+        .filter((p) => p.is_master_admin && p.id !== myId)
+        .map((p) => ({
+          id: p.id,
+          full_name: p.full_name || 'Dirección General',
+          email: '',
+          roleName: p.roles?.name || 'Administración / Presidencia',
+          accessLevel: 1,
+          relationLabel: 'Dirección General',
+        }));
+      return masters;
+    }
+
+    return candidates;
   } catch (err) {
     console.warn('Error resolviendo jefes inmediatos:', err);
     return [];
