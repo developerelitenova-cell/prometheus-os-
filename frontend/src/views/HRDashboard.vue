@@ -176,9 +176,25 @@
                       </span>
                     </td>
                     <td class="py-3.5 px-4">
-                      <div class="flex flex-col">
+                      <div class="flex flex-col gap-1">
                         <span class="font-medium text-on-surface">{{ emp.roles?.name || 'Sin cargo asignado' }}</span>
                         <span class="text-xs text-secondary">{{ emp.roles?.areas?.name || 'Área no asignada' }}</span>
+                        <span
+                          v-if="getEffectiveNewsPermission(emp) === 'company'"
+                          class="inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#b08d57]/15 text-[#8a6d3d] border border-[#b08d57]/30"
+                          title="Puede publicar noticias a toda la empresa o por área"
+                        >
+                          <span class="material-symbols-outlined text-[13px]">campaign</span>
+                          Noticias: Empresa
+                        </span>
+                        <span
+                          v-else-if="getEffectiveNewsPermission(emp) === 'area'"
+                          class="inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-700 border border-emerald-500/30"
+                          title="Puede publicar noticias a su departamento"
+                        >
+                          <span class="material-symbols-outlined text-[13px]">campaign</span>
+                          Noticias: Área
+                        </span>
                       </div>
                     </td>
                     <td class="py-3.5 px-4">
@@ -282,21 +298,101 @@
             <h3 class="text-xl font-bold mb-4">Publicar Nueva Noticia</h3>
             <form @submit.prevent="publishNews" class="flex flex-col gap-4">
               <div>
-                <label class="block font-semibold text-sm mb-1 text-secondary">Título de la Noticia</label>
-                <input v-model="newsForm.title" required type="text" class="w-full p-3 rounded-xl border bg-surface-container-low outline-none" placeholder="Ej: Fiesta de Fin de Año">
+                <label class="block font-semibold text-sm mb-1 text-secondary">Título de la Noticia *</label>
+                <input v-model="newsForm.title" required type="text" class="w-full p-3 rounded-xl border bg-surface-container-low outline-none focus:border-primary" placeholder="Ej: Fiesta de Fin de Año o Resultados Q3">
               </div>
+
+              <!-- Alcance (Empresa vs Área) -->
               <div>
-                <label class="block font-semibold text-sm mb-1 text-secondary">Flyer / Imagen</label>
-                <input type="file" required accept="image/*" @change="onNewsImageChange" class="w-full p-2 border border-dashed rounded-xl bg-surface-container-low">
+                <label class="block font-semibold text-sm mb-1.5 text-secondary">Alcance de la Publicación</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    @click="newsForm.scope = 'company'; newsForm.area_id = ''"
+                    :class="[
+                      'py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer',
+                      newsForm.scope === 'company'
+                        ? 'bg-[#b08d57]/15 border-[#b08d57] text-[#8a6d3d] ring-1 ring-[#b08d57]'
+                        : 'bg-surface-container-low border-surface-container-high text-secondary hover:text-on-surface'
+                    ]"
+                  >
+                    <span class="material-symbols-outlined text-[17px]">public</span>
+                    <span>Toda la Empresa</span>
+                  </button>
+                  <button
+                    type="button"
+                    @click="newsForm.scope = 'area'"
+                    :class="[
+                      'py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer',
+                      newsForm.scope === 'area'
+                        ? 'bg-emerald-500/15 border-emerald-600 text-emerald-700 ring-1 ring-emerald-600'
+                        : 'bg-surface-container-low border-surface-container-high text-secondary hover:text-on-surface'
+                    ]"
+                  >
+                    <span class="material-symbols-outlined text-[17px]">groups</span>
+                    <span>Departamento específico</span>
+                  </button>
+                </div>
               </div>
+
+              <!-- Selector de Departamento (solo si scope === 'area') -->
+              <div v-if="newsForm.scope === 'area'">
+                <label class="block font-semibold text-sm mb-1 text-secondary">Departamento Destino *</label>
+                <select v-model="newsForm.area_id" required class="w-full p-3 rounded-xl border bg-surface-container-low outline-none focus:border-primary text-sm">
+                  <option value="">-- Seleccionar departamento --</option>
+                  <option v-for="area in areasList" :key="area.id" :value="area.id">{{ area.name }}</option>
+                </select>
+              </div>
+
+              <!-- Categoría -->
+              <div>
+                <label class="block font-semibold text-sm mb-1.5 text-secondary">Categoría</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button
+                    v-for="cat in NEWS_CATEGORY_OPTIONS"
+                    :key="cat.value"
+                    type="button"
+                    @click="newsForm.category = cat.value"
+                    :class="[
+                      'py-2 px-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 text-xs font-semibold transition-all cursor-pointer text-center',
+                      newsForm.category === cat.value
+                        ? `${cat.badgeClass} ring-1 ring-current shadow-2xs`
+                        : 'bg-surface-container-low border-surface-container-high text-secondary hover:text-on-surface'
+                    ]"
+                  >
+                    <span class="material-symbols-outlined text-[18px]">{{ cat.icon }}</span>
+                    <span class="leading-tight">{{ cat.label }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mensaje o Comunicado (Opcional si hay imagen) -->
+              <div>
+                <label class="block font-semibold text-sm mb-1 text-secondary">Mensaje o Comunicado</label>
+                <textarea
+                  v-model="newsForm.body"
+                  rows="4"
+                  class="w-full p-3 rounded-xl border bg-surface-container-low outline-none focus:border-primary text-sm resize-y"
+                  placeholder="Escribe el comunicado aquí (opcional si adjuntas un flyer/imagen)..."
+                ></textarea>
+              </div>
+
+              <!-- Flyer / Imagen (Opcional si hay mensaje) -->
+              <div>
+                <label class="block font-semibold text-sm mb-1 text-secondary">
+                  Flyer / Imagen <span class="font-normal text-xs">(opcional si escribes un mensaje)</span>
+                </label>
+                <input ref="newsFileInput" type="file" accept="image/*" @change="onNewsImageChange" class="w-full p-2 border border-dashed rounded-xl bg-surface-container-low text-sm">
+              </div>
+
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block font-semibold text-sm mb-1 text-secondary">Válido Desde</label>
                   <input v-model="newsForm.start_date" required type="date" class="w-full p-3 rounded-xl border bg-surface-container-low outline-none">
                 </div>
                 <div>
-                  <label class="block font-semibold text-sm mb-1 text-secondary">Válido Hasta</label>
-                  <input v-model="newsForm.end_date" required type="date" class="w-full p-3 rounded-xl border bg-surface-container-low outline-none">
+                  <label class="block font-semibold text-sm mb-1 text-secondary">Válido Hasta <span class="font-normal text-xs">(opcional)</span></label>
+                  <input v-model="newsForm.end_date" type="date" class="w-full p-3 rounded-xl border bg-surface-container-low outline-none">
                 </div>
               </div>
               <button type="submit" :disabled="uploadingNews" class="mt-4 px-6 py-3 rounded-xl bg-primary text-white font-bold flex justify-center items-center gap-2 disabled:opacity-70">
@@ -312,14 +408,44 @@
             <div v-if="activeNews.length === 0" class="text-center py-6 bg-surface-container-low rounded-xl text-secondary">
               No hay noticias activas.
             </div>
-            <div v-for="news in activeNews" :key="news.id" class="p-3 border rounded-xl bg-surface-container-lowest flex gap-4 shadow-sm items-center">
-              <img :src="news.image_url" class="w-24 h-24 object-cover rounded-lg border">
-              <div class="flex flex-col flex-1">
-                <span class="font-bold text-lg leading-tight">{{ news.title }}</span>
-                <span class="text-xs text-secondary mt-1">Desde: {{ new Date(news.start_date).toLocaleDateString() }}</span>
-                <span class="text-xs text-secondary">Hasta: {{ new Date(news.end_date).toLocaleDateString() }}</span>
+            <div v-for="news in activeNews" :key="news.id" class="p-4 border rounded-xl bg-surface-container-lowest flex gap-4 shadow-sm items-start">
+              <img v-if="news.image_url" :src="news.image_url" class="w-24 h-24 object-cover rounded-lg border shrink-0" :alt="news.title">
+              <div v-else class="w-16 h-16 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[28px]">{{ getNewsCategoryMeta(news).icon }}</span>
               </div>
-              <button @click="deleteNews(news.id)" class="p-2 text-danger hover:bg-danger/10 rounded-lg transition-colors" title="Eliminar Noticia">
+              <div class="flex flex-col flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border"
+                    :class="getNewsCategoryMeta(news).badgeClass"
+                  >
+                    <span class="material-symbols-outlined text-[13px]">{{ getNewsCategoryMeta(news).icon }}</span>
+                    {{ getNewsCategoryMeta(news).label }}
+                  </span>
+                  <span
+                    v-if="news.scope === 'area'"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/25"
+                  >
+                    <span class="material-symbols-outlined text-[13px]">groups</span>
+                    {{ getAreaName(news.area_id) }}
+                  </span>
+                  <span
+                    v-else
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-surface-container text-secondary border border-surface-container-high"
+                  >
+                    <span class="material-symbols-outlined text-[13px]">public</span>
+                    Toda la Empresa
+                  </span>
+                </div>
+                <span class="font-bold text-base leading-tight text-on-surface">{{ news.title }}</span>
+                <p v-if="news.body" class="text-xs text-secondary mt-1 line-clamp-2 whitespace-pre-line">{{ news.body }}</p>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-2 text-[11px] text-secondary">
+                  <span>Desde: {{ news.start_date ? new Date(news.start_date).toLocaleDateString() : 'Hoy' }}</span>
+                  <span>Hasta: {{ news.end_date ? new Date(news.end_date).toLocaleDateString() : 'Sin vencimiento' }}</span>
+                  <span v-if="news.author_name" class="font-medium text-on-surface/80">Por: {{ news.author_name }}</span>
+                </div>
+              </div>
+              <button @click="deleteNews(news.id)" class="p-2 text-danger hover:bg-danger/10 rounded-lg transition-colors shrink-0" title="Eliminar Noticia">
                 <span class="material-symbols-outlined">delete</span>
               </button>
             </div>
@@ -621,6 +747,38 @@
               <input v-model="createForm.password" required minlength="6" type="text" placeholder="Mínimo 6 caracteres" class="w-full p-2.5 rounded-xl border bg-surface-container-low outline-none text-sm font-mono focus:border-primary">
             </div>
 
+            <!-- Permisos de Publicación de Noticias -->
+            <div>
+              <label class="block text-xs font-semibold text-secondary uppercase mb-1.5 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px] text-primary">campaign</span>
+                Permisos de Publicación de Noticias
+              </label>
+              <div class="flex flex-col gap-2">
+                <label
+                  v-for="opt in NEWS_PERMISSION_OPTIONS"
+                  :key="opt.value"
+                  :class="[
+                    'p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all',
+                    createForm.news_permission === opt.value
+                      ? 'bg-primary/10 border-primary ring-1 ring-primary/40'
+                      : 'bg-surface-container-low border-surface-container-high hover:bg-surface-container'
+                  ]"
+                >
+                  <input
+                    type="radio"
+                    name="create_news_permission"
+                    :value="opt.value"
+                    v-model="createForm.news_permission"
+                    class="mt-0.5 accent-primary"
+                  />
+                  <div class="flex flex-col">
+                    <span class="text-xs font-bold text-on-surface leading-tight">{{ opt.label }}</span>
+                    <span class="text-[11px] text-secondary leading-snug mt-0.5">{{ opt.description }}</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <p v-if="createError" class="text-xs text-danger font-medium">{{ createError }}</p>
 
             <div class="flex justify-end gap-3 mt-2">
@@ -638,7 +796,7 @@
 
       <!-- Modal: Editar / Reasignar Cuenta -->
       <div v-if="showEditModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-        <div class="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-md p-6 shadow-xl">
+        <div class="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 shadow-xl">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-bold text-on-surface flex items-center gap-2">
               <span class="material-symbols-outlined text-primary">edit</span>
@@ -731,6 +889,38 @@
                 <option value="suspended">Suspendido</option>
                 <option value="pending">Pendiente</option>
               </select>
+            </div>
+
+            <!-- Permisos de Publicación de Noticias -->
+            <div>
+              <label class="block text-xs font-semibold text-secondary uppercase mb-1.5 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px] text-primary">campaign</span>
+                Permisos de Publicación de Noticias
+              </label>
+              <div class="flex flex-col gap-2">
+                <label
+                  v-for="opt in NEWS_PERMISSION_OPTIONS"
+                  :key="opt.value"
+                  :class="[
+                    'p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all',
+                    editForm.news_permission === opt.value
+                      ? 'bg-primary/10 border-primary ring-1 ring-primary/40'
+                      : 'bg-surface-container-low border-surface-container-high hover:bg-surface-container'
+                  ]"
+                >
+                  <input
+                    type="radio"
+                    name="edit_news_permission"
+                    :value="opt.value"
+                    v-model="editForm.news_permission"
+                    class="mt-0.5 accent-primary"
+                  />
+                  <div class="flex flex-col">
+                    <span class="text-xs font-bold text-on-surface leading-tight">{{ opt.label }}</span>
+                    <span class="text-[11px] text-secondary leading-snug mt-0.5">{{ opt.description }}</span>
+                  </div>
+                </label>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mt-2">
@@ -927,6 +1117,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../api/supabase';
 import { notifyRoleChangeFallback } from '../utils/notifications';
+import {
+  NEWS_PERMISSION_OPTIONS,
+  NEWS_CATEGORY_OPTIONS,
+  getEffectiveNewsPermission,
+  getNewsCategoryMeta
+} from '../utils/newsPermissions';
 
 const router = useRouter();
 const loading = ref(true);
@@ -979,9 +1175,11 @@ const fetchWithAuth = async (url, options = {}, isRetry = false) => {
 };
 
 // Data
+const currentUserProfile = ref(null);
 const pendingUsers = ref([]);
 const allEmployees = ref([]);
 const rolesList = ref([]);
+const areasList = ref([]);
 const activeNews = ref([]);
 
 // Filtros y búsqueda
@@ -1014,13 +1212,13 @@ const filteredEmployees = computed(() => {
 
 // State - Modales Usuario
 const showCreateModal = ref(false);
-const createForm = ref({ full_name: '', email: '', company: 'Elite Nutrition', role_id: '', password: '' });
+const createForm = ref({ full_name: '', email: '', company: 'Elite Nutrition', role_id: '', password: '', news_permission: 'none' });
 const createLoading = ref(false);
 const createError = ref('');
 const emailMode = ref('name'); // 'name' | 'role' | 'manual'
 
 const showEditModal = ref(false);
-const editForm = ref({ id: '', full_name: '', email: '', company: 'Elite Nutrition', role_id: '', approval_status: 'approved' });
+const editForm = ref({ id: '', full_name: '', email: '', company: 'Elite Nutrition', role_id: '', approval_status: 'approved', news_permission: 'none' });
 const editLoading = ref(false);
 const editError = ref('');
 
@@ -1059,7 +1257,17 @@ const hasDrawn = ref(false);
 let ctx = null;
 
 // State - Noticias
-const newsForm = ref({ title: '', start_date: new Date().toISOString().split('T')[0], end_date: '', file: null });
+const newsForm = ref({
+  title: '',
+  body: '',
+  scope: 'company',
+  area_id: '',
+  category: 'corporate',
+  start_date: new Date().toISOString().split('T')[0],
+  end_date: '',
+  file: null
+});
+const newsFileInput = ref(null);
 const uploadingNews = ref(false);
 
 onMounted(async () => {
@@ -1070,6 +1278,7 @@ onMounted(async () => {
   }
   
   const { data: profile } = await supabase.from('profiles').select('*, roles(name)').eq('id', session.session.user.id).single();
+  currentUserProfile.value = profile || null;
   
   const roleName = profile?.roles?.name?.toLowerCase() || '';
   const isMaster = !!profile?.is_master_admin;
@@ -1111,6 +1320,13 @@ const loadData = async () => {
     seenRoleKeys.add(key);
     return true;
   });
+
+  // 1b. Áreas / Departamentos disponibles
+  const { data: areasData } = await supabase
+    .from('areas')
+    .select('id, name')
+    .order('name');
+  areasList.value = areasData || [];
 
   // 2. Colaboradores / Empleados (intentar vía backend para obtener correos de Auth, fallback a Supabase)
   try {
@@ -1324,7 +1540,8 @@ const openCreateModal = () => {
     email: '',
     company: 'Elite Nutrition',
     role_id: '',
-    password: generateRandomPassword()
+    password: generateRandomPassword(),
+    news_permission: 'none'
   };
   createError.value = '';
   showCreateModal.value = true;
@@ -1343,6 +1560,7 @@ const submitCreateEmployee = async () => {
 
   createLoading.value = true;
   try {
+    const selectedNewsPermission = createForm.value.news_permission || 'none';
     const res = await fetchWithAuth(`${apiUrl}/api/v1/admin/create-employee`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1351,13 +1569,31 @@ const submitCreateEmployee = async () => {
         email: createForm.value.email.trim(),
         company: createForm.value.company || 'Elite Nutrition',
         role_id: createForm.value.role_id || null,
-        password: createForm.value.password
+        password: createForm.value.password,
+        news_permission: selectedNewsPermission
       })
     });
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.detail || 'Error al crear la cuenta.');
     }
+
+    // Asegurar persistencia de news_permission en Supabase (tolerante si la columna aún no está migrada)
+    const createdId = data?.user?.id || data?.employee?.id || data?.id || null;
+    if (createdId && selectedNewsPermission) {
+      try {
+        const { error: permErr } = await supabase
+          .from('profiles')
+          .update({ news_permission: selectedNewsPermission })
+          .eq('id', createdId);
+        if (permErr && !(permErr.message?.includes('news_permission') || permErr.code === 'PGRST204')) {
+          console.warn('Aviso al guardar news_permission en creación:', permErr);
+        }
+      } catch (permEx) {
+        console.warn('Aviso al guardar news_permission en creación:', permEx);
+      }
+    }
+
     showCreateModal.value = false;
     await loadData();
     alert('Cuenta corporativa asignada y activada exitosamente.');
@@ -1376,6 +1612,7 @@ const openEditModal = (emp) => {
     company: getEmployeeCompany(emp),
     role_id: emp.role_id || '',
     approval_status: emp.approval_status || 'approved',
+    news_permission: getEffectiveNewsPermission(emp),
     contract_url: emp.contract_url || '',
     signature_url: emp.signature_url || '',
     contractFile: null,
@@ -1417,13 +1654,15 @@ const submitEditEmployee = async () => {
     }
 
     let backendSuccess = false;
+    const selectedNewsPermission = editForm.value.news_permission || 'none';
     try {
       const payload = {
         full_name: editForm.value.full_name.trim(),
         email: editForm.value.email ? editForm.value.email.trim() : undefined,
         company: editForm.value.company || 'Elite Nutrition',
         role_id: editForm.value.role_id || null,
-        approval_status: editForm.value.approval_status
+        approval_status: editForm.value.approval_status,
+        news_permission: selectedNewsPermission
       };
       if (finalContractUrl) payload.contract_url = finalContractUrl;
       if (finalSignatureUrl) payload.signature_url = finalSignatureUrl;
@@ -1438,12 +1677,28 @@ const submitEditEmployee = async () => {
       console.warn('Backend API no disponible para update, guardando directo en Supabase:', apiErr);
     }
 
+    if (backendSuccess) {
+      // Sincronizar news_permission directamente en Supabase en caso de que el backend aún no persista ese campo
+      try {
+        const { error: permErr } = await supabase
+          .from('profiles')
+          .update({ news_permission: selectedNewsPermission })
+          .eq('id', editForm.value.id);
+        if (permErr && !(permErr.message?.includes('news_permission') || permErr.code === 'PGRST204')) {
+          console.warn('Aviso al sincronizar news_permission:', permErr);
+        }
+      } catch (permEx) {
+        console.warn('Aviso al sincronizar news_permission:', permEx);
+      }
+    }
+
     if (!backendSuccess) {
       const updateData = {
         full_name: editForm.value.full_name.trim(),
         company: editForm.value.company || 'Elite Nutrition',
         role_id: editForm.value.role_id || null,
-        approval_status: editForm.value.approval_status
+        approval_status: editForm.value.approval_status,
+        news_permission: selectedNewsPermission
       };
       if (finalContractUrl) updateData.contract_url = finalContractUrl;
       if (finalSignatureUrl) updateData.signature_url = finalSignatureUrl;
@@ -1453,10 +1708,18 @@ const submitEditEmployee = async () => {
         .update(updateData)
         .eq('id', editForm.value.id);
 
-      if (supaErr && (supaErr.message?.includes('contract_url') || supaErr.message?.includes('signature_url') || supaErr.message?.includes('company') || supaErr.code === 'PGRST204')) {
+      if (
+        supaErr &&
+        (supaErr.message?.includes('contract_url') ||
+          supaErr.message?.includes('signature_url') ||
+          supaErr.message?.includes('company') ||
+          supaErr.message?.includes('news_permission') ||
+          supaErr.code === 'PGRST204')
+      ) {
         delete updateData.contract_url;
         delete updateData.signature_url;
         delete updateData.company;
+        delete updateData.news_permission;
         const retry = await supabase
           .from('profiles')
           .update(updateData)
@@ -1818,44 +2081,113 @@ const saveContract = async () => {
 };
 
 // --- NOTICIAS ---
+const getAreaName = (areaId) => {
+  if (!areaId) return 'Departamento';
+  const found = areasList.value.find(a => a.id === areaId);
+  return found ? found.name : 'Departamento';
+};
+
 const onNewsImageChange = (e) => {
   if (e.target.files && e.target.files.length > 0) {
     newsForm.value.file = e.target.files[0];
+  } else {
+    newsForm.value.file = null;
   }
 };
 
 const publishNews = async () => {
-  if (!newsForm.value.file) return;
+  const title = (newsForm.value.title || '').trim();
+  const body = (newsForm.value.body || '').trim();
+  const file = newsForm.value.file;
+
+  if (!title) {
+    alert('El título de la noticia es obligatorio.');
+    return;
+  }
+  if (!body && !file) {
+    alert('Debes escribir un mensaje/comunicado o adjuntar una imagen/flyer.');
+    return;
+  }
+  if (newsForm.value.scope === 'area' && !newsForm.value.area_id) {
+    alert('Selecciona el departamento destino para la noticia.');
+    return;
+  }
+
   uploadingNews.value = true;
 
   try {
-    const file = newsForm.value.file;
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `flyers/${fileName}`;
+    let imageUrl = null;
+    if (file) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `flyers/${fileName}`;
 
-    // Subir a Storage
-    const { error: uploadError } = await supabase.storage.from('news_flyers').upload(filePath, file);
-    if (uploadError) throw uploadError;
+      // Subir a Storage
+      const { error: uploadError } = await supabase.storage.from('news_flyers').upload(filePath, file);
+      if (uploadError) throw uploadError;
 
-    // Obtener URL pública
-    const { data: publicUrlData } = supabase.storage.from('news_flyers').getPublicUrl(filePath);
-    const imageUrl = publicUrlData.publicUrl;
+      // Obtener URL pública
+      const { data: publicUrlData } = supabase.storage.from('news_flyers').getPublicUrl(filePath);
+      imageUrl = publicUrlData.publicUrl;
+    }
 
     // Insertar en BD
     const { data: userData } = await supabase.auth.getUser();
-    const { error: insertError } = await supabase.from('corporate_news').insert({
-      title: newsForm.value.title,
+    const startDate = newsForm.value.start_date || new Date().toISOString().split('T')[0];
+    const endDate = newsForm.value.end_date ? newsForm.value.end_date : null;
+
+    const fullPayload = {
+      title,
+      body: body || null,
       image_url: imageUrl,
-      start_date: newsForm.value.start_date || new Date().toISOString().split('T')[0],
-      end_date: newsForm.value.end_date ? newsForm.value.end_date : null,
-      created_by: userData.user.id
-    });
+      scope: newsForm.value.scope || 'company',
+      area_id: newsForm.value.scope === 'area' ? newsForm.value.area_id : null,
+      category: newsForm.value.category || 'corporate',
+      author_name: currentUserProfile.value?.full_name || null,
+      created_by: userData.user.id,
+      start_date: startDate,
+      end_date: endDate
+    };
+
+    let { error: insertError } = await supabase.from('corporate_news').insert(fullPayload);
+
+    // Fallback limpio si las columnas nuevas aún no han sido migradas en Supabase
+    if (
+      insertError &&
+      (insertError.code === 'PGRST204' ||
+        insertError.message?.includes('body') ||
+        insertError.message?.includes('scope') ||
+        insertError.message?.includes('area_id') ||
+        insertError.message?.includes('category') ||
+        insertError.message?.includes('author_name'))
+    ) {
+      const legacyPayload = {
+        title,
+        image_url: imageUrl,
+        start_date: startDate,
+        end_date: endDate,
+        created_by: userData.user.id
+      };
+      const retry = await supabase.from('corporate_news').insert(legacyPayload);
+      insertError = retry.error;
+    }
     
     if (insertError) throw insertError;
     
     alert('Noticia publicada exitosamente.');
-    newsForm.value = { title: '', start_date: new Date().toISOString().split('T')[0], end_date: '', file: null };
+    newsForm.value = {
+      title: '',
+      body: '',
+      scope: 'company',
+      area_id: '',
+      category: 'corporate',
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: '',
+      file: null
+    };
+    if (newsFileInput.value) {
+      newsFileInput.value.value = '';
+    }
     await loadData(); // recargar
   } catch (err) {
     console.error(err);

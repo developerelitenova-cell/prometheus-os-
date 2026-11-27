@@ -29,21 +29,109 @@
         </div>
       </div>
 
-      <!-- Carrusel de Noticias Corporativas -->
-      <div v-if="activeNews.length > 0" class="mb-6 bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden relative group">
-        <div class="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10 pointer-events-none"></div>
-        <img :src="activeNews[currentNewsIndex].image_url" class="w-full h-36 sm:h-48 object-cover object-center transition-opacity duration-500">
-        <div class="absolute bottom-0 left-0 p-4 sm:p-6 z-20 w-full bg-gradient-to-t from-black/80 to-transparent">
-          <span class="bg-primary text-white text-xs font-bold px-2 py-1 rounded mb-2 inline-block">NOTICIAS ELITE</span>
-          <h2 class="text-white text-lg sm:text-2xl font-bold">{{ activeNews[currentNewsIndex].title }}</h2>
+      <!-- Carrusel de Noticias Corporativas y de Área -->
+      <div v-if="activeNews.length > 0 && currentNews" class="mb-6 bg-white rounded-2xl border border-[#e5e5ea] shadow-sm overflow-hidden relative group">
+        <!-- Botón rápido de publicación para perfiles autorizados -->
+        <button
+          v-if="canUserPublishNews"
+          type="button"
+          data-testid="workspace-publish-news-btn"
+          @click="showNewsPublisherModal = true"
+          class="absolute top-3 right-3 z-30 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+          :class="currentNews.image_url ? 'bg-black/55 hover:bg-black/75 text-white backdrop-blur-md border border-white/20' : 'bg-[#b08d57]/12 hover:bg-[#b08d57]/20 text-[#8a6d3d] border border-[#b08d57]/30'"
+          title="Publicar nuevo comunicado"
+        >
+          <span class="material-symbols-outlined text-[15px]">campaign</span>
+          <span>Publicar Noticia</span>
+        </button>
+
+        <!-- Modo Flyer (con imagen) -->
+        <template v-if="currentNews.image_url">
+          <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent z-10 pointer-events-none"></div>
+          <img :src="currentNews.image_url" :alt="currentNews.title" class="w-full h-40 sm:h-52 object-cover object-center transition-opacity duration-500">
+          <div class="absolute bottom-0 left-0 p-4 sm:p-6 z-20 w-full bg-gradient-to-t from-black/85 via-black/45 to-transparent">
+            <div class="flex items-center gap-2 flex-wrap mb-1.5">
+              <span
+                :class="['inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-white/95 backdrop-blur-sm', currentNewsMeta?.badgeClass]"
+              >
+                <span class="material-symbols-outlined text-[13px]">{{ currentNewsMeta?.icon }}</span>
+                <span>{{ currentNewsMeta?.label }}</span>
+              </span>
+              <span v-if="currentNews.author_name" class="text-[11px] font-semibold text-white/85 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[13px]">person</span>
+                <span>{{ currentNews.author_name }}</span>
+              </span>
+            </div>
+            <h2 class="text-white text-lg sm:text-2xl font-bold leading-tight">{{ currentNews.title }}</h2>
+            <p v-if="currentNews.body" class="text-white/85 text-xs sm:text-sm mt-1 line-clamp-2 max-w-3xl">
+              {{ currentNews.body }}
+            </p>
+          </div>
+        </template>
+
+        <!-- Modo Comunicado de Texto (sin imagen) -->
+        <div
+          v-else
+          data-testid="text-news-card"
+          class="p-5 sm:p-6 bg-gradient-to-br from-white via-[#fbfbfd] to-[#f5f5f7] border-l-4"
+          :class="currentNews.category === 'kpi' ? 'border-l-blue-500' : currentNews.category === 'area' ? 'border-l-emerald-500' : 'border-l-[#b08d57]'"
+        >
+          <div class="flex items-center gap-2 flex-wrap mb-2 pr-36">
+            <span
+              :class="['inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border', currentNewsMeta?.badgeClass]"
+            >
+              <span class="material-symbols-outlined text-[14px]">{{ currentNewsMeta?.icon }}</span>
+              <span>{{ currentNewsMeta?.label }}</span>
+            </span>
+            <span v-if="currentNews.author_name" class="text-xs font-medium text-[#86868b] flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">person</span>
+              <span>Por {{ currentNews.author_name }}</span>
+            </span>
+          </div>
+          <h2 class="text-[#1d1d1f] text-lg sm:text-xl font-bold leading-snug">{{ currentNews.title }}</h2>
+          <p v-if="currentNews.body" class="text-[#424245] text-sm mt-2 whitespace-pre-line leading-relaxed max-w-4xl">
+            {{ currentNews.body }}
+          </p>
         </div>
-        
+
         <!-- Controles del Carrusel -->
-        <button v-if="activeNews.length > 1" @click="prevNews" class="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+        <button v-if="activeNews.length > 1" type="button" @click="prevNews" class="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer">
           <span class="material-symbols-outlined">chevron_left</span>
         </button>
-        <button v-if="activeNews.length > 1" @click="nextNews" class="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+        <button v-if="activeNews.length > 1" type="button" @click="nextNews" class="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer">
           <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+        <div v-if="activeNews.length > 1" class="absolute bottom-2.5 right-4 z-30 flex items-center gap-1.5">
+          <button
+            v-for="(n, idx) in activeNews"
+            :key="n.id || idx"
+            type="button"
+            @click="currentNewsIndex = idx"
+            class="h-1.5 rounded-full transition-all cursor-pointer"
+            :class="[
+              idx === currentNewsIndex
+                ? (currentNews.image_url ? 'w-5 bg-white' : 'w-5 bg-[#b08d57]')
+                : (currentNews.image_url ? 'w-1.5 bg-white/50' : 'w-1.5 bg-[#d2d2d7]')
+            ]"
+            :aria-label="`Ver noticia ${idx + 1}`"
+          ></button>
+        </div>
+      </div>
+
+      <!-- Acceso rápido para publicar si no hay noticias activas y el usuario tiene permiso -->
+      <div v-else-if="canUserPublishNews" class="mb-6 bg-white rounded-2xl border border-[#e5e5ea] shadow-2xs px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 text-xs text-[#5e6c84]">
+          <span class="material-symbols-outlined text-[#b08d57] text-[18px]">campaign</span>
+          <span>No hay comunicados activos en este momento.</span>
+        </div>
+        <button
+          type="button"
+          data-testid="workspace-publish-news-btn"
+          @click="showNewsPublisherModal = true"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#b08d57]/12 hover:bg-[#b08d57]/20 text-[#8a6d3d] border border-[#b08d57]/30 text-xs font-bold transition-colors cursor-pointer shrink-0"
+        >
+          <span class="material-symbols-outlined text-[15px]">add_circle</span>
+          <span>Publicar Noticia</span>
         </button>
       </div>
 
@@ -1245,6 +1333,14 @@
       @export-file="handleSendModalExportFile"
       @sent="handleSupervisorReportSent"
     />
+
+    <!-- Modal: Publicador de Noticias Corporativas / de Área -->
+    <NewsPublisherModal
+      v-model="showNewsPublisherModal"
+      :profile="currentProfile"
+      default-category="area"
+      @published="fetchNews"
+    />
   </div>
 </template>
 
@@ -1262,13 +1358,17 @@ import OverdueTasksModal from '@/components/OverdueTasksModal.vue';
 import PortalTutorialModal from '@/components/PortalTutorialModal.vue';
 import SendReportModal from '@/components/SendReportModal.vue';
 import PersonalKpiChartPanel from '@/components/PersonalKpiChartPanel.vue';
+import NewsPublisherModal from '@/components/NewsPublisherModal.vue';
 import { getBogotaDateStr, isTaskOverdueBogota } from '../utils/bogotaTime';
 import { cancelTaskReminders, findImmediateSupervisors } from '../utils/notifications';
 import { getPriorityBadge, getEvidenceBadge } from '../utils/taskBadges';
 import { escapeHtml, exportDailyComplianceExcel, exportDailyComplianceWord } from '../utils/reportExporter';
 import { countEvidencePhotos } from '../utils/evidencePhotos';
+import { filterVisibleNews, getNewsCategoryMeta, canPublishNews } from '../utils/newsPermissions';
 
 const canManageKpis = computed(() => canAccessKpis());
+const showNewsPublisherModal = ref(false);
+const canUserPublishNews = computed(() => canPublishNews(currentProfile.value));
 
 // ── Control de Jornada, Fechas y Cierre de Gestión ───────────────
 const getTodayStr = () => {
@@ -2081,6 +2181,8 @@ const markAllRead = async () => {
 };
 
 const currentNewsIndex = ref(0);
+const currentNews = computed(() => activeNews.value[currentNewsIndex.value] || null);
+const currentNewsMeta = computed(() => (currentNews.value ? getNewsCategoryMeta(currentNews.value) : null));
 let newsInterval = null;
 
 const fetchNews = async () => {
@@ -2088,11 +2190,18 @@ const fetchNews = async () => {
   const { data } = await supabase.from('corporate_news')
     .select('*')
     .lte('start_date', now)
-    .or(`end_date.gte.${now},end_date.is.null`);
-  activeNews.value = data || [];
-  
+    .or(`end_date.gte.${now},end_date.is.null`)
+    .order('created_at', { ascending: false });
+  activeNews.value = filterVisibleNews(data || [], currentProfile.value);
+  if (currentNewsIndex.value >= activeNews.value.length) {
+    currentNewsIndex.value = 0;
+  }
+
+  if (newsInterval) {
+    clearInterval(newsInterval);
+    newsInterval = null;
+  }
   if (activeNews.value.length > 1) {
-    if (newsInterval) clearInterval(newsInterval);
     newsInterval = setInterval(() => { nextNews(); }, 7000);
   }
 };

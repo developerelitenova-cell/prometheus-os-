@@ -5,10 +5,22 @@
         <button @click="$router.back()" class="back-link cursor-pointer">← Volver</button>
         <h1>Gestión de Indicadores Clave (KPIs)</h1>
       </div>
-      <div class="tabs no-print">
-        <button :class="{ active: tab === 'templates' }" @click="tab = 'templates'">Plantillas</button>
-        <button :class="{ active: tab === 'measurements' }" @click="tab = 'measurements'">Cargar Mediciones</button>
-        <button :class="{ active: tab === 'reports' }" @click="tab = 'reports'">📄 Actas e Informes</button>
+      <div class="header-actions no-print">
+        <button
+          v-if="canUserPublishNews"
+          type="button"
+          data-testid="kpi-publish-news-btn"
+          class="btn-kpi-news"
+          @click="showNewsModal = true"
+        >
+          <span class="material-symbols-outlined text-[18px]">campaign</span>
+          <span>Emitir Noticia de KPIs</span>
+        </button>
+        <div class="tabs">
+          <button :class="{ active: tab === 'templates' }" @click="tab = 'templates'">Plantillas</button>
+          <button :class="{ active: tab === 'measurements' }" @click="tab = 'measurements'">Cargar Mediciones</button>
+          <button :class="{ active: tab === 'reports' }" @click="tab = 'reports'">📄 Actas e Informes</button>
+        </div>
       </div>
     </header>
 
@@ -787,6 +799,12 @@
         </div>
       </div>
     </div>
+    <NewsPublisherModal
+      v-model="showNewsModal"
+      :profile="currentProfile"
+      :areas="allAreas"
+      default-category="kpi"
+    />
   </div>
 </template>
 
@@ -795,9 +813,13 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { supabase } from '../api/supabase';
 import { currentProfile, isMasterAdmin, isLeader } from '../api/auth';
 import { evaluateMeasurementsWithAi, generateRoleSpecificKpis } from '../api/kpiAi';
+import { canPublishNews } from '../utils/newsPermissions';
+import NewsPublisherModal from '../components/NewsPublisherModal.vue';
 
 const tab = ref('templates');
 const loading = ref(true);
+const showNewsModal = ref(false);
+const canUserPublishNews = computed(() => canPublishNews(currentProfile.value));
 const templates = ref([]);
 const allRoles = ref([]);
 
@@ -1587,6 +1609,28 @@ DIRECTRICES Y ACUERDOS ESTRATÉGICOS:
 .header-content h1 { font-size: 28px; color: var(--text-primary); margin: 4px 0 8px 0; }
 .subtitle { color: var(--text-secondary); font-size: 0.9rem; max-width: 620px; }
 
+.header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.btn-kpi-news {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.22);
+  transition: all 0.2s ease;
+}
+.btn-kpi-news:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
 .tabs { display: flex; background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 4px; height: fit-content; }
 .tabs button { padding: 9px 18px; border: none; background: transparent; cursor: pointer; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); transition: all 0.2s; }
 .tabs button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }

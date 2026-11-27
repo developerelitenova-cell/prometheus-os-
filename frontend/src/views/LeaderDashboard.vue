@@ -54,6 +54,11 @@
                   <span class="material-symbols-outlined text-[#34c759] text-[18px] transition-transform group-hover:scale-110">assignment_turned_in</span>
                   <span>Informe Diario</span>
                 </button>
+                <!-- Botón: Publicar Noticia -->
+                <button v-if="canUserPublishNews" @click="showNewsModal = true" class="group inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-lowest border border-emerald-500/50 hover:border-emerald-600 text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm cursor-pointer" type="button" title="Publicar comunicado o noticia para tu equipo o empresa">
+                  <span class="material-symbols-outlined text-emerald-600 text-[18px] transition-transform group-hover:scale-110">campaign</span>
+                  <span>Publicar Noticia</span>
+                </button>
                 <button @click="openScheduledModal" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-200 shadow-sm">
                   <span class="material-symbols-outlined text-[#0071e3] text-[18px]">event_repeat</span>
                   <span>Orden Programada</span>
@@ -1825,6 +1830,13 @@
       </div>
     </div>
 
+    <NewsPublisherModal
+      v-model="showNewsModal"
+      :profile="currentUser"
+      :areas="availableAreas"
+      default-category="area"
+    />
+
   </div>
 </template>
 
@@ -1837,9 +1849,13 @@ import { signOut, canAccessKpis } from '@/api/auth';
 import { getPeriodKey } from '@/utils/taskPeriods';
 import { scheduleTaskReminders } from '@/utils/notifications';
 import { parseEvidencePhotos } from '@/utils/evidencePhotos';
+import { canPublishNews } from '@/utils/newsPermissions';
+import NewsPublisherModal from '@/components/NewsPublisherModal.vue';
 
 const router = useRouter();
 const canManageKpis = computed(() => canAccessKpis());
+const showNewsModal = ref(false);
+const canUserPublishNews = computed(() => canPublishNews(currentUser.value));
 
 const handleSignOut = async () => {
   await signOut();
